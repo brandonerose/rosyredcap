@@ -3,7 +3,7 @@ Title: Rosy REDCap
 Version: 1.0.0
 Authors@R: 
     person("Brandon", "Rose", , "thecodingdocs@gmail.com", role = c("cre", "aut"))
-Description: Make a database out of a basic REDCap
+Description: Use your REDCap API token to create an updatable R list object (DB) to be used downstream for analysis, data exports, shiny apps, and even data imports.
 License: MIT + file LICENSE
 URL: https://github.com/brandonerose/rosyredcap
 BugReports: https://github.com/brandonerose/rosyredcap/issues
