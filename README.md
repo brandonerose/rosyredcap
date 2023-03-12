@@ -1,7 +1,8 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-[![TheCodingDocs.com](man/figures/TCD.png)](http://www.thecodingdocs.com)
+<a href="http://www.thecodingdocs.com" width="25%"><img
+src="man/figures/TCD.png" alt="TheCodingDocs.com" /></a>
 
 # rosyredcap <img src="man/figures/logo.png" align="right" height="200" />
 
