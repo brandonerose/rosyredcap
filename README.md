@@ -1,8 +1,6 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<a href="TheCodingDocs.com"><img src="man/figures/TCD.png" align="left" height="200" width="200" ></a>
-
 # rosyredcap <img src="man/figures/logo.png" align="right" height="200" />
 
 <!-- badges: start -->
@@ -63,3 +61,5 @@ Follow us on Twitter
 
 Follow me on Twitter
 [twitter.com/BRoseMDMPH](https://twitter.com/BRoseMDMPH "BRoseMDMPH Twitter")
+
+[![TheCodingDocs.com](man/figures/TCD.png)](http://www.thecodingdocs.com)
