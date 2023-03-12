@@ -36,10 +36,12 @@ library("rosyredcap")
 
 redcap_link<-"https://redcap.miami.edu/" #or change to your institution
 
+token = "yourNEVERshareTOKENfromREDCapAPI"
+
 set_dir(getwd()) #this is where files where drop, default is project but pick another path if needed
 
-DB<-update_DB(token = "yourNEVERshareTOKENfromREDCapAPI") 
-#DB<-update_DB(token = "yourNEVERshareTOKENfromREDCapAPI",force=T) #force for autmatic update
+DB<-update_DB(token) 
+#DB<-update_DB(token,force=T) #force for autmatic update
 
 DB %>% drop_redcap_dir() #drops excel files with links to dir
 ```
