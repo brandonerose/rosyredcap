@@ -1,6 +1,8 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+[![TheCodingDocs.com](man/figures/TCD.png)](http://www.thecodingdocs.com)
+
 # rosyredcap <img src="man/figures/logo.png" align="right" height="200" />
 
 <!-- badges: start -->
