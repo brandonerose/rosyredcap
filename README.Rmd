@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The goal of rosyredcap is to select ICD10 codes! We are still in development.
+Use your REDCap API token to create an updatable R list object (DB) to be used downstream for analysis, data exports, shiny apps, and even data imports! We are still in development.
 
 ## Installation
 
