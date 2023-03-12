@@ -2,7 +2,7 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 <a href="http://www.thecodingdocs.com" width="25%"><img
-src="man/figures/TCD.png" alt="TheCodingDocs.com" /></a>
+src="man/figures/TCD.png" alt="TheCodingDocs.com|320x271,50%" /></a>
 
 # rosyredcap <img src="man/figures/logo.png" align="right" height="200" />
 
