@@ -52,7 +52,7 @@ update_DB<-function(token,force=F){
         time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
         DB2<-DB %>% get_redcap_data(token,records = IDs)
         DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
-        DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(token,begin_time = time)) %>% unique() %>% nrow()
+        DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(token,begin_time = time)) %>% unique()
         for(TABLE  in names(DB$data)){
           DB$data[[TABLE]]<-DB$data[[TABLE]][which(!DB$data[[TABLE]][[DB$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data[[TABLE]][which(DB2$data[[TABLE]][[DB2$id_col]]%in%IDs),])
         }
