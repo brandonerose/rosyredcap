@@ -17,6 +17,7 @@ Imports:
     magrittr,
     openxlsx,
     purrr,
+    readxl,
     REDCapR,
     utils
 Config/testthat/edition: 3

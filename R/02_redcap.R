@@ -333,7 +333,7 @@ upload_redcap<-function(DB_import,DB,token){
         batch_size=1000,
         interbatch_delay=0.2,
         continue_on_error=FALSE,
-        LCDB:::redcap_uri,
+        redcap_uri(),
         token,
         overwrite_with_blanks=TRUE
       )
