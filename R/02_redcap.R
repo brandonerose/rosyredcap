@@ -272,7 +272,7 @@ read_redcap_dir<-function(DB){
 }
 
 #development only!
-upload_redcap<-function(DB_import,DB,token){
+upload_redcap<-function(DB_import,DB,token,unsafe=F){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   validate_DB(DB_import)
   validate_DB(DB)
@@ -284,49 +284,57 @@ upload_redcap<-function(DB_import,DB,token){
   if(y$clean){
     y<-clean_to_raw_redcap(y)
   }
-  warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
+  if(unsafe){
+    warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
+  }
   for(TABLE in names(x[["data"]])){
-    a<-x[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
+    a<-c<-x[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
     b<-y[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
-    if(ncol(a)!=ncol(b)){stop("Import and DB need same columns. Did you use drop dir? Don't delete cols.")}
-    if(!all(colnames(a)==colnames(b))){stop("Import and DB need same columns. Did you use drop dir? Don't delete or rearrange cols.")}
-    if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-      a<-a[order(a[["redcap_repeat_instance"]]),]
-      b<-b[order(b[["redcap_repeat_instance"]]),]
-    }
-    a<-a[order(a[[DB$id_col]]),]
-    b<-b[order(b[[DB$id_col]]),]
-    if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-      if(!all(b[["redcap_repeat_instance"]]==a[["redcap_repeat_instance"]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
-    }
-    if(!all(b[[DB$id_col]]==a[[DB$id_col]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
-    kill<-NULL
-    for(i in which(colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
-      a_<-a[,i]
-      a_[is.na(a_)]<-"NA"
-      b_<-b[,i]
-      b_[is.na(b_)]<-"NA"
-      if(!all(a_==b_)){
-        stop("You cannot change the following columns ... `",DB$id_col, "`, `redcap_repeat_instance`, or `redcap_repeat_instrument`")
+    if(!unsafe){
+      c<-data.frame()
+      if(ncol(a)!=ncol(b)){stop("Import and DB need same columns. Did you use drop dir? Don't delete cols.")}
+      if(!all(colnames(a)==colnames(b))){stop("Import and DB need same columns. Did you use drop dir? Don't delete or rearrange cols.")}
+      if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+        a<-a[order(a[["redcap_repeat_instance"]]),]
+        b<-b[order(b[["redcap_repeat_instance"]]),]
       }
-    }
-    for(i in which(!colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
-      a_<-a[,i]
-      a_[is.na(a_)]<-"NA"
-      b_<-b[,i]
-      b_[is.na(b_)]<-"NA"
-      if(all(a_==b_)){
-        kill<-kill %>% append(i)
+      a<-a[order(a[[DB$id_col]]),]
+      b<-b[order(b[[DB$id_col]]),]
+      if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+        if(!all(b[["redcap_repeat_instance"]]==a[["redcap_repeat_instance"]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
       }
+      if(!all(b[[DB$id_col]]==a[[DB$id_col]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
+      kill<-NULL
+      for(i in which(colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
+        a_<-a[,i]
+        a_[is.na(a_)]<-"NA"
+        b_<-b[,i]
+        b_[is.na(b_)]<-"NA"
+        if(!all(a_==b_)){
+          stop("You cannot change the following columns ... `",DB$id_col, "`, `redcap_repeat_instance`, or `redcap_repeat_instrument`")
+        }
+      }
+      for(i in which(!colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
+        a_<-a[,i]
+        a_[is.na(a_)]<-"NA"
+        b_<-b[,i]
+        b_[is.na(b_)]<-"NA"
+        if(all(a_==b_)){
+          kill<-kill %>% append(i)
+        }
+      }
+      if(length(kill)>0){
+        a<-a[,-kill]
+        b<-b[,-kill]
+      }
+      c<- dplyr::anti_join(a,b)
+      d<- dplyr::inner_join(a,b)
+      message(TABLE,": ",nrow(c)," rows have updates")
+      message(TABLE,": ",nrow(d)," rows are the same")
     }
-    if(length(kill)>0){
-      a<-a[,-kill]
-      b<-b[,-kill]
+    if(nrow(c)==0){
+      message(paste0("No changes -> ",TABLE))
     }
-    c<- dplyr::anti_join(a,b)
-    d<- dplyr::inner_join(a,b)
-    message(TABLE,": ",nrow(c)," rows have updates")
-    message(TABLE,": ",nrow(d)," rows are the same")
     if(nrow(c)>0){
       REDCapR::redcap_write(
         c,
@@ -337,13 +345,7 @@ upload_redcap<-function(DB_import,DB,token){
         token,
         overwrite_with_blanks=TRUE
       )
-    }else{
-      message(paste0("No changes -> ",TABLE))
     }
-    c<-NULL
   }
 }
-
-
-
 
