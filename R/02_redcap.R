@@ -98,7 +98,24 @@ raw_process_redcap <- function(DB,raw,clean=T){
             }
             OUT
           }) %>% unlist()
-
+        }
+        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="yesno")]){
+          z<-data.frame(
+            code=c(0,1),
+            name=c("No","Yes")
+          )
+          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
+            OUT<-NA
+            if(!is.na(C)){
+              D<-which(z$code==C)
+              if(length(D)==0){
+                print(z)
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
+              }
+              OUT<-z$name[D]
+            }
+            OUT
+          }) %>% unlist()
         }
       }
       if(x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
@@ -139,7 +156,7 @@ check_redcap_log <- function(token,last=24,units="hours",begin_time=""){
   if(units=="days"){
     x<-(Sys.time()-lubridate::days(last)) %>% as.character()
   }
-   if(units=="hours"){
+  if(units=="hours"){
     x<-(Sys.time()-lubridate::hours(last)) %>% as.character()
   }
   if(units=="mins"){
@@ -229,12 +246,103 @@ get_redcap_users<-function(token){
 #' @export
 drop_redcap_dir<-function(DB,records=NULL){
   dir.create(file.path(get_dir(),"REDCap"),showWarnings = F)
+  dir.create(file.path(get_dir(),"REDCap","other"),showWarnings = F)
+  dir.create(file.path(get_dir(),"REDCap","upload"),showWarnings = F)
   DB_selected<- DB %>% select_redcap_records(records)
   for(x in DB$instruments$instrument_name){
     DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap",paste0(x,".xlsx")))
   }
+  for (x in c("metadata","instruments","users")){ #,"log" #taking too long
+    DB_selected[[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap","other",paste0(x,".xlsx")))
+  }
 }
 
+
+read_redcap_dir<-function(DB){
+  path<-file.path(get_dir(),"REDCap","upload")
+  if(!file.exists(path))stop("No REDCap files found")
+  x<-list.files.real(path)
+  x<-x[which(gsub("\\.xlsx","",x)%in%DB$instruments$instrument_name)]
+  DB_import<-DB
+  DB_import[["data"]]<-list()
+  for(y in x){
+    DB_import[["data"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y))
+  }
+  DB_import
+}
+
+#development only!
+upload_redcap<-function(DB_import,DB,token){
+  warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
+  validate_DB(DB_import)
+  validate_DB(DB)
+  x<-DB_import
+  y<-DB
+  if(x$clean){
+    x<-clean_to_raw_redcap(x)
+  }
+  if(y$clean){
+    y<-clean_to_raw_redcap(y)
+  }
+  warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
+  for(TABLE in names(x[["data"]])){
+    a<-x[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
+    b<-y[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
+    if(ncol(a)!=ncol(b)){stop("Import and DB need same columns. Did you use drop dir? Don't delete cols.")}
+    if(!all(colnames(a)==colnames(b))){stop("Import and DB need same columns. Did you use drop dir? Don't delete or rearrange cols.")}
+    if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+      a<-a[order(a[["redcap_repeat_instance"]]),]
+      b<-b[order(b[["redcap_repeat_instance"]]),]
+    }
+    a<-a[order(a[[DB$id_col]]),]
+    b<-b[order(b[[DB$id_col]]),]
+    if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+      if(!all(b[["redcap_repeat_instance"]]==a[["redcap_repeat_instance"]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
+    }
+    if(!all(b[[DB$id_col]]==a[[DB$id_col]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
+    kill<-NULL
+    for(i in which(colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
+      a_<-a[,i]
+      a_[is.na(a_)]<-"NA"
+      b_<-b[,i]
+      b_[is.na(b_)]<-"NA"
+      if(!all(a_==b_)){
+        stop("You cannot change the following columns ... `",DB$id_col, "`, `redcap_repeat_instance`, or `redcap_repeat_instrument`")
+      }
+    }
+    for(i in which(!colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
+      a_<-a[,i]
+      a_[is.na(a_)]<-"NA"
+      b_<-b[,i]
+      b_[is.na(b_)]<-"NA"
+      if(all(a_==b_)){
+        kill<-kill %>% append(i)
+      }
+    }
+    if(length(kill)>0){
+      a<-a[,-kill]
+      b<-b[,-kill]
+    }
+    c<- dplyr::anti_join(a,b)
+    d<- dplyr::inner_join(a,b)
+    message(TABLE,": ",nrow(c)," rows have updates")
+    message(TABLE,": ",nrow(d)," rows are the same")
+    if(nrow(c)>0){
+      REDCapR::redcap_write(
+        c,
+        batch_size=1000,
+        interbatch_delay=0.2,
+        continue_on_error=FALSE,
+        LCDB:::redcap_uri,
+        token,
+        overwrite_with_blanks=TRUE
+      )
+    }else{
+      message(paste0("No changes -> ",TABLE))
+    }
+    c<-NULL
+  }
+}
 
 
 
