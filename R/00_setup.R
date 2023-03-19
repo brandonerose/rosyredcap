@@ -14,7 +14,7 @@ validate_dir <- function(dir_path,silent=T){
   if( ! silent) message("directory --> '",dir_path,"'")
   dir_path<-normalizePath(dir_path)
   stop_mes<-"Did you use `set_dir()`?"
-  for(folder in c("R_objects","REDCap","upload","output")){
+  for(folder in c("R_objects","REDCap","output")){
     if ( ! file.exists(file.path(dir_path,folder))) stop("'",dir_path,"/",folder,"' missing! ",stop_mes)
   }
   # if ( ! file.exists(file.path(dir_path,"ref_tables"))) stop("'",dir_path,"/ref_tables' missing! ",stop_mes)
@@ -56,7 +56,7 @@ set_dir <- function(dir_path){
       }
     }
   }
-  for(folder in c("R_objects","REDCap","upload","output")){
+  for(folder in c("R_objects","REDCap","output")){
     dir.create(file.path(dir_path,folder),showWarnings = F)
   }
 
