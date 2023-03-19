@@ -1,3 +1,5 @@
+# rosyredcap 1.0.2
+
 # rosyredcap 1.0.1
 
 * minor patch to fix small error in internal code
