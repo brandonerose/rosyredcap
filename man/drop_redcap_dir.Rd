@@ -4,7 +4,7 @@
 \alias{drop_redcap_dir}
 \title{Shows DB in the env}
 \usage{
-drop_redcap_dir(DB)
+drop_redcap_dir(DB, records = NULL)
 }
 \arguments{
 \item{DB}{list for the package that contains applications and reference files}

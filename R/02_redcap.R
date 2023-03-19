@@ -59,12 +59,21 @@ get_redcap_data<-function(DB,token,clean=T,records=NULL){
   DB
 }
 
-select_redcap_record<-function(DB, ID){
-  RC_ind<-DB
-  for(x in DB$instruments$instrument_name){
-    RC_ind[["data"]][[x]]<-RC_ind[["data"]][[x]][which(RC_ind[["data"]][[x]][[RC_ind$id_col]]==ID),]
+select_redcap_records<-function(DB, records=NULL){
+  DB_selected<-DB
+  DB_selected$data<-list()
+  if(!is.null(records)){
+    BAD <-records[which(!records%in%DB$data$patient[[DB$id_col]])]
+    if(length(BAD)>0)stop(message("Following records are not found in DB: ", paste0(BAD,collapse = ", ")))
   }
-  RC_ind
+  for(x in DB$instruments$instrument_name){
+    OUT <- DB[["data"]][[x]]
+    if(!is.null(records)){
+      OUT<-OUT[which(OUT[[DB$id_col]]%in%records),]
+    }
+    DB_selected[["data"]][[x]]<-OUT
+  }
+  DB_selected
 }
 
 raw_process_redcap <- function(DB,raw,clean=T){
@@ -103,11 +112,11 @@ raw_process_redcap <- function(DB,raw,clean=T){
   DB
 }
 
-clean_to_raw_redcap <- function(RC_import){
-  for(x in names(RC_import[["data"]])){
+clean_to_raw_redcap <- function(DB_import){
+  for(x in names(DB_import[["data"]])){
     for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="radio")]){
       z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==y)] %>% split_choices()
-      RC_import[["data"]][[x]][[y]]<-RC_import[["data"]][[x]][[y]] %>% sapply(function(C){
+      DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           OUT<-z$code[which(z$name==C)]
@@ -116,7 +125,8 @@ clean_to_raw_redcap <- function(RC_import){
       }) %>% unlist()
     }
   }
-  RC_import
+  DB_import$clean<-F
+  DB_import
 }
 
 clean_redcap_log <- function(log){
@@ -217,10 +227,11 @@ get_redcap_users<-function(token){
 #' @param DB list for the package that contains applications and reference files
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB){
+drop_redcap_dir<-function(DB,records=NULL){
   dir.create(file.path(get_dir(),"REDCap"),showWarnings = F)
+  DB_selected<- DB %>% select_redcap_records(records)
   for(x in DB$instruments$instrument_name){
-    DB[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap",paste0(x,".xlsx")))
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap",paste0(x,".xlsx")))
   }
 }
 
