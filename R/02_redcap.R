@@ -131,12 +131,30 @@ raw_process_redcap <- function(DB,raw,clean=T){
 
 clean_to_raw_redcap <- function(DB_import){
   for(x in names(DB_import[["data"]])){
-    for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="radio")]){
-      z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==y)] %>% split_choices()
+    for (y in DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type=="radio")]){
+      z<-DB_import$metadata$select_choices_or_calculations[which(DB_import$metadata$field_name==y)] %>% split_choices()
       DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           OUT<-z$code[which(z$name==C)]
+        }
+        OUT
+      }) %>% unlist()
+    }
+    for (y in DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type=="yesno")]){
+      z<-data.frame(
+        code=c(0,1),
+        name=c("No","Yes")
+      )
+      DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          D<-which(z$name==C)
+          if(length(D)==0){
+            print(z)
+            stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
+          }
+          OUT<-z$code[D]
         }
         OUT
       }) %>% unlist()
