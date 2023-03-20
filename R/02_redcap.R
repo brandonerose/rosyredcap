@@ -146,7 +146,7 @@ clean_to_raw_redcap <- function(DB_import){
         code=c(0,1),
         name=c("No","Yes")
       )
-      DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
+      DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           D<-which(z$name==C)
