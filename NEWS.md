@@ -1,3 +1,5 @@
+# rosyredcap 1.0.3
+
 # rosyredcap 1.0.2
 
 * big internal function update to allow for uploads. Won't bump to minor version until it's external and tested more.
