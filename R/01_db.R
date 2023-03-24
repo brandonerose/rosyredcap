@@ -74,9 +74,14 @@ save_DB<-function(DB){
 #' @param DB list for the package that contains applications and reference files
 #' @return DB tables in your environment
 #' @export
-show_DB<-function(DB){
+show_DB<-function(DB,also_metadata=T){
   validate_DB(DB)
   for(NAME in names(DB$data)){
     assign(NAME,DB$data[[NAME]],pos = 1)
+  }
+  if(also_metadata){
+    for(NAME in c("metadata","instruments","log","users")){
+      assign(NAME,DB[[NAME]],pos = 1)
+    }
   }
 }
