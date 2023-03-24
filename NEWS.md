@@ -1,3 +1,7 @@
+# rosyredcap 1.0.4
+
+* added repeat redcap instance to meta data for direct matching clean labels
+
 # rosyredcap 1.0.3
 
 # rosyredcap 1.0.2
