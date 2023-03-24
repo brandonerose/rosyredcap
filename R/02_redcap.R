@@ -23,7 +23,7 @@ get_redcap_metadata<-function(DB,token){
     data.frame(
       field_name=paste0(unique(DB$metadata$form_name),"_complete"),form_name=unique(DB$metadata$form_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
     )
-  )
+  ) %>% unique()
   DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
 
   DB$instruments=REDCapR::redcap_instruments(redcap_uri=redcap_uri(), token=token)$data
@@ -40,6 +40,13 @@ get_redcap_metadata<-function(DB,token){
     )
   )$form_name
   DB$instruments$repeating <- DB$instruments$instrument_name%in%repeating
+  if(length(repeating)>0){
+    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
+      data.frame(
+        field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,form_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
+      )
+    ) %>% unique()
+  }
   DB$users<-get_redcap_users(token)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=redcap_uri(), token=token)),collapse = ".")
   DB$log<-check_redcap_log(token,last = 2,units = "mins")
