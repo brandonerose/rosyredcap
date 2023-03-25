@@ -43,7 +43,12 @@ get_redcap_metadata<-function(DB,token){
   if(length(repeating)>0){
     DB$metadata<-DB$metadata %>%dplyr::bind_rows(
       data.frame(
-        field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,form_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
+        field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
+      )
+    ) %>% unique()
+    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
+      data.frame(
+        field_name="redcap_repeat_instrument",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
       )
     ) %>% unique()
   }
@@ -61,7 +66,7 @@ get_redcap_metadata<-function(DB,token){
 get_redcap_data<-function(DB,token,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
   raw=REDCapR::redcap_read(redcap_uri=redcap_uri(), token=token,batch_size = 2000, interbatch_delay = 0.1,records = records)$data
-  raw$redcap_repeat_instrument[which(is.na(raw$redcap_repeat_instrument))]<-"patient"
+  raw$redcap_repeat_instrument[which(is.na(raw$redcap_repeat_instrument))]<-"patient" # I can rewrite this to make it more generic to REDCAP
   DB<-DB %>% raw_process_redcap(raw,clean)
   DB
 }
