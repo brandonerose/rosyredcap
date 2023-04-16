@@ -4,7 +4,7 @@
 \alias{show_DB}
 \title{Shows DB in the env}
 \usage{
-show_DB(DB)
+show_DB(DB, also_metadata = T)
 }
 \arguments{
 \item{DB}{list for the package that contains applications and reference files}
