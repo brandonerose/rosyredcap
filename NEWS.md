@@ -1,5 +1,7 @@
 # rosyredcap 1.0.5
 
+* adjusting for multiple projects, saves .PID.rdata file to R_objects
+
 # rosyredcap 1.0.4
 
 * added repeat redcap instance to meta data for direct matching clean labels
