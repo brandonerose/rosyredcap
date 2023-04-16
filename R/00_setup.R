@@ -24,7 +24,7 @@ validate_dir <- function(dir_path,silent=T){
 #' @title set your  directory
 #' @param dir_path your absolute path to the  directory
 #' @export
-set_dir <- function(dir_path){
+set_dir <- function(dir_path,ask=T){
   #param check
   if ( ! is.character(dir_path)) stop("dir must be a character string")
   #function
@@ -47,7 +47,7 @@ set_dir <- function(dir_path){
   )
   if (file.exists(file.path(cache_path,"dir_path.rds"))){
     if (file.exists(readRDS(file.path(cache_path,"dir_path.rds")))){
-      if (dir_path!=readRDS(file.path(cache_path,"dir_path.rds"))){
+      if ((dir_path!=readRDS(file.path(cache_path,"dir_path.rds")))&ask){
         answer<-utils::menu(c("Yes","No"),title = paste0("There is already a cached path at '",readRDS(file.path(cache_path,"dir_path.rds")),"'. Would you like to continue?"))
         if (answer == 2){
           validate_dir(readRDS(file.path(cache_path,"dir_path.rds")),T)

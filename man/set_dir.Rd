@@ -4,7 +4,7 @@
 \alias{set_dir}
 \title{set your  directory}
 \usage{
-set_dir(dir_path)
+set_dir(dir_path, ask = T)
 }
 \arguments{
 \item{dir_path}{your absolute path to the  directory}
