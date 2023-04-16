@@ -40,9 +40,14 @@ validate_DB<-function(DB){
 #' @export
 load_DB<-function(blank=F){
   DB_path<-file.path(get_dir(),"R_objects","DB.rdata")
+  PID_path<-file.path(get_dir(),"R_objects",".PID.rdata")
   if(file.exists(DB_path)&!blank){
     load(file=DB_path)
     validate_DB(DB)
+    if(file.exists(PID_path)){
+      load(file=PID_path)
+      if(DB$PID!=PID) stop("Do you have more than REDCap project? The current directory contains a Project ID that does not match!")
+    }
   }else{
     DB <- blank_DB
     if(!blank) message("`DB` was empty and created. This should only happen with a new directory!")
@@ -65,6 +70,8 @@ save_DB<-function(DB){
   if( ! is.list(DB)) stop("DB must be a list")
   #function
   validate_DB(DB)
+  PID<-DB$PID
+  save(PID,file=file.path(get_dir(),"R_objects",".PID.rdata"))
   save(DB,file=file.path(get_dir(),"R_objects","DB.rdata"))
   # save_xls_wrapper(DB)
   message("Saved!")
@@ -85,3 +92,4 @@ show_DB<-function(DB,also_metadata=T){
     }
   }
 }
+
