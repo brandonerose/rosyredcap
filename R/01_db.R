@@ -40,7 +40,7 @@ validate_DB<-function(DB){
 #' @export
 load_DB<-function(blank=F){
   DB_path<-file.path(get_dir(),"R_objects","DB.rdata")
-  PID_path<-file.path(get_dir(),"R_objects",".PID.rdata")
+  PID_path<-file.path(get_dir(),"R_objects","PID.rdata")
   if(file.exists(DB_path)&!blank){
     load(file=DB_path)
     validate_DB(DB)
@@ -71,7 +71,7 @@ save_DB<-function(DB){
   #function
   validate_DB(DB)
   PID<-DB$PID
-  save(PID,file=file.path(get_dir(),"R_objects",".PID.rdata"))
+  save(PID,file=file.path(get_dir(),"R_objects","PID.rdata"))
   save(DB,file=file.path(get_dir(),"R_objects","DB.rdata"))
   # save_xls_wrapper(DB)
   message("Saved!")
