@@ -302,7 +302,7 @@ read_redcap_dir<-function(DB){
 }
 
 #development only!
-upload_redcap<-function(DB_import,DB,token,unsafe=F){
+upload_redcap<-function(DB_import,DB,token,unsafe=F,batch_size=500){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   validate_DB(DB_import)
   validate_DB(DB)
@@ -368,7 +368,7 @@ upload_redcap<-function(DB_import,DB,token,unsafe=F){
     if(nrow(c)>0){
       REDCapR::redcap_write(
         c,
-        batch_size=1000,
+        batch_size=batch_size,
         interbatch_delay=0.2,
         continue_on_error=FALSE,
         redcap_uri(),
