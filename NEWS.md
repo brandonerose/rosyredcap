@@ -1,3 +1,5 @@
+# rosyredcap 1.0.6
+
 # rosyredcap 1.0.5
 
 * adjusting for multiple projects, saves .PID.rdata file to R_objects
