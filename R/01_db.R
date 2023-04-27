@@ -6,6 +6,7 @@ blank_DB<-list(
   last_metadata_update=NULL,
   last_data_update=NULL,
   metadata=NULL,
+  choices=NULL,
   instruments=NULL,
   log=NULL,
   users=NULL,

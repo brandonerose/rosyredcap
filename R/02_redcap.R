@@ -25,7 +25,14 @@ get_redcap_metadata<-function(DB,token){
     )
   ) %>% unique()
   DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
-
+  if(!is.null(DB$metadata)){
+    x<-which(DB$metadata$field_type=="radio")
+    if(length(x)>0){
+      for(field in DB$metadata$field_name[x]){
+        DB[["choices"]][[field]]<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field)] %>% split_choices()
+      }
+    }
+  }
   DB$instruments=REDCapR::redcap_instruments(redcap_uri=redcap_uri(), token=token)$data
   repeating<-httr::content(
     httr::POST(
