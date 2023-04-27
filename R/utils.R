@@ -24,7 +24,7 @@ write_xl<-function(DF,DB,path){
   openxlsx::addWorksheet(wb, "sheet")
   COL<-which(colnames(DF)==DB$id_col)
   if(nrow(DF)>0&&length(COL)>0){
-    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v12.0.23/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$id_col]],"&arm=1")
+    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$id_col]],"&arm=1")
     class(DF$redcap_link) <- "hyperlink"
     openxlsx::writeData(wb, sheet = 1, x = DF$redcap_link,startRow = 2,startCol = COL)
     DF$redcap_link<-NULL
