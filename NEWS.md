@@ -1,5 +1,8 @@
 # rosyredcap 1.0.6
 
+* added choices to DB object
+* added batch_size to internal upload function
+
 # rosyredcap 1.0.5
 
 * adjusting for multiple projects, saves .PID.rdata file to R_objects
