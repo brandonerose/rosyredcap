@@ -1,3 +1,5 @@
+# rosyredcap 1.0.7
+
 # rosyredcap 1.0.6
 
 * added choices to DB object
