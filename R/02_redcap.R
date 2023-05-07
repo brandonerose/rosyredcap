@@ -360,8 +360,8 @@ upload_redcap<-function(DB_import,DB,token,unsafe=F,batch_size=500){
         }
       }
       if(length(kill)>0){
-        a<-a[,-kill]
-        b<-b[,-kill]
+        a<-a[,-kill] %>% as.data.frame()
+        b<-b[,-kill] %>% as.data.frame()
       }
       c<- dplyr::anti_join(a,b)
       d<- dplyr::inner_join(a,b)
