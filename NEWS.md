@@ -1,5 +1,7 @@
 # rosyredcap 1.0.7
 
+* allowing for multiple non-repeating instruments in DB object
+
 # rosyredcap 1.0.6
 
 * added choices to DB object
