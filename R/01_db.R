@@ -82,7 +82,7 @@ save_DB<-function(DB){
 #' @param DB list for the package that contains applications and reference files
 #' @return DB tables in your environment
 #' @export
-show_DB<-function(DB,also_metadata=T){
+show_DB <- function(DB,also_metadata=T){
   validate_DB(DB)
   for(NAME in names(DB$data)){
     assign(NAME,DB$data[[NAME]],pos = 1)
@@ -93,5 +93,14 @@ show_DB<-function(DB,also_metadata=T){
     }
     assign("codebook",make_codebook(DB),pos = 1)
   }
+}
+
+#' @title Shows DB in the env
+#' @return message
+#' @export
+delete_DB <- function(){
+  unlink(file.path(get_dir(),"R_objects","DB.Rdata"))
+  unlink(file.path(get_dir(),"R_objects","PID.Rdata"))
+  message("Deleted saved DB")
 }
 
