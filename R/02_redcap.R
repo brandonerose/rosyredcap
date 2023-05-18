@@ -111,7 +111,7 @@ raw_process_redcap <- function(DB,raw,clean=T){
         DB[["data"]][[x]][[COL]]<-DB[["data"]][[x]][[COL]] %>% as.character()
       }
       if(clean){
-        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="radio")]){
+        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type%in%c("radio","dropdown"))]){
           z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==y)] %>% split_choices()
           DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
             OUT<-NA
