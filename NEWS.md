@@ -1,5 +1,9 @@
 # rosyredcap 1.0.8
 
+* fixed for non repeating instrument projects
+* added codebook output
+* fixed dropdown issues
+
 # rosyredcap 1.0.7
 
 * allowing for multiple non-repeating instruments in DB object
