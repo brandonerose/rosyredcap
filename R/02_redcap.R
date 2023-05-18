@@ -72,7 +72,7 @@ get_redcap_metadata<-function(DB,token){
 
 get_redcap_data<-function(DB,token,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
-  raw=REDCapR::redcap_read(redcap_uri=redcap_uri(), token=token,batch_size = 2000, interbatch_delay = 0.1,records = records)$data
+  raw <- REDCapR::redcap_read(redcap_uri=redcap_uri(), token=token,batch_size = 2000, interbatch_delay = 0.1,records = records)$data
   DB<-DB %>% raw_process_redcap(raw,clean)
   DB
 }
@@ -101,7 +101,11 @@ raw_process_redcap <- function(DB,raw,clean=T){
         DB[["data"]][[x]]<-raw[which(raw$redcap_repeat_instrument==x),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
       }
       if(!x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        DB[["data"]][[x]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+        if("redcap_repeat_instrument" %in% colnames(raw)){
+          DB[["data"]][[x]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+        }else{
+          DB[["data"]][[x]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+        }
       }
       for(COL in colnames(DB[["data"]][[x]])){
         DB[["data"]][[x]][[COL]]<-DB[["data"]][[x]][[COL]] %>% as.character()
