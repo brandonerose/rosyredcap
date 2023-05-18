@@ -15,6 +15,7 @@ NULL
 
 
 split_choices<-function(x){
+  x<-gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
   x<-x %>% strsplit(" [:|:] ") %>% unlist() %>% strsplit(", ")
   data.frame(code=x %>% purrr::map(1) %>% unlist(),name=x %>% purrr::map(2) %>% unlist())
 }
