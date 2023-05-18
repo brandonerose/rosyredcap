@@ -91,6 +91,7 @@ show_DB<-function(DB,also_metadata=T){
     for(NAME in c("metadata","instruments","log","users")){
       assign(NAME,DB[[NAME]],pos = 1)
     }
+    assign("codebook",make_codebook(DB),pos = 1)
   }
 }
 

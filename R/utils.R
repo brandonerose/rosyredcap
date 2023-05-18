@@ -20,6 +20,17 @@ split_choices<-function(x){
   data.frame(code=x %>% purrr::map(1) %>% unlist(),name=x %>% purrr::map(2) %>% unlist())
 }
 
+make_codebook<-function(DB){
+  OUT <- NULL
+  for (CHOICE in names(DB[["choices"]])){
+    x<-DB[["choices"]][[CHOICE]]
+    x$field_name <- CHOICE
+    OUT <- OUT %>% dplyr::bind_rows(x)
+  }
+  OUT<-OUT %>% dplyr::select(field_name,code,name)
+  OUT
+}
+
 write_xl<-function(DF,DB,path){
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
