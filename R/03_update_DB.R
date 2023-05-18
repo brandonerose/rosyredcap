@@ -3,8 +3,8 @@
 #' @param force logical for force a fresh update
 #' @return messages for confirmation
 #' @export
-update_DB<-function(token,force=F){
-  DB<-load_DB()
+update_DB<-function(token,force=F,day_of_log = 10){
+  DB<-load_DB(blank = force)
   IDs<-NULL
   TEST<-test_redcap(token)
   if(!TEST)warning("Invalid token or API privileges. Contact Admin!",immediate. = T)
@@ -43,7 +43,7 @@ update_DB<-function(token,force=F){
     if(force){
       DB<-DB %>% get_redcap_metadata(token)
       DB<-DB %>% get_redcap_data(token)
-      DB$log<-check_redcap_log(token,last = 7,units = "days") %>% unique()
+      DB$log<-check_redcap_log(token,last = day_of_log,units = "days") %>% unique()
       message("Full update!")
       DB %>% save_DB()
     }else{
