@@ -81,7 +81,7 @@ select_redcap_records<-function(DB, records=NULL){
   DB_selected<-DB
   DB_selected$data<-list()
   if(!is.null(records)){
-    BAD <-records[which(!records%in%DB$data$patient[[DB$id_col]])]
+    BAD <-records[which(!records%in%DB$data$identity[[DB$id_col]])]
     if(length(BAD)>0)stop(message("Following records are not found in DB: ", paste0(BAD,collapse = ", ")))
   }
   for(x in DB$instruments$instrument_name){
