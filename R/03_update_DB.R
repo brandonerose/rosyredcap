@@ -23,6 +23,7 @@ update_DB<-function(token,force=F,day_of_log = 10){
         ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |record dashboard",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
         if(nrow(ilog3)>0){
           force<-T
+          message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
         }else{
           ilog2<-ilog[which(!is.na(ilog$record_id)),]
           ilog2$timestamp<-NULL
