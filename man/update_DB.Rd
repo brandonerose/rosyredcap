@@ -4,7 +4,7 @@
 \alias{update_DB}
 \title{Shows DB in the env}
 \usage{
-update_DB(token, force = F)
+update_DB(token, force = F, day_of_log = 10)
 }
 \arguments{
 \item{token}{REDCap API token}

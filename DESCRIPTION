@@ -9,6 +9,8 @@ Description: Use your REDCap API token to create an updatable R list
 License: MIT + file LICENSE
 URL: https://github.com/brandonerose/rosyredcap
 BugReports: https://github.com/brandonerose/rosyredcap/issues
+Depends: 
+    R (>= 2.10)
 Imports: 
     dplyr,
     hoardr,
@@ -25,5 +27,3 @@ Encoding: UTF-8
 Language: en-US
 LazyData: true
 RoxygenNote: 7.2.3
-Depends: 
-    R (>= 2.10)
