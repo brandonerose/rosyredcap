@@ -1,3 +1,5 @@
+# rosyredcap 1.0.9
+
 # rosyredcap 1.0.8
 
 * fixed for non repeating instrument projects
