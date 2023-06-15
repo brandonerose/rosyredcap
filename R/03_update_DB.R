@@ -3,7 +3,7 @@
 #' @param force logical for force a fresh update
 #' @return messages for confirmation
 #' @export
-update_DB<-function(token,force=F,day_of_log = 10){
+update_DB<-function(token,force=F,day_of_log = 10,use_missing_codes = T){
   DB<-load_DB(blank = force)
   IDs<-NULL
   TEST<-test_redcap(token)
@@ -43,7 +43,7 @@ update_DB<-function(token,force=F,day_of_log = 10){
     }
     if(force){
       DB<-DB %>% get_redcap_metadata(token)
-      DB<-DB %>% get_redcap_data(token)
+      DB<-DB %>% get_redcap_data(token, use_missing_codes = use_missing_codes)
       DB$log<-check_redcap_log(token,last = day_of_log,units = "days") %>% unique()
       message("Full update!")
       DB %>% save_DB()
@@ -51,7 +51,7 @@ update_DB<-function(token,force=F,day_of_log = 10){
       if(!is.null(IDs)){
         time<-c(DB$last_metadata_update,DB$last_data_update)
         time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
-        DB2<-DB %>% get_redcap_data(token,records = IDs)
+        DB2<-DB %>% get_redcap_data(token,records = IDs,use_missing_codes = use_missing_codes)
         DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
         DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(token,begin_time = time)) %>% unique()
         for(TABLE  in names(DB$data)){
