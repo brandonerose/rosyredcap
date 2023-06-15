@@ -1,5 +1,7 @@
 # rosyredcap 1.0.9
 
+* added missing code support needs to be tested
+
 # rosyredcap 1.0.8
 
 * fixed for non repeating instrument projects
