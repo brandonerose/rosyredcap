@@ -240,71 +240,73 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
 
 clean_to_raw_redcap <- function(DB_import,use_missing_codes = T){
   for(x in names(DB_import[["data"]])){
-    for (y in DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type%in%c("radio","dropdown"))]){
-      z<-DB_import$metadata$select_choices_or_calculations[which(DB_import$metadata$field_name==y)] %>% split_choices()
-      DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
-        OUT<-NA
-        if(!is.na(C)){
-          coded_redcap<-which(z$name==C)
-          if(length(coded_redcap)>0){
-            OUT<-z$code[coded_redcap]
-          }else{
-            if(use_missing_codes){
-              coded_redcap2<-which(missing_codes()$name==C)
-              if(length(coded_redcap2)>0){
-                OUT<-missing_codes()$code[coded_redcap2]
-              }else{
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-              }
+    for(y in DB_import[["data"]][[x]] %>% colnames()){
+      if(y%in%DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type%in%c("radio","dropdown"))]){
+        z<-DB_import$metadata$select_choices_or_calculations[which(DB_import$metadata$field_name==y)] %>% split_choices()
+        DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
+          OUT<-NA
+          if(!is.na(C)){
+            coded_redcap<-which(z$name==C)
+            if(length(coded_redcap)>0){
+              OUT<-z$code[coded_redcap]
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-            }
-          }
-        }
-        OUT
-      }) %>% unlist() %>% as.character()
-    }
-    for (y in DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type=="yesno")]){
-      z<-data.frame(
-        code=c(0,1),
-        name=c("No","Yes")
-      )
-      DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
-        OUT<-NA
-        if(!is.na(C)){
-          D<-which(z$name==C)
-          if(length(D)>0){
-            OUT<-z$code[D]
-          }
-          if(length(D)==0){
-            if(use_missing_codes){
-              E<-which(missing_codes()$name==C)
-              if(length(E)==0){
+              if(use_missing_codes){
+                coded_redcap2<-which(missing_codes()$name==C)
+                if(length(coded_redcap2)>0){
+                  OUT<-missing_codes()$code[coded_redcap2]
+                }else{
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
+                }
+              }else{
                 stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
               }
-              if(length(E)>0){
-                OUT<-missing_codes()$code[E]
-              }
-            }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-            }
-          }
-        }
-        OUT
-      }) %>% unlist() %>% as.character()
-    }
-    if(use_missing_codes){
-      for(y in DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno"))]){
-        DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-          OUT<-C
-          if(!is.na(C)){
-            D<-which(missing_codes()$name==C)
-            if(length(D)>0){
-              OUT<-missing_codes()$code[D]
             }
           }
           OUT
         }) %>% unlist() %>% as.character()
+      }
+      if(y%in%DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type=="yesno")]){
+        z<-data.frame(
+          code=c(0,1),
+          name=c("No","Yes")
+        )
+        DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
+          OUT<-NA
+          if(!is.na(C)){
+            D<-which(z$name==C)
+            if(length(D)>0){
+              OUT<-z$code[D]
+            }
+            if(length(D)==0){
+              if(use_missing_codes){
+                E<-which(missing_codes()$name==C)
+                if(length(E)==0){
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
+                }
+                if(length(E)>0){
+                  OUT<-missing_codes()$code[E]
+                }
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
+              }
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
+      }
+      if(use_missing_codes){
+        if(y%in%DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno"))]){
+          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
+            OUT<-C
+            if(!is.na(C)){
+              D<-which(missing_codes()$name==C)
+              if(length(D)>0){
+                OUT<-missing_codes()$code[D]
+              }
+            }
+            OUT
+          }) %>% unlist() %>% as.character()
+        }
       }
     }
   }
