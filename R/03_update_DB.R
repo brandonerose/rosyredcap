@@ -20,7 +20,7 @@ update_DB<-function(token,force=F,day_of_log = 10,use_missing_codes = T){
         ilog3<-ilog[which(is.na(ilog$record_id)),]
         ilog3$timestamp<-NULL
         ilog3<-ilog3 %>% unique()
-        ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |record dashboard",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
+        ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |record dashboard | User regenerate own API token",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
         if(nrow(ilog3)>0){
           force<-T
           message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
