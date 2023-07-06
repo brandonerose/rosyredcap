@@ -104,6 +104,20 @@ get_redcap_metadata<-function(DB,token){
       )
     ) %>% unique()
   }
+  if(any(DB$metadata$field_type=="checkbox")){
+    for(field_name in DB$metadata$field_name[which(DB$metadata$field_type=="checkbox")]){
+      x<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field_name)] %>% split_choices()
+      DB$metadata<-DB$metadata %>%dplyr::bind_rows(
+        data.frame(
+          field_name=paste0(field_name,"___",x$code),
+          form_name=DB$metadata$form_name[which(DB$metadata$field_name==field_name)]  ,
+          field_label=paste0(DB$metadata$field_label[which(DB$metadata$field_name==field_name)]," - ",x$name),
+          field_type="checkbox_choice",
+          select_choices_or_calculations=c("0, Unchecked | 1, Checked")
+        )
+      )
+    }
+  }
   DB$users<-get_redcap_users(token)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=redcap_uri(), token=token)),collapse = ".")
   DB$log<-check_redcap_log(token,last = 2,units = "mins")
@@ -143,13 +157,13 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
   if(nrow(raw)>0){
     for(x in DB$instruments$instrument_name){
       if(x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        DB[["data"]][[x]]<-raw[which(raw$redcap_repeat_instrument==x),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+        DB[["data"]][[x]]<-raw[which(raw$redcap_repeat_instrument==x),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
       }
       if(!x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
         if("redcap_repeat_instrument" %in% colnames(raw)){
-          DB[["data"]][[x]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+          DB[["data"]][[x]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
         }else{
-          DB[["data"]][[x]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x)]))]
+          DB[["data"]][[x]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
         }
       }
       for(COL in colnames(DB[["data"]][[x]])){
@@ -210,8 +224,38 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
             OUT
           }) %>% unlist() %>% as.character()
         }
+        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="checkbox_choice")]){
+          z<-data.frame(
+            code=c(0,1),
+            name=c("Unchecked","Checked")
+          )
+          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
+            OUT<-NA
+            if(!is.na(C)){
+              D<-which(z$code==C)
+              if(length(D)>0){
+                OUT<-z$name[D]
+              }
+              if(length(D)==0){
+                if(use_missing_codes){
+                  E<-which(missing_codes()$code==C)
+                  if(length(E)==0){
+                    stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
+                  }
+                  if(length(E)>0){
+                    OUT<-missing_codes()$name[E]
+                  }
+                }else{
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
+                }
+              }
+            }
+            OUT
+          }) %>% unlist() %>% as.character()
+        }
+
         if(use_missing_codes){
-          for(y in DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno"))]){
+          for(y in DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
             z<-missing_codes()
             DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
               OUT<-C
