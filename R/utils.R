@@ -16,8 +16,11 @@ NULL
 
 split_choices<-function(x){
   x<-gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
-  x<-x %>% strsplit(" [:|:] ") %>% unlist() %>% strsplit(", ")
-  data.frame(code=x %>% purrr::map(1) %>% unlist(),name=x %>% purrr::map(2) %>% unlist())
+  x<-x %>% strsplit(" [:|:] ") %>% unlist()
+  data.frame(
+    code=x %>% strsplit(", ") %>% sapply(`[`, 1),
+    name=x %>% strsplit(", ")%>% sapply(`[`, -1) %>% sapply(function(y){paste0(y,collapse = ", ")})
+  )
 }
 
 make_codebook<-function(DB){
