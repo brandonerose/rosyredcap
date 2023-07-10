@@ -1,69 +1,19 @@
-redcap_uri<-function(){
-  paste0(redcap_link,"api/")
-}
-
-missing_codes <- function(){
-  data.frame(
-    code = c(
-      'NI',
-      'INV',
-      'UNK',
-      'NASK',
-      'ASKU',
-      'NAV',
-      'MSK',
-      'NA',
-      'NAVU',
-      'NP',
-      'QS',
-      'QI',
-      'TRC',
-      'UNC',
-      'DER',
-      'PINF',
-      'NINF',
-      'OTH'
+get_redcap_project_info <- function(DB){
+  httr::POST(
+    url = DB$redcap_uri,
+    body = list(
+      "token"= validate_redcap_token(DB,silent = F) ,
+      content='project',
+      format='csv',
+      returnFormat='json'
     ),
-    name = c(
-      'No information',
-      'Invalid',
-      'Unknown',
-      'Not asked',
-      'Asked but unknown',
-      'Temporarily unavailable',
-      'Masked',
-      'Not applicable',
-      'Not available',
-      'Not present',
-      'Sufficient quantity',
-      'Insufficient quantity',
-      'Trace',
-      'Unencoded',
-      'Derived',
-      'Positive infinity',
-      'Negative infinity',
-      'Other'
-    )
+    encode = "form"
   )
 }
 
-get_redcap_metadata<-function(DB,token){
+get_redcap_metadata<-function(DB){
   DB$last_metadata_update=Sys.time()
-  RC_proj<-httr::content(
-    httr::POST(
-      redcap_uri(),
-      body = list(
-        "token"=token,
-        content='project',
-        format='csv',
-        returnFormat='json'
-      ),
-      encode = "form"
-    )
-  )
-  DB$title=RC_proj$project_title
-  DB$PID=RC_proj$project_id
-  DB$metadata=REDCapR::redcap_metadata_read(redcap_uri=redcap_uri(), token=token)$data
+  DB$metadata=REDCapR::redcap_metadata_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))$data
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
       field_name=paste0(unique(DB$metadata$form_name),"_complete"),form_name=unique(DB$metadata$form_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
@@ -78,12 +28,12 @@ get_redcap_metadata<-function(DB,token){
       }
     }
   }
-  DB$instruments=REDCapR::redcap_instruments(redcap_uri=redcap_uri(), token=token)$data
+  DB$instruments=REDCapR::redcap_instruments(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))$data
   repeating<-httr::content(
     httr::POST(
-      redcap_uri(),
+      url = DB$redcap_uri,
       body = list(
-        "token"=token,
+        "token"=validate_redcap_token(DB),
         content='repeatingFormsEvents',
         format='csv',
         returnFormat='json'
@@ -118,20 +68,58 @@ get_redcap_metadata<-function(DB,token){
       )
     }
   }
-  DB$users<-get_redcap_users(token)
-  DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=redcap_uri(), token=token)),collapse = ".")
-  DB$log<-check_redcap_log(token,last = 2,units = "mins")
+  DB$users<-get_redcap_users(DB)
+  DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
+  DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
-  DB$home_link <- paste0(redcap_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
-  DB$records_link <- paste0(redcap_link,"redcap_v",DB$version,"/DataEntry/record_status_dashboard.php?pid=",DB$PID)
-  DB$API_link <- paste0(redcap_link,"redcap_v",DB$version,"/API/project_api.php?pid=",DB$PID)
-  DB$API_playground_link <- paste0(redcap_link,"redcap_v",DB$version,"/API/playground.php?pid=",DB$PID)
+  DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
+  DB$records_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_status_dashboard.php?pid=",DB$PID)
+  DB$API_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/API/project_api.php?pid=",DB$PID)
+  DB$API_playground_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/API/playground.php?pid=",DB$PID)
   DB
 }
 
-get_redcap_data<-function(DB,token,clean=T,records=NULL,use_missing_codes = T){
+get_redcap_users<-function(DB){
+  merge(
+    merge(
+      httr::content(
+        httr::POST(
+          url = DB$redcap_uri,
+          body = list(
+            "token"=validate_redcap_token(DB),
+            content='userRole',
+            format='csv',
+            returnFormat='json'
+          ), encode = "form")
+      ) %>% dplyr::select("unique_role_name","role_label"),
+      httr::content(
+        httr::POST(
+          url = DB$redcap_uri,
+          body = list(
+            "token"=validate_redcap_token(DB),
+            content='userRoleMapping',
+            format='csv',
+            returnFormat='json'
+          ), encode = "form")
+      ),
+      by="unique_role_name"),
+    httr::content(
+      httr::POST(
+        url = DB$redcap_uri,
+        body = list(
+          "token"=validate_redcap_token(DB),
+          content='user',
+          format='csv',
+          returnFormat='json'
+        ), encode = "form")
+    ),
+    by="username"
+  )
+}
+
+get_redcap_data<-function(DB,clean=T,records=NULL,use_missing_codes = T){
   DB$last_data_update=Sys.time()
-  raw <- REDCapR::redcap_read(redcap_uri=redcap_uri(), token=token,batch_size = 2000, interbatch_delay = 0.1,records = records)$data
+  raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records)$data
   DB<-DB %>% raw_process_redcap(raw = raw,clean = clean,use_missing_codes = use_missing_codes)
   DB
 }
@@ -360,11 +348,16 @@ clean_to_raw_redcap <- function(DB_import,use_missing_codes = T){
 
 clean_redcap_log <- function(log){
   log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
+  comments <- which(log$action=="Manage/Design"&grepl("Add field comment|Edit field comment|Delete field comment",log$details))
+  if(length(comments)>0){
+    log$record_id[comments] <- stringr::str_extract(log$details[comments], "(?<=Record: )[^,]+")
+    log$action_type[comments] <- "Comment"
+  }
   log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
   log
 }
 
-check_redcap_log <- function(token,last=24,units="hours",begin_time=""){
+check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   if(units=="days"){
     x<-(Sys.time()-lubridate::days(last)) %>% as.character()
   }
@@ -379,9 +372,9 @@ check_redcap_log <- function(token,last=24,units="hours",begin_time=""){
   }
   httr::content(
     httr::POST(
-      redcap_uri(),
+      url = DB$redcap_uri,
       body = list(
-        "token"=token,
+        "token"=validate_redcap_token(DB),
         content='log',
         logtype='',
         user='',
@@ -394,84 +387,139 @@ check_redcap_log <- function(token,last=24,units="hours",begin_time=""){
       encode = "form"
     )
   ) %>% clean_redcap_log()
-
 }
 
-test_redcap<-function(token){
-  x<-httr::http_error(
-    httr::POST(
-      redcap_uri(),
-      body = list(
-        "token"=token,
-        content='project',
-        format='csv',
-        returnFormat='json'
-      ),
-      encode = "form"
+missing_codes <- function(){
+  data.frame(
+    code = c(
+      'NI',
+      'INV',
+      'UNK',
+      'NASK',
+      'ASKU',
+      'NAV',
+      'MSK',
+      'NA',
+      'NAVU',
+      'NP',
+      'QS',
+      'QI',
+      'TRC',
+      'UNC',
+      'DER',
+      'PINF',
+      'NINF',
+      'OTH'
+    ),
+    name = c(
+      'No information',
+      'Invalid',
+      'Unknown',
+      'Not asked',
+      'Asked but unknown',
+      'Temporarily unavailable',
+      'Masked',
+      'Not applicable',
+      'Not available',
+      'Not present',
+      'Sufficient quantity',
+      'Insufficient quantity',
+      'Trace',
+      'Unencoded',
+      'Derived',
+      'Positive infinity',
+      'Negative infinity',
+      'Other'
     )
   )
-  !x
 }
 
-get_redcap_users<-function(token){
-  merge(
-    merge(
-      httr::content(
-        httr::POST(
-          redcap_uri(),
-          body = list(
-            "token"=token,
-            content='userRole',
-            format='csv',
-            returnFormat='json'
-          ), encode = "form")
-      ) %>% dplyr::select("unique_role_name","role_label"),
-      httr::content(
-        httr::POST(
-          redcap_uri(),
-          body = list(
-            "token"=token,
-            content='userRoleMapping',
-            format='csv',
-            returnFormat='json'
-          ), encode = "form")
-      ),
-      by="unique_role_name"),
-    httr::content(
-      httr::POST(
-        redcap_uri(),
-        body = list(
-          "token"=token,
-          content='user',
-          format='csv',
-          returnFormat='json'
-        ), encode = "form")
-    ),
-    by="username"
-  )
+has_redcap_token <- function(DB,silent=T){
+  DB <- validate_DB(DB)
+  DB$token_name %>% validate_env_name()
+  DB$token_name %>% Sys.getenv() %>% is_redcap_token()
 }
 
+is_redcap_token <- function(token){
+  pattern <- "^([0-9A-Fa-f]{32})(?:\\n)?$"
+  token2 <- token %>% sub(pattern,"\\1", ., perl = TRUE) %>% trimws(whitespace = "[\\h\\v]")
+  info_message <- paste0("You can set it each session with `Sys.setenv('",DB$token_name,"'='YoUrNevErShaReToKeN')...` or for higher safety run `usethis::edit_r_environ()` and add `",DB$token_name,"='YoUrNevErShaReToKeN'` to that file...(then restart R under session tab after saving file)... The way to tell it worked is to run the code, `Sys.getenv('",DB$token_name,"')` or `Sys.getenv(DB$token_name)` and see if it returns your token!...")
+  if(is.null(token)){
+    message("The token is `NULL`, not a valid 32-character hexademical value.")
+    return(F)
+  }else if (is.na(token)) {
+    message("The token is `NA`, not a valid 32-character hexademical value.")
+    return(F)
+  }else if (nchar(token) == 0L) {
+    message("`Sys.getenv(",DB$token_name,")` returned no token or is an empty string. ",info_message)
+    return(F)
+  }else if(token2 != token){
+    message("remove whitespace or extra lines from your token.")
+    return(F)
+  }else if (!grepl(pattern, token, perl = TRUE)) {
+    message("The token from `Sys.getenv('",DB$token_name,"')` is not a valid 32-character hexademical value.",info_message)
+    return(F)
+  }
+  return(T)
+}
+
+#' @title Loop that ensures you have a valid token for this session
+#' @param DB the object generated using `setup_DB()`
+#' @return messages for confirmation. Runs a loop with `has_redcap_token(DB)` to make sure the pattern is correct
+#' @export
+validate_redcap_token <- function(DB,silent=T,return=T){
+  while (!has_redcap_token(DB)) {
+    set_redcap_token(DB)
+    message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
+  }
+  if(!silent){
+    message("You have a valid token set in your session!")
+  }
+  if(return){
+    return(Sys.getenv(DB$token_name))
+  }
+}
+
+#' @title Sets a valid token for this session
+#' @param DB the object generated using `setup_DB()`
+#' @return messages for confirmation
+#' @export
+set_redcap_token <- function(DB){
+  token <- readline("What is your PSDB REDCap API token: ")
+  while (!is_redcap_token(token)) {
+    warning("You set an invalid token. Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`",immediate. = T)
+    token <- readline("What is your PSDB REDCap API token: ")
+  }
+  args =list(args =list(token))
+  names(args) = DB$token_name
+  do.call(Sys.setenv, args)
+  message("Token was set for this session only using `Sys.getenv('",DB$token_name,"')` <- 'TheSecretTokenYouJustEntered'")
+  message("For higher safety run `usethis::edit_r_environ()` and add `",DB$token_name,"='YoUrNevErShaReToKeN'` to that file...(then restart R under session tab after saving file)... The way to tell it worked is to run the code, `Sys.getenv('",DB$token_name,"')` or `Sys.getenv(DB$token_name)` or `has_redcap_token(DB)`, and see if it returns your token!...'")
+}
 
 #' @title Shows DB in the env
 #' @param DB list for the package that contains applications and reference files
 #' @return messages for confirmation
 #' @export
 drop_redcap_dir<-function(DB,records=NULL){
-  dir.create(file.path(get_dir(),"REDCap"),showWarnings = F)
-  dir.create(file.path(get_dir(),"REDCap","other"),showWarnings = F)
-  dir.create(file.path(get_dir(),"REDCap","upload"),showWarnings = F)
+  dir.create(file.path(get_dir(DB),"REDCap"),showWarnings = F)
+  dir.create(file.path(get_dir(DB),"REDCap","other"),showWarnings = F)
+  dir.create(file.path(get_dir(DB),"REDCap","upload"),showWarnings = F)
   DB_selected<- DB %>% select_redcap_records(records)
   for(x in DB$instruments$instrument_name){
-    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap",paste0(x,".xlsx")))
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(DB),"REDCap",paste0(x,".xlsx")))
   }
   for (x in c("metadata","instruments","users")){ #,"log" #taking too long
-    DB_selected[[x]] %>% write_xl(DB,path=file.path(get_dir(),"REDCap","other",paste0(x,".xlsx")))
+    DB_selected[[x]] %>% write_xl(DB,path=file.path(get_dir(DB),"REDCap","other",paste0(x,".xlsx")))
   }
 }
 
-
+#' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
+#' @param DB list for the package that contains applications and reference files
+#' @return messages for confirmation
+#' @export
 read_redcap_dir<-function(DB){
-  path<-file.path(get_dir(),"REDCap","upload")
+  path<-file.path(get_dir(DB),"REDCap","upload")
   if(!file.exists(path))stop("No REDCap files found")
   x<-list.files.real(path)
   x<-x[which(gsub("\\.xlsx","",x)%in%DB$instruments$instrument_name)]
@@ -484,7 +532,7 @@ read_redcap_dir<-function(DB){
 }
 
 #development only!
-upload_redcap<-function(DB_import,DB,token,unsafe=F,batch_size=500, use_missing_codes = T){
+upload_redcap<-function(DB_import,DB,unsafe=F,batch_size=500, use_missing_codes = T){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   validate_DB(DB_import)
   validate_DB(DB)
@@ -553,11 +601,76 @@ upload_redcap<-function(DB_import,DB,token,unsafe=F,batch_size=500, use_missing_
         batch_size=batch_size,
         interbatch_delay=0.2,
         continue_on_error=FALSE,
-        redcap_uri(),
+        DB$redcap_uri,
         token,
         overwrite_with_blanks=TRUE
       )
     }
   }
 }
+
+link_API_token<- function(DB){
+  DB$API_link %>% browseURL()
+}
+
+#' @title Shows DB in the env
+#' @param DB list for the package that contains applications and reference files
+#' @return messages for confirmation
+#' @export
+link_API_playground <- function(DB){
+  DB$API_playground_link %>% browseURL()
+}
+
+#' @title Shows DB in the env
+#' @param DB list for the package that contains applications and reference files
+#' @return messages for confirmation
+#' @export
+link_REDCap_home <- function(DB){
+  DB$redcap_base_link %>% browseURL()
+}
+
+#' @title Shows DB in the env
+#' @param DB list for the package that contains applications and reference files
+#' @return messages for confirmation
+#' @export
+link_REDCap_project <- function(DB){
+  DB$home_link %>% browseURL()
+}
+
+all_possible_records <- function(DB){
+  records <- NULL
+  for(NAME in names(DB$data)){
+    records<- records %>% append(DB$data[[NAME]][[DB$id_col]])
+  }
+  records %>% unique()
+}
+
+#' @title Shows DB in the env
+#' @param DB list for the package that contains applications and reference files
+#' @return messages for confirmation
+#' @export
+link_REDCap_record <- function(DB,record,page,instance){
+  link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID)
+  if(!missing(record)){
+    if(!record%in%all_possible_records(DB))stop(record," is not one of the records inside DB")
+    link <- link %>% paste0("&id=",record)
+
+  }
+  if(!missing(page)){
+    link <- gsub("record_home","index",link)
+    if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
+    link <- link %>% paste0("&page=",page)
+    if(!missing(instance)){
+      if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
+      link <- link %>% paste0("&instance=",instance)
+    }
+  }
+  link %>% browseURL()
+}
+
+
+
+
+
+
 
