@@ -62,7 +62,7 @@ add_project <- function(DB){
   rownames(OUT)<-NULL
   OUT
   projects <- projects %>% dplyr::bind_rows(OUT)
-  cache$cache_path_get() %>% normalizePath() %>% file.path("projects.rds") %>% saveRDS(projects, file = .)
+  saveRDS(projects, file = cache$cache_path_get() %>% normalizePath() %>% file.path("projects.rds"))
 }
 
 validate_dir <- function(dir_path,silent=T){
@@ -109,6 +109,7 @@ set_dir <- function(dir_path){
 #' @title get your directory
 #' @export
 get_dir <- function(DB){
+  dir_path <- DB$dir_path
   stop_mes<-"Did you use `set_dir()`?"
   if ( ! file.exists(dir_path)) {
     warning("Searched for directory --> '",dir_path,"' ...")

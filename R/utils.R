@@ -30,7 +30,7 @@ make_codebook<-function(DB){
     x$field_name <- CHOICE
     OUT <- OUT %>% dplyr::bind_rows(x)
   }
-  OUT<-OUT %>% dplyr::select(field_name,code,name)
+  OUT<-OUT %>% dplyr::select("field_name","code","name")
   OUT
 }
 

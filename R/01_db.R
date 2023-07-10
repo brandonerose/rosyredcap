@@ -12,6 +12,7 @@ blank_DB<- function(){
     last_metadata_update=NULL,
     last_data_update=NULL,
     metadata=NULL,
+    codebook=NULL,
     choices=NULL,
     instruments=NULL,
     log=NULL,
@@ -23,6 +24,7 @@ blank_DB<- function(){
     API_link = NULL,
     API_playground_link = NULL,
     clean = NULL,
+    all_records = NULL,
     data=NULL
   )
 }
@@ -141,13 +143,14 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
 
 
 #' @title Saves DB in the directory
-#' @param DB DB from load_DB or update_DB
+#' @param DB DB from load_DB or setup_DB
 #' @return Message
 #' @export
 save_DB<-function(DB){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
+  DB$choices
   validate_DB(DB) %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
   add_project(DB)
   # save_xls_wrapper(DB)
@@ -155,7 +158,7 @@ save_DB<-function(DB){
 }
 
 #' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
+#' @param DB DB from load_DB or setup_DB
 #' @return DB tables in your environment
 #' @export
 show_DB <- function(DB,also_metadata=T){
@@ -171,7 +174,8 @@ show_DB <- function(DB,also_metadata=T){
   }
 }
 
-#' @title Shows DB in the env
+#' @title Deletes DB object from directory (solves occasional problems)
+#' @param DB DB from load_DB or setup_DB
 #' @return message
 #' @export
 delete_DB <- function(DB){
@@ -179,4 +183,10 @@ delete_DB <- function(DB){
   message("Deleted saved DB")
 }
 
-
+all_records <- function(DB){
+  records <- NULL
+  for(NAME in names(DB$data)){
+    records<- records %>% append(DB$data[[NAME]][[DB$id_col]])
+  }
+  records %>% unique()
+}

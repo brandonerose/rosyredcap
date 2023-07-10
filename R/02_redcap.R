@@ -70,6 +70,7 @@ get_redcap_metadata<-function(DB){
   }
   DB$users<-get_redcap_users(DB)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
+  DB$codecook <- make_codebook(DB)
   DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
@@ -121,6 +122,7 @@ get_redcap_data<-function(DB,clean=T,records=NULL,use_missing_codes = T){
   DB$last_data_update=Sys.time()
   raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records)$data
   DB<-DB %>% raw_process_redcap(raw = raw,clean = clean,use_missing_codes = use_missing_codes)
+  DB$all_records <- all_records(DB)
   DB
 }
 
@@ -348,12 +350,12 @@ clean_to_raw_redcap <- function(DB_import,use_missing_codes = T){
 
 clean_redcap_log <- function(log){
   log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
+  log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
   comments <- which(log$action=="Manage/Design"&grepl("Add field comment|Edit field comment|Delete field comment",log$details))
   if(length(comments)>0){
     log$record_id[comments] <- stringr::str_extract(log$details[comments], "(?<=Record: )[^,]+")
     log$action_type[comments] <- "Comment"
   }
-  log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
   log
 }
 
@@ -434,71 +436,8 @@ missing_codes <- function(){
   )
 }
 
-has_redcap_token <- function(DB,silent=T){
-  DB <- validate_DB(DB)
-  DB$token_name %>% validate_env_name()
-  DB$token_name %>% Sys.getenv() %>% is_redcap_token()
-}
-
-is_redcap_token <- function(token){
-  pattern <- "^([0-9A-Fa-f]{32})(?:\\n)?$"
-  token2 <- token %>% sub(pattern,"\\1", ., perl = TRUE) %>% trimws(whitespace = "[\\h\\v]")
-  info_message <- paste0("You can set it each session with `Sys.setenv('",DB$token_name,"'='YoUrNevErShaReToKeN')...` or for higher safety run `usethis::edit_r_environ()` and add `",DB$token_name,"='YoUrNevErShaReToKeN'` to that file...(then restart R under session tab after saving file)... The way to tell it worked is to run the code, `Sys.getenv('",DB$token_name,"')` or `Sys.getenv(DB$token_name)` and see if it returns your token!...")
-  if(is.null(token)){
-    message("The token is `NULL`, not a valid 32-character hexademical value.")
-    return(F)
-  }else if (is.na(token)) {
-    message("The token is `NA`, not a valid 32-character hexademical value.")
-    return(F)
-  }else if (nchar(token) == 0L) {
-    message("`Sys.getenv(",DB$token_name,")` returned no token or is an empty string. ",info_message)
-    return(F)
-  }else if(token2 != token){
-    message("remove whitespace or extra lines from your token.")
-    return(F)
-  }else if (!grepl(pattern, token, perl = TRUE)) {
-    message("The token from `Sys.getenv('",DB$token_name,"')` is not a valid 32-character hexademical value.",info_message)
-    return(F)
-  }
-  return(T)
-}
-
-#' @title Loop that ensures you have a valid token for this session
-#' @param DB the object generated using `setup_DB()`
-#' @return messages for confirmation. Runs a loop with `has_redcap_token(DB)` to make sure the pattern is correct
-#' @export
-validate_redcap_token <- function(DB,silent=T,return=T){
-  while (!has_redcap_token(DB)) {
-    set_redcap_token(DB)
-    message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
-  }
-  if(!silent){
-    message("You have a valid token set in your session!")
-  }
-  if(return){
-    return(Sys.getenv(DB$token_name))
-  }
-}
-
-#' @title Sets a valid token for this session
-#' @param DB the object generated using `setup_DB()`
-#' @return messages for confirmation
-#' @export
-set_redcap_token <- function(DB){
-  token <- readline("What is your PSDB REDCap API token: ")
-  while (!is_redcap_token(token)) {
-    warning("You set an invalid token. Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`",immediate. = T)
-    token <- readline("What is your PSDB REDCap API token: ")
-  }
-  args =list(args =list(token))
-  names(args) = DB$token_name
-  do.call(Sys.setenv, args)
-  message("Token was set for this session only using `Sys.getenv('",DB$token_name,"')` <- 'TheSecretTokenYouJustEntered'")
-  message("For higher safety run `usethis::edit_r_environ()` and add `",DB$token_name,"='YoUrNevErShaReToKeN'` to that file...(then restart R under session tab after saving file)... The way to tell it worked is to run the code, `Sys.getenv('",DB$token_name,"')` or `Sys.getenv(DB$token_name)` or `has_redcap_token(DB)`, and see if it returns your token!...'")
-}
-
 #' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
+#' @param DB object generated using `load_DB()` or `setup_DB()`
 #' @return messages for confirmation
 #' @export
 drop_redcap_dir<-function(DB,records=NULL){
@@ -515,7 +454,7 @@ drop_redcap_dir<-function(DB,records=NULL){
 }
 
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
-#' @param DB list for the package that contains applications and reference files
+#' @param DB object generated using `load_DB()` or `setup_DB()`
 #' @return messages for confirmation
 #' @export
 read_redcap_dir<-function(DB){
@@ -544,54 +483,9 @@ upload_redcap<-function(DB_import,DB,unsafe=F,batch_size=500, use_missing_codes 
   if(y$clean){
     y<-clean_to_raw_redcap(y,use_missing_codes = use_missing_codes)
   }
-  if(unsafe){
     warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  }
   for(TABLE in names(x[["data"]])){
-    a<-c<-x[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
-    b<-y[["data"]][[TABLE]] %>% lapply(as.character) %>% as.data.frame()
-    if(!unsafe){
-      c<-data.frame()
-      if(ncol(a)!=ncol(b)){stop("Import and DB need same columns. Did you use drop dir? Don't delete cols.")}
-      if(!all(colnames(a)==colnames(b))){stop("Import and DB need same columns. Did you use drop dir? Don't delete or rearrange cols.")}
-      if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        a<-a[order(a[["redcap_repeat_instance"]]),]
-        b<-b[order(b[["redcap_repeat_instance"]]),]
-      }
-      a<-a[order(a[[DB$id_col]]),]
-      b<-b[order(b[[DB$id_col]]),]
-      if(TABLE %in% DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        if(!all(b[["redcap_repeat_instance"]]==a[["redcap_repeat_instance"]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
-      }
-      if(!all(b[[DB$id_col]]==a[[DB$id_col]]))stop("Import and DB have to same IDs. Did you use drop dir? Don't delete rows.")
-      kill<-NULL
-      for(i in which(colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
-        a_<-a[,i]
-        a_[is.na(a_)]<-"NA"
-        b_<-b[,i]
-        b_[is.na(b_)]<-"NA"
-        if(!all(a_==b_)){
-          stop("You cannot change the following columns ... `",DB$id_col, "`, `redcap_repeat_instance`, or `redcap_repeat_instrument`")
-        }
-      }
-      for(i in which(!colnames(a)%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument"))){
-        a_<-a[,i]
-        a_[is.na(a_)]<-"NA"
-        b_<-b[,i]
-        b_[is.na(b_)]<-"NA"
-        if(all(a_==b_)){
-          kill<-kill %>% append(i)
-        }
-      }
-      if(length(kill)>0){
-        a<-a[,-kill] %>% as.data.frame()
-        b<-b[,-kill] %>% as.data.frame()
-      }
-      c<- dplyr::anti_join(a,b)
-      d<- dplyr::inner_join(a,b)
-      message(TABLE,": ",nrow(c)," rows have updates")
-      message(TABLE,": ",nrow(d)," rows are the same")
-    }
+
     if(nrow(c)==0){
       message(paste0("No changes -> ",TABLE))
     }
@@ -609,64 +503,6 @@ upload_redcap<-function(DB_import,DB,unsafe=F,batch_size=500, use_missing_codes 
   }
 }
 
-link_API_token<- function(DB){
-  DB$API_link %>% browseURL()
-}
-
-#' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
-#' @return messages for confirmation
-#' @export
-link_API_playground <- function(DB){
-  DB$API_playground_link %>% browseURL()
-}
-
-#' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
-#' @return messages for confirmation
-#' @export
-link_REDCap_home <- function(DB){
-  DB$redcap_base_link %>% browseURL()
-}
-
-#' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
-#' @return messages for confirmation
-#' @export
-link_REDCap_project <- function(DB){
-  DB$home_link %>% browseURL()
-}
-
-all_possible_records <- function(DB){
-  records <- NULL
-  for(NAME in names(DB$data)){
-    records<- records %>% append(DB$data[[NAME]][[DB$id_col]])
-  }
-  records %>% unique()
-}
-
-#' @title Shows DB in the env
-#' @param DB list for the package that contains applications and reference files
-#' @return messages for confirmation
-#' @export
-link_REDCap_record <- function(DB,record,page,instance){
-  link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID)
-  if(!missing(record)){
-    if(!record%in%all_possible_records(DB))stop(record," is not one of the records inside DB")
-    link <- link %>% paste0("&id=",record)
-
-  }
-  if(!missing(page)){
-    link <- gsub("record_home","index",link)
-    if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
-    link <- link %>% paste0("&page=",page)
-    if(!missing(instance)){
-      if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
-      link <- link %>% paste0("&instance=",instance)
-    }
-  }
-  link %>% browseURL()
-}
 
 
 

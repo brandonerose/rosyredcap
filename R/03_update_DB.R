@@ -1,6 +1,8 @@
 #' @title Shows DB in the env
-#' @param token REDCap API token
+#' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update
+#' @param day_of_log numbers of days to be checked in the log
+#' @param use_missing_codes logical for ussing REDCap missing codes
 #' @return messages for confirmation
 #' @export
 update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
@@ -62,9 +64,9 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
     if(!is.null(IDs)){
       time<-c(DB$last_metadata_update,DB$last_data_update)
       time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
-      DB2<-DB %>% get_redcap_data(token,records = IDs,use_missing_codes = use_missing_codes)
+      DB2<-DB %>% get_redcap_data(DB,records = IDs,use_missing_codes = use_missing_codes)
       DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
-      DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(token,begin_time = time)) %>% unique()
+      DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique()
       for(TABLE  in names(DB$data)){
         DB$data[[TABLE]]<-DB$data[[TABLE]][which(!DB$data[[TABLE]][[DB$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data[[TABLE]][which(DB2$data[[TABLE]][[DB2$id_col]]%in%IDs),])
       }
