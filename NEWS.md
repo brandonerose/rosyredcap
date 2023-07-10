@@ -1,3 +1,5 @@
+# rosyredcap 2.0.0
+
 # rosyredcap 1.0.9
 
 * added missing code support needs to be tested
