@@ -10,7 +10,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
   DB <- validate_DB(DB)
   ERROR <-T
   while(ERROR){
-    RC_proj <- DB %>% get_redcap_project_info()
+    RC_proj <- DB %>% get_redcap_project_info()# used as first test of API/token
     ERROR <-RC_proj %>% httr::http_error()
     if(ERROR){
       warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
@@ -20,9 +20,9 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
     }
   }
   message("Connected to REDCap!")
-  RC_proj<-httr::content(RC_proj)
-  DB$title=RC_proj$project_title
-  DB$PID=RC_proj$project_id
+  DB$project_info<-httr::content(RC_proj)
+  DB$title=DB$project_info$project_title
+  DB$PID=DB$project_info$project_id
   if(!force){
     if(is.null(DB$last_metadata_update)||is.null(DB$last_data_update)){
       force<-T

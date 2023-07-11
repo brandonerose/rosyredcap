@@ -70,8 +70,7 @@ get_redcap_metadata<-function(DB){
   }
   DB$users<-get_redcap_users(DB)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
-  DB$codecook <- make_codebook(DB)
-  print("added codebook")
+  DB$codebook <- make_codebook(DB)
   DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
@@ -349,17 +348,13 @@ clean_to_raw_redcap <- function(DB_import,use_missing_codes = T){
   DB_import
 }
 
-clean_redcap_log <- function(log){
-  log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
-  log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
-  comments <- which(log$action=="Manage/Design"&grepl("Add field comment|Edit field comment|Delete field comment",log$details))
-  if(length(comments)>0){
-    log$record_id[comments] <- stringr::str_extract(log$details[comments], "(?<=Record: )[^,]+")
-    log$action_type[comments] <- "Comment"
-  }
-  log
-}
-
+#' @title Check the REDCap log
+#' @inheritParams save_DB
+#' @param last numeric paired with units. Default is 24.
+#' @param units character paired with last. Options are "mins","hours","days". Default is "hours".
+#' @param begin_time character of time where the log should start from. Example 2023-07-11 13:15:06.
+#' @return data.frame of log that has been cleaned and has extra summary columns
+#' @export
 check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   if(units=="days"){
     x<-(Sys.time()-lubridate::days(last)) %>% as.character()
@@ -390,6 +385,17 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
       encode = "form"
     )
   ) %>% clean_redcap_log()
+}
+
+clean_redcap_log <- function(log){
+  log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
+  log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
+  comments <- which(log$action=="Manage/Design"&grepl("Add field comment|Edit field comment|Delete field comment",log$details))
+  if(length(comments)>0){
+    log$record_id[comments] <- stringr::str_extract(log$details[comments], "(?<=Record: )[^,]+")
+    log$action_type[comments] <- "Comment"
+  }
+  log
 }
 
 missing_codes <- function(){
@@ -437,8 +443,13 @@ missing_codes <- function(){
   )
 }
 
+missing_codes2 <- function(DB){
+  DB$project_info$missing_data_codes %>% split_choices()
+}
+
 #' @title Shows DB in the env
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
+#' @param records character vector of records you want dropped to your directory
 #' @return messages for confirmation
 #' @export
 drop_redcap_dir<-function(DB,records=NULL){
@@ -455,7 +466,7 @@ drop_redcap_dir<-function(DB,records=NULL){
 }
 
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
 #' @return messages for confirmation
 #' @export
 read_redcap_dir<-function(DB){
@@ -472,37 +483,37 @@ read_redcap_dir<-function(DB){
 }
 
 #development only!
-upload_redcap<-function(DB_import,DB,unsafe=F,batch_size=500, use_missing_codes = T){
-  warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
-  validate_DB(DB_import)
-  validate_DB(DB)
-  x<-DB_import
-  y<-DB
-  if(x$clean){
-    x<-clean_to_raw_redcap(x,use_missing_codes = use_missing_codes)
-  }
-  if(y$clean){
-    y<-clean_to_raw_redcap(y,use_missing_codes = use_missing_codes)
-  }
-    warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  for(TABLE in names(x[["data"]])){
-
-    if(nrow(c)==0){
-      message(paste0("No changes -> ",TABLE))
-    }
-    if(nrow(c)>0){
-      REDCapR::redcap_write(
-        c,
-        batch_size=batch_size,
-        interbatch_delay=0.2,
-        continue_on_error=FALSE,
-        DB$redcap_uri,
-        token,
-        overwrite_with_blanks=TRUE
-      )
-    }
-  }
-}
+# upload_redcap_from_import<-function(DB_import,DB,unsafe=F,batch_size=500, use_missing_codes = T){
+#   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
+#   validate_DB(DB_import)
+#   validate_DB(DB)
+#   x<-DB_import
+#   y<-DB
+#   if(x$clean){
+#     x<-clean_to_raw_redcap(x,use_missing_codes = use_missing_codes)
+#   }
+#   if(y$clean){
+#     y<-clean_to_raw_redcap(y,use_missing_codes = use_missing_codes)
+#   }
+#     warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
+#   for(TABLE in names(x[["data"]])){
+#
+#     if(nrow(c)==0){
+#       message(paste0("No changes -> ",TABLE))
+#     }
+#     if(nrow(c)>0){
+#       REDCapR::redcap_write(
+#         c,
+#         batch_size=batch_size,
+#         interbatch_delay=0.2,
+#         continue_on_error=FALSE,
+#         DB$redcap_uri,
+#         token,
+#         overwrite_with_blanks=TRUE
+#       )
+#     }
+#   }
+# }
 
 
 

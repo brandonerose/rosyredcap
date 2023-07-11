@@ -1,5 +1,5 @@
 #' @title Link to get a new API token for your project (if you access)
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
 #' @return messages for confirmation
 #' @export
 link_API_token<- function(DB){
@@ -7,7 +7,7 @@ link_API_token<- function(DB){
 }
 
 #' @title Link view the API playground for your project (if you access)
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
 #' @return messages for confirmation
 #' @export
 link_API_playground <- function(DB){
@@ -15,7 +15,7 @@ link_API_playground <- function(DB){
 }
 
 #' @title Link view the REDCap project home page
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
 #' @return opens browser link
 #' @export
 link_REDCap_home <- function(DB){
@@ -23,7 +23,7 @@ link_REDCap_home <- function(DB){
 }
 
 #' @title Shows DB in the env
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
 #' @return opens browser link
 #' @export
 link_REDCap_project <- function(DB){
@@ -31,7 +31,10 @@ link_REDCap_project <- function(DB){
 }
 
 #' @title Shows DB in the env
-#' @param DB object generated using `load_DB()` or `setup_DB()`
+#' @inheritParams save_DB
+#' @param record REDCap record id or study id etc, any column names that match `DB$id_col`
+#' @param page REDCap page for the record. Must be one of `DB$instruments$instrument_name`
+#' @param instance REDCap instance if it's a repeating instrument
 #' @return opens browser link
 #' @export
 link_REDCap_record <- function(DB,record,page,instance){
@@ -45,7 +48,7 @@ link_REDCap_record <- function(DB,record,page,instance){
     if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
     link <- link %>% paste0("&page=",page)
     if(!missing(instance)){
-      if(!page%in%DB$instruments$instrument_name)stop(page," has to be one of the instrument names: ",paste0(DB$instruments$instrument_name,collapse = ", "))
+      if(!page%in%DB$instruments$instrument_name[which(DB$instruments$repeating)])stop("If you provide an instance, it has to be one of the repeating instrument names: ",paste0(DB$instruments$instrument_name[which(DB$instruments$repeating)],collapse = ", "))
       link <- link %>% paste0("&instance=",instance)
     }
   }

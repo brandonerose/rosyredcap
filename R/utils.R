@@ -31,6 +31,7 @@ make_codebook<-function(DB){
     OUT <- OUT %>% dplyr::bind_rows(x)
   }
   OUT<-OUT %>% dplyr::select("field_name","code","name")
+  rownames(OUT) <- NULL
   OUT
 }
 

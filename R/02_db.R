@@ -1,5 +1,5 @@
 #' @title blank DB object
-#' @return blank_DB list
+#' @return blank_DB list for reference
 blank_DB<- function(){
   list(
     title=NULL,
@@ -11,6 +11,7 @@ blank_DB<- function(){
     version=NULL,
     last_metadata_update=NULL,
     last_data_update=NULL,
+    project_info=NULL,
     metadata=NULL,
     codebook=NULL,
     choices=NULL,
@@ -29,20 +30,12 @@ blank_DB<- function(){
   )
 }
 
-#' @title Validates DB
-#' @return Message
-#' @param DB DB from load_DB or setup_DB
 validate_DB<-function(DB,silent = T){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
   if( ! all(names(blank_DB())%in%names(DB))){
     stop("`DB` does not have the appropriate names. Did you use `load_DB()` or `setup_DB()` to generate it?")
-  }
-  if((length(DB[["data"]])==0)>0){
-    if(!silent){
-      warning("Valid list but no data yet!",immediate. = T)
-    }
   }
   if(is.null(DB$dir_path)){
     stop("`DB$dir_path` is NULL!, Did you use `setup_DB()`?")
@@ -64,38 +57,20 @@ validate_DB<-function(DB,silent = T){
   }else{
     DB$redcap_base_link %>% validate_web_link()
   }
-  for (CHECK in c("title","PID","version","last_metadata_update","last_data_update","home_link","API_playground_link")){
-    if(is.null(DB[CHECK])){
-      stop("`DB$",CHECK,"` is NULL!, Did you use `setup_DB()`?")
-    }
-  }
+  # for (CHECK in c("title","PID","version","last_metadata_update","last_data_update","home_link","API_playground_link")){
+  #   if(is.null(DB[[CHECK]])){
+  #     stop("`DB$",CHECK,"` is NULL!, Did you use `setup_DB()`?")
+  #   }
+  # }
   if(!silent){
-  message("`DB` validated!")
+    if((length(DB[["data"]])==0)>0||is.null(DB$project_info)){
+      warning("Valid list but no data yet!",immediate. = T)
+    }
+    message("`DB` validated!")
   }
   DB
 }
 #add year check
-
-#' @title Reads DB from the directory
-#' @param dir_path character file path of the directory
-#' @param blank logical for blank load or last save
-#' @return DB
-#' @export
-load_DB<-function(dir_path,blank=F){
-  if(blank){
-    DB <- blank_DB()
-  }else{
-    DB_path<-file.path(dir_path,"R_objects","DB.rdata")
-    if(file.exists(DB_path)){
-      DB <-readRDS(file=DB_path)
-      validate_DB(DB)
-    }else{
-      DB <- blank_DB()
-    }
-  }
-  #DB summary----
-  DB
-}
 
 #' @title Setup for DB including token
 #' @param short_name character name as a shortcut
@@ -113,6 +88,7 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
   if(
     force |
     is.null(DB$last_metadata_update) |
+    is.null(DB$project_info) |
     is.null(DB$short_name) |
     is.null(DB$token_name) |
     is.null(DB$redcap_uri) |
@@ -141,9 +117,29 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
   DB
 }
 
+#' @title Reads DB from the directory
+#' @inheritParams setup_DB
+#' @param blank logical for blank load or last save
+#' @return DB
+#' @export
+load_DB<-function(dir_path,blank=F){
+  if(blank){
+    DB <- blank_DB()
+  }else{
+    DB_path<-file.path(dir_path,"R_objects","DB.rdata")
+    if(file.exists(DB_path)){
+      DB <-readRDS(file=DB_path)
+      validate_DB(DB)
+    }else{
+      DB <- blank_DB()
+    }
+  }
+  #DB summary----
+  DB
+}
 
 #' @title Saves DB in the directory
-#' @param DB DB from load_DB or setup_DB
+#' @param DB object generated using `load_DB()` or `setup_DB()`
 #' @return Message
 #' @export
 save_DB<-function(DB){
@@ -151,36 +147,63 @@ save_DB<-function(DB){
   if( ! is.list(DB)) stop("DB must be a list")
   #function
   DB$choices
-  validate_DB(DB) %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
+  DB %>% validate_DB() %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
   add_project(DB)
   # save_xls_wrapper(DB)
   message("Saved!")
 }
 
 #' @title Shows DB in the env
-#' @param DB DB from load_DB or setup_DB
-#' @return DB tables in your environment
+#' @inheritParams save_DB
+#' @param also_metadata logical for including metadata
+#' @description
+#' To add all of these to your global environment you could run the following code...
+#' `data_list <- show_DB(DB)`
+#' `for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
+#' This code is not allowed on CRAN to avoid name conflicts
+#' @return DB tables
 #' @export
 show_DB <- function(DB,also_metadata=T){
-  validate_DB(DB)
+  DB <- validate_DB(DB)
+  data_list <- list()
   for(NAME in names(DB$data)){
-    assign(NAME,DB$data[[NAME]],pos = 1)
+    L <- list(DB$data[[NAME]])
+    names(L) <- NAME
+    data_list <- data_list %>% append(L)
   }
   if(also_metadata){
-    for(NAME in c("metadata","instruments","log","users")){
-      assign(NAME,DB[[NAME]],pos = 1)
-    }
-    assign("codebook",make_codebook(DB),pos = 1)
+    for(NAME in c("metadata","instruments","log","users","codebook","project_info")){
+      L <- list(DB[[NAME]])
+      names(L) <- NAME
+      data_list <- data_list %>% append(L)    }
   }
 }
 
+
+
 #' @title Deletes DB object from directory (solves occasional problems)
-#' @param DB DB from load_DB or setup_DB
+#' @inheritParams save_DB
+#' @inheritParams setup_DB
+#' @param dir_path character file path of the directory
 #' @return message
 #' @export
-delete_DB <- function(DB){
-  unlink(file.path(DB$dir_path,"R_objects","DB.Rdata"))
-  message("Deleted saved DB")
+delete_DB <- function(DB,dir_path){
+  if(!missing(DB)){
+    DB <- validate_DB(DB)
+    DIR <- DB$dir_path
+    if(!missing(dir_path))warning("You only need to provide a directory path using a DB object OR dir_path. DB will be used by default.",immediate. = T)
+  } else {
+    if(missing(dir_path))stop("You must provide a directory path using a DB object or dir_path")
+    DIR <- dir_path
+  }
+  DIR <-validate_dir(DIR,silent = F)
+  delete_this <- file.path(DIR,"R_objects","DB.Rdata")
+  if(file.exists(delete_this)){
+    unlink(delete_this)
+    message("Deleted saved DB")
+  }else{
+    warning("The DB object you wanted to is not there. Did you delete already? ",delete_this)
+  }
 }
 
 all_records <- function(DB){

@@ -14,9 +14,12 @@ cache_exists<- function(){
   cache_path() %>% file.exists()
 }
 
+#' @title Clear your cached projects
+#' @return message confirmation
 #' @export
 cache_clear<- function(){
   cache$delete_all()
+  message("Cache cleared!")
 }
 
 cache_projects_exists<- function(){
@@ -28,6 +31,13 @@ cache_projects_exists<- function(){
   }
 }
 
+#' @title Get your REDCap projects used by rosyredcap
+#' @description
+#' Everytime a setup or update is performed rosyredcap stores the most basic information
+#' about that project to the cache so the user has a running log of everywhere there project information is stored,
+#' which can be used to find, move, edit, delete that data.
+#' @return data.frame of projects from the cache
+#' @export
 get_projects <- function(){
   if(cache_projects_exists()){
     projects<-cache_path() %>% file.path("projects.rds") %>% readRDS()
@@ -85,9 +95,7 @@ clean_dir_path <- function(dir_path){
   if ( ! is.character(dir_path)) stop("dir must be a character string")
   dir_path %>% trimws(whitespace = "[\\h\\v]") %>% normalizePath( winslash = "/",mustWork = F)
 }
-#' @title set your  directory
-#' @param dir_path your absolute path to the  directory
-#' @export
+
 set_dir <- function(dir_path){
   dir_path<-clean_dir_path(dir_path)
   if( ! file.exists(dir_path)){
@@ -107,6 +115,7 @@ set_dir <- function(dir_path){
 }
 
 #' @title get your directory
+#' @inheritParams save_DB
 #' @export
 get_dir <- function(DB){
   dir_path <- DB$dir_path

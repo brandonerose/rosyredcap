@@ -1,5 +1,8 @@
 # rosyredcap 2.0.0
 
+* big changes in structure to allow for multiple projects
+* refer to new readme
+
 # rosyredcap 1.0.9
 
 * added missing code support needs to be tested

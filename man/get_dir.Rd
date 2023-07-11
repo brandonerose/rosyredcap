@@ -4,7 +4,10 @@
 \alias{get_dir}
 \title{get your directory}
 \usage{
-get_dir()
+get_dir(DB)
+}
+\arguments{
+\item{DB}{object generated using `load_DB()` or `setup_DB()`}
 }
 \description{
 get your directory
