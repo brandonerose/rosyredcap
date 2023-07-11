@@ -71,6 +71,10 @@ get_redcap_metadata<-function(DB){
   DB$users<-get_redcap_users(DB)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
   DB$codebook <- make_codebook(DB)
+  missing_codes <- missing_codes2(DB)
+  if(!is.null(missing_codes)){
+    DB$missing_codes <- missing_codes
+  }
   DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
@@ -118,10 +122,10 @@ get_redcap_users<-function(DB){
   )
 }
 
-get_redcap_data<-function(DB,clean=T,records=NULL,use_missing_codes = T){
+get_redcap_data<-function(DB,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
   raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records)$data
-  DB<-DB %>% raw_process_redcap(raw = raw,clean = clean,use_missing_codes = use_missing_codes)
+  DB<-DB %>% raw_process_redcap(raw = raw,clean = clean)
   DB$all_records <- all_records(DB)
   DB
 }
@@ -143,7 +147,8 @@ select_redcap_records<-function(DB, records=NULL){
   DB_selected
 }
 
-raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
+raw_process_redcap <- function(DB,raw,clean=T){
+  use_missing_codes <- !is.null(DB$missing_codes)
   if(nrow(raw)>0){
     for(x in DB$instruments$instrument_name){
       if(x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
@@ -170,9 +175,9 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
                 OUT<-z$name[coded_redcap]
               }else{
                 if(use_missing_codes){
-                  coded_redcap2<-which(missing_codes()$code==C)
+                  coded_redcap2<-which(DB$missing_codes$code==C)
                   if(length(coded_redcap2)>0){
-                    OUT<-missing_codes()$name[coded_redcap2]
+                    OUT<-DB$missing_codes$name[coded_redcap2]
                   }else{
                     stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
                   }
@@ -199,12 +204,12 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
               }
               if(length(D)==0){
                 if(use_missing_codes){
-                  E<-which(missing_codes()$code==C)
+                  E<-which(DB$missing_codes$code==C)
                   if(length(E)==0){
                     stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
                   }
                   if(length(E)>0){
-                    OUT<-missing_codes()$name[E]
+                    OUT<-DB$missing_codes$name[E]
                   }
                 }else{
                   stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
@@ -228,12 +233,12 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
               }
               if(length(D)==0){
                 if(use_missing_codes){
-                  E<-which(missing_codes()$code==C)
+                  E<-which(DB$missing_codes$code==C)
                   if(length(E)==0){
                     stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
                   }
                   if(length(E)>0){
-                    OUT<-missing_codes()$name[E]
+                    OUT<-DB$missing_codes$name[E]
                   }
                 }else{
                   stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
@@ -246,7 +251,7 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
 
         if(use_missing_codes){
           for(y in DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
-            z<-missing_codes()
+            z<-DB$missing_codes
             DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
               OUT<-C
               if(!is.na(C)){
@@ -272,81 +277,99 @@ raw_process_redcap <- function(DB,raw,clean=T,use_missing_codes = T){
   DB
 }
 
-clean_to_raw_redcap <- function(DB_import,use_missing_codes = T){
-  for(x in names(DB_import[["data"]])){
-    for(y in DB_import[["data"]][[x]] %>% colnames()){
-      if(y%in%DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type%in%c("radio","dropdown"))]){
-        z<-DB_import$metadata$select_choices_or_calculations[which(DB_import$metadata$field_name==y)] %>% split_choices()
-        DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
-          OUT<-NA
-          if(!is.na(C)){
-            coded_redcap<-which(z$name==C)
-            if(length(coded_redcap)>0){
-              OUT<-z$code[coded_redcap]
+clean_to_raw_redcap <- function(DB){
+  DB <- validate_DB(DB)
+  for(TABLE in names(DB[["data"]])){
+    DB[["data"]][[TABLE]] <- clean_to_raw_form(FORM = DB[["data"]][[TABLE]],DB=DB)
+  }
+  DB$clean<-F
+  DB
+}
+
+clean_to_raw_form <- function(FORM,DB){
+  use_missing_codes <- !is.null(DB$missing_codes)
+  # if(!deparse(substitute(FORM))%in%DB$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
+  if(any(!colnames(FORM)%in%DB$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$metadata$field_name`")
+  instrument <- DB$metadata$form_name[
+    which(
+      DB$metadata$field_name%in%colnames(FORM)&
+        !DB$metadata$field_name%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument")
+    )
+  ] %>% unique()
+  if(length(instrument)>1)stop("All column names in your form must match only one form in your metadata, `DB$instruments$instrument_name`")
+  metadata<-DB$metadata[which(DB$metadata$form_name==instrument),]
+  for(COL_NAME in FORM %>% colnames()){
+    if(COL_NAME%in%metadata$field_name[which(metadata$field_type%in%c("radio","dropdown","checkbox_choice"))]){
+      z<-metadata$select_choices_or_calculations[which(metadata$field_name==COL_NAME)] %>% split_choices()
+      FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          coded_redcap<-which(z$name==C)
+          if(length(coded_redcap)>0){
+            OUT<-z$code[coded_redcap]
+          }else{
+            if(use_missing_codes){
+              coded_redcap2<-which(DB$missing_codes$name==C)
+              if(length(coded_redcap2)>0){
+                OUT<-DB$missing_codes$code[coded_redcap2]
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C)
+              }
             }else{
-              if(use_missing_codes){
-                coded_redcap2<-which(missing_codes()$name==C)
-                if(length(coded_redcap2)>0){
-                  OUT<-missing_codes()$code[coded_redcap2]
-                }else{
-                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-                }
-              }else{
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-              }
+              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
             }
           }
-          OUT
-        }) %>% unlist() %>% as.character()
-      }
-      if(y%in%DB_import$metadata$field_name[which(DB_import$metadata$form_name==x&DB_import$metadata$field_type=="yesno")]){
-        z<-data.frame(
-          code=c(0,1),
-          name=c("No","Yes")
-        )
-        DB_import[["data"]][[x]][[y]]<-DB_import[["data"]][[x]][[y]] %>% sapply(function(C){
-          OUT<-NA
-          if(!is.na(C)){
-            D<-which(z$name==C)
-            if(length(D)>0){
-              OUT<-z$code[D]
-            }
-            if(length(D)==0){
-              if(use_missing_codes){
-                E<-which(missing_codes()$name==C)
-                if(length(E)==0){
-                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-                }
-                if(length(E)>0){
-                  OUT<-missing_codes()$code[E]
-                }
-              }else{
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-              }
-            }
-          }
-          OUT
-        }) %>% unlist() %>% as.character()
-      }
-      if(use_missing_codes){
-        if(y%in%DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno"))]){
-          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-            OUT<-C
-            if(!is.na(C)){
-              D<-which(missing_codes()$name==C)
-              if(length(D)>0){
-                OUT<-missing_codes()$code[D]
-              }
-            }
-            OUT
-          }) %>% unlist() %>% as.character()
         }
+        OUT
+      }) %>% unlist() %>% as.character()
+    }
+    if(COL_NAME%in%metadata$field_name[which(metadata$field_type=="yesno")]){
+      z<-data.frame(
+        code=c(0,1),
+        name=c("No","Yes")
+      )
+      FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          D<-which(z$name==C)
+          if(length(D)>0){
+            OUT<-z$code[D]
+          }
+          if(length(D)==0){
+            if(use_missing_codes){
+              E<-which(DB$missing_codes$name==C)
+              if(length(E)==0){
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
+              }
+              if(length(E)>0){
+                OUT<-DB$missing_codes$code[E]
+              }
+            }else{
+              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C)
+            }
+          }
+        }
+        OUT
+      }) %>% unlist() %>% as.character()
+    }
+    if(use_missing_codes){
+      if(COL_NAME%in%metadata$field_name[which(!metadata$field_type%in%c("radio","dropdown","yesno","checkbox_choice"))]){
+        FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
+          OUT<-C
+          if(!is.na(C)){
+            D<-which(DB$missing_codes$name==C)
+            if(length(D)>0){
+              OUT<-DB$missing_codes$code[D]
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
       }
     }
   }
-  DB_import$clean<-F
-  DB_import
+  FORM
 }
+
 
 #' @title Check the REDCap log
 #' @inheritParams save_DB
@@ -398,7 +421,7 @@ clean_redcap_log <- function(log){
   log
 }
 
-missing_codes <- function(){
+all_missing_codes <- function(){
   data.frame(
     code = c(
       'NI',
@@ -444,7 +467,19 @@ missing_codes <- function(){
 }
 
 missing_codes2 <- function(DB){
-  DB$project_info$missing_data_codes %>% split_choices()
+  included <- "missing_data_codes"%in%colnames(DB$project_info)
+  if(included){
+    is_na <-is.na(DB$project_info$missing_data_codes)
+    if(!is_na){
+      return(DB$project_info$missing_data_codes %>% split_choices())
+    }
+    if(is_na){
+      return(NULL)
+    }
+  }
+  if(!included){
+    return(NULL)
+  }
 }
 
 #' @title Shows DB in the env
@@ -484,6 +519,28 @@ read_redcap_dir<-function(DB){
   DB_import
 }
 
+#' @title Upload to REDCap
+#' @description
+#' This will only overwrite and new data. It will not directly delete and data.
+#' Because this is the only function that can mess up your data, use it at your own risk.
+#' Remember all changes are saved in the redcap log if there's an issue.
+#' @param to_be_uploaded data.frame in raw coded form. If you worked with clean data pass your data to `clean_to_raw_form(FORM,DB)` first.
+#' @inheritParams save_DB
+#' @param batch_size numeric of how big the REDCap batch upload is. Default 500.
+#' @return messages
+#' @export
+upload_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
+    REDCapR::redcap_write(
+      ds_to_write = to_be_uploaded,
+      batch_size=batch_size,
+      interbatch_delay=0.2,
+      continue_on_error=FALSE,
+      redcap_uri = DB$redcap_uri,
+      token = validate_redcap_token(DB),
+      overwrite_with_blanks=TRUE
+    )
+}
+
 #' @title Upload from your directory to REDCap
 #' @description
 #' This function is meant to be run after `DB_import <- read_redcap_dir(DB)`.
@@ -492,20 +549,18 @@ read_redcap_dir<-function(DB){
 #' Because this is the only function that can mess up your data, use it at your own risk.
 #' Remember all changes are saved in the redcap log if there's an issue.
 #' @param DB_import obtained from your directory 'REDCap/upload' folder using, `DB_import <- read_redcap_dir(DB)`
-#' @inheritParams save_DB
-#' @param batch_size numeric of how big the REDCap batch upload is. Default 500.
-#' @param use_missing_codes logical for whether or not to check for missing codes. Default is TRUE.
+#' @inheritParams upload_to_redcap
 #' @return messages
 #' @export
-upload_DB_import_to_redcap<-function(DB_import,DB,batch_size=500, use_missing_codes = T){
+upload_DB_import_to_redcap<-function(DB_import,DB,batch_size=500){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB_import<-validate_DB(DB_import)
   DB<-validate_DB(DB)
   if(DB_import$clean){
-    DB_import<-clean_to_raw_redcap(DB_import,use_missing_codes = use_missing_codes)
+    DB_import<-clean_to_raw_redcap(DB_import)
   }
   if(DB$clean){
-    DB<-clean_to_raw_redcap(DB,use_missing_codes = use_missing_codes)
+    DB<-clean_to_raw_redcap(DB)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(any(!names(DB_import[["data"]])%in%names(DB[["data"]])))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$instruments$instrument_name`")
@@ -520,18 +575,13 @@ upload_DB_import_to_redcap<-function(DB_import,DB,batch_size=500, use_missing_co
       message(paste0("No changes -> ",TABLE))
     }
     if(nrow(to_be_uploaded)>0){
-      REDCapR::redcap_write(
-        ds_to_write = to_be_uploaded,
-        batch_size=batch_size,
-        interbatch_delay=0.2,
-        continue_on_error=FALSE,
-        redcap_uri = DB$redcap_uri,
-        token = validate_redcap_token(DB),
-        overwrite_with_blanks=TRUE
-      )
+      upload_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
     }
   }
 }
+
+
+
 
 
 

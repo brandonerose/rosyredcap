@@ -4,7 +4,7 @@
 \alias{update_DB}
 \title{Shows DB in the env}
 \usage{
-update_DB(DB, force = F, day_of_log = 10, use_missing_codes = T)
+update_DB(DB, force = F, day_of_log = 10, clean = T)
 }
 \arguments{
 \item{DB}{DB from load_DB or setup_DB}
@@ -13,7 +13,7 @@ update_DB(DB, force = F, day_of_log = 10, use_missing_codes = T)
 
 \item{day_of_log}{numbers of days to be checked in the log}
 
-\item{use_missing_codes}{logical for ussing REDCap missing codes}
+\item{clean}{logical for whether or not to return raw or clean REDCap. Default is TRUE.}
 }
 \value{
 messages for confirmation

@@ -2,12 +2,20 @@
 #' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update
 #' @param day_of_log numbers of days to be checked in the log
-#' @param use_missing_codes logical for ussing REDCap missing codes
+#' @param clean logical for whether or not to return raw or clean REDCap. Default is TRUE.
 #' @return messages for confirmation
 #' @export
-update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
+update_DB<-function(DB,force=F,day_of_log = 10,clean = T){
   IDs<-NULL
   DB <- validate_DB(DB)
+  if(!is.null(DB$clean)){
+    if(DB$clean!=clean){
+      if(!force){
+        force <- T
+        warning("The DB that was loaded was ",ifelse(DB$clean,"CLEAN","RAW"), " and you chose ",ifelse(clean,"CLEAN","RAW"),". Therefore, we will set force to TRUE for a full update of data to avoid data conflicts",immediate. = T)
+      }
+    }
+  }
   ERROR <-T
   while(ERROR){
     RC_proj <- DB %>% get_redcap_project_info()# used as first test of API/token
@@ -56,7 +64,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
   }
   if(force){
     DB<-DB %>% get_redcap_metadata()
-    DB<-DB %>% get_redcap_data(use_missing_codes = use_missing_codes)
+    DB<-DB %>% get_redcap_data(clean = clean)
     DB$log<-DB %>% check_redcap_log(last = day_of_log,units = "days") %>% unique()
     message("Full update!")
     DB %>% save_DB()
@@ -64,7 +72,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
     if(!is.null(IDs)){
       time<-c(DB$last_metadata_update,DB$last_data_update)
       time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
-      DB2<-DB %>% get_redcap_data(records = IDs,use_missing_codes = use_missing_codes)
+      DB2<-DB %>% get_redcap_data(clean = clean,records = IDs)
       DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
       DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique()
       for(TABLE  in names(DB$data)){
