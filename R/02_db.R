@@ -15,6 +15,7 @@ blank_DB<- function(){
     metadata=NULL,
     codebook=NULL,
     choices=NULL,
+    missing_codes=NULL,
     instruments=NULL,
     log=NULL,
     users=NULL,
