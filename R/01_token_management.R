@@ -63,5 +63,5 @@ set_redcap_token <- function(DB){
 #' @export
 view_redcap_token <- function(DB){
   DB <-validate_DB(DB)
-  DB$token_name %>% Sys.getenv()
+  validate_redcap_token(DB,silent = F,return = T)
  }
