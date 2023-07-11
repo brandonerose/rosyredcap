@@ -64,7 +64,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,use_missing_codes = T){
     if(!is.null(IDs)){
       time<-c(DB$last_metadata_update,DB$last_data_update)
       time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
-      DB2<-DB %>% get_redcap_data(DB,records = IDs,use_missing_codes = use_missing_codes)
+      DB2<-DB %>% get_redcap_data(records = IDs,use_missing_codes = use_missing_codes)
       DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
       DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique()
       for(TABLE  in names(DB$data)){

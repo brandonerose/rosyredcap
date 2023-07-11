@@ -71,6 +71,7 @@ get_redcap_metadata<-function(DB){
   DB$users<-get_redcap_users(DB)
   DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
   DB$codecook <- make_codebook(DB)
+  print("added codebook")
   DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
