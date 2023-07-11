@@ -35,16 +35,42 @@ projects at this time
 ``` r
 library("rosyredcap")
 
-redcap_link<-"https://redcap.miami.edu/" #or change to your institution
+DB <- setup_DB(
+  short_name = "PROJECT1",
+  token_name = "PROJECT1_token",
+  redcap_base_link<-"https://redcap.miami.edu/",
+  dir_path = "/Users/brandonrose/R/PROJECT1/dir"
+  # ,force = T
+  )
+# DB <- load_DB(dir_path = projects$dir_path[which(projects$short_name=="PSDB")])
+DB <- update_DB(DB)
 
-token = "yourNEVERshareTOKENfromREDCapAPI"
+projects <- get_projects() # get list of cached projects
 
-set_dir(getwd()) #this is where files where drop, default is project but pick another path if needed
+DB %>% drop_redcap_dir() #drops excel files with links to directory
+```
 
-DB<-update_DB(token) 
-#DB<-update_DB(token,force=T) #force for autmatic update
+You can set your REDCap token in two ways!
 
-DB %>% drop_redcap_dir() #drops excel files with links to dir
+``` r
+Sys.setenv(PROJECT1_token = "YoUrNevErShaReToken")
+```
+
+Or add the following line to your Reviron file… PROJECT1_token =
+‘YoUrNevErShaReToken’
+
+``` r
+usethis::edit_r_environ() #finds your file
+# Then you add --> PROJECT1_token = 'YoUrNevErShaReToken'
+# then save file and restart R
+```
+
+If it worked you will see your token when you run…
+
+``` r
+Sys.getenv("PROJECT1_token")
+#And if your DB object is setup properly...
+view_redcap_token(DB)
 ```
 
 ## Links
