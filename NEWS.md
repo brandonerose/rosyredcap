@@ -1,7 +1,10 @@
 # rosyredcap 2.0.0
 
-* big changes in structure to allow for multiple projects
-* refer to new readme
+* big changes in structure to allow for multiple projects. Refer to new readme!
+* added file repository functions, may integrate at some point
+* added checkbox support to codebook and choices output
+* tokens are now more secure in users environment with option to have it never directly in the project or console
+* fixing/testing upload function
 
 # rosyredcap 1.0.9
 
