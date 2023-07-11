@@ -523,13 +523,13 @@ read_redcap_dir<-function(DB){
 #' @description
 #' This will only overwrite and new data. It will not directly delete and data.
 #' Because this is the only function that can mess up your data, use it at your own risk.
-#' Remember all changes are saved in the redcap log if there's an issue.
+#' Remember all changes are saved in the redcap log if there's an issue. Missing rows and columns are fine!
 #' @param to_be_uploaded data.frame in raw coded form. If you worked with clean data pass your data to `clean_to_raw_form(FORM,DB)` first.
 #' @inheritParams save_DB
 #' @param batch_size numeric of how big the REDCap batch upload is. Default 500.
 #' @return messages
 #' @export
-upload_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
+upload_form_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
     REDCapR::redcap_write(
       ds_to_write = to_be_uploaded,
       batch_size=batch_size,
@@ -549,7 +549,7 @@ upload_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
 #' Because this is the only function that can mess up your data, use it at your own risk.
 #' Remember all changes are saved in the redcap log if there's an issue.
 #' @param DB_import obtained from your directory 'REDCap/upload' folder using, `DB_import <- read_redcap_dir(DB)`
-#' @inheritParams upload_to_redcap
+#' @inheritParams upload_form_to_redcap
 #' @return messages
 #' @export
 upload_DB_import_to_redcap<-function(DB_import,DB,batch_size=500){
@@ -575,7 +575,7 @@ upload_DB_import_to_redcap<-function(DB_import,DB,batch_size=500){
       message(paste0("No changes -> ",TABLE))
     }
     if(nrow(to_be_uploaded)>0){
-      upload_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
+      upload_form_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
     }
   }
 }

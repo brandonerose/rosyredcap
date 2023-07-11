@@ -3,7 +3,7 @@
 #' @param file file location on your PC
 #' @return messages for confirmation
 #' @export
-upload_to_redcap_files <- function(DB,file){
+upload_file_to_redcap_fileRepository <- function(DB,file){
   DB <- validate_DB(DB)
   file<-normalizePath(file)
   if(!file.exists(file)) stop("File does not exist! --> ",file)
