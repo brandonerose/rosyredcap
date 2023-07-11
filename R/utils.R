@@ -91,7 +91,17 @@ validate_web_link <- function(link) {
   return(link)
 }
 
-find_the_diff2 <- function (new, old,ref_cols=NULL){
+#' @title find the difference between two data.frames
+#' @description
+#' This function will compare two data.frames: new and old.
+#' You define the reference columns with ref_cols.
+#' Reference columns are always included in the return data.frame and their combination should always lead to a unique key for each row.
+#' @param new a new data.frame to compare to old. All new cols must be included in the set of the old ones.
+#' @param old a reference data.frame to be compared to
+#' @param ref_cols character vector of reference columns. They are always included in the return data.frame and their combination should always lead to a unique key for each row.
+#' @return messages and data.frame of only changes and reference cols
+#' @export
+find_the_diff <- function (new, old,ref_cols=NULL){
   if (!all(colnames(new) %in% colnames(old))) {
     stop("All new df columns must be included in old df")
   }
