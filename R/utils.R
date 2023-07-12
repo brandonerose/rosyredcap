@@ -51,6 +51,7 @@ write_xl<-function(DF,DB,path){# add instance links
     file = path, overwrite = TRUE)
   message("Saved at -> ","'",path,"'")
 }
+
 list.files.real<-function(path){
   grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
 }
@@ -101,7 +102,7 @@ validate_web_link <- function(link) {
 #' @param ref_cols character vector of reference columns. They are always included in the return data.frame and their combination should always lead to a unique key for each row.
 #' @return messages and data.frame of only changes and reference cols
 #' @export
-find_the_diff <- function (new, old,ref_cols=NULL){
+find_df_diff <- function (new, old,ref_cols=NULL){
   if (!all(colnames(new) %in% colnames(old))) {
     stop("All new df columns must be included in old df")
   }
@@ -164,4 +165,8 @@ find_the_diff <- function (new, old,ref_cols=NULL){
     message("No changes!")
   }
   OUT
+}
+
+count_DB_cells <- function(DB){
+  DB$data %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
 }
