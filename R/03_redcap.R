@@ -313,10 +313,10 @@ clean_to_raw_form <- function(FORM,DB){
               if(length(coded_redcap2)>0){
                 OUT<-DB$missing_codes$code[coded_redcap2]
               }else{
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C)
+                stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C)
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
+              stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
             }
           }
         }
@@ -339,13 +339,13 @@ clean_to_raw_form <- function(FORM,DB){
             if(use_missing_codes){
               E<-which(DB$missing_codes$name==C)
               if(length(E)==0){
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
+                stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
                 OUT<-DB$missing_codes$code[E]
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", COL_NAME,", Choice: ",C)
+              stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C)
             }
           }
         }
