@@ -12,6 +12,8 @@ blank_DB<- function(){
     last_metadata_update=NULL,
     last_data_update=NULL,
     project_info=NULL,
+    arms=NULL,
+    events=NULL,
     metadata=NULL,
     codebook=NULL,
     choices=NULL,
@@ -179,8 +181,6 @@ show_DB <- function(DB,also_metadata=T){
       data_list <- data_list %>% append(L)    }
   }
 }
-
-
 
 #' @title Deletes DB object from directory (solves occasional problems)
 #' @inheritParams save_DB
