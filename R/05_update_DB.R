@@ -16,21 +16,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,clean = T){
       }
     }
   }
-  ERROR <-T
-  while(ERROR){
-    RC_proj <- DB %>% get_redcap_project_info()# used as first test of API/token
-    ERROR <-RC_proj %>% httr::http_error()
-    if(ERROR){
-      warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
-      if(!missing(RC_proj))warning("HTTP error ",RC_proj %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
-      message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
-      set_redcap_token(DB)
-    }
-  }
-  message("Connected to REDCap!")
-  DB$project_info<-httr::content(RC_proj)
-  DB$title=DB$project_info$project_title
-  DB$PID=DB$project_info$project_id
+  DB <- test_redcap(DB)
   if(!force){
     if(is.null(DB$last_metadata_update)||is.null(DB$last_data_update)){
       force<-T
@@ -74,7 +60,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,clean = T){
       time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
       DB2<-DB %>% get_redcap_data(clean = clean,records = IDs)
       DB$last_metadata_update<-DB$last_data_update<-DB2$last_data_update
-      DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique()
+      DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
       for(TABLE  in names(DB$data)){
         DB$data[[TABLE]]<-DB$data[[TABLE]][which(!DB$data[[TABLE]][[DB$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data[[TABLE]][which(DB2$data[[TABLE]][[DB2$id_col]]%in%IDs),])
       }
