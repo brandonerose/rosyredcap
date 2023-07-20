@@ -1,4 +1,5 @@
 # rosyredcap 2.1.1
+* patch for repeat instrument bug
 
 # rosyredcap 2.1.0
 * several internal code changes for readability and effeciency
