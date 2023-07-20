@@ -3,13 +3,18 @@
 #' @param records character vector of records you want dropped to your directory
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T){
   DB <- validate_DB(DB)
   dir.create(file.path(get_dir(DB),"REDCap"),showWarnings = F)
   dir.create(file.path(get_dir(DB),"REDCap","other"),showWarnings = F)
   dir.create(file.path(get_dir(DB),"REDCap","upload"),showWarnings = F)
   DB_selected<- DB %>% select_redcap_records(records)
-  for(x in DB$instruments$instrument_name){
+  if(allow_mod){
+    to_save <- names(DB$data)
+  }else{
+    to_save <- DB$instruments$instrument_name
+  }
+  for(x in to_save){
     DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(DB),"REDCap",paste0(x,".xlsx")))
   }
   for (x in c("metadata","instruments","users")){ #,"log" #taking too long
