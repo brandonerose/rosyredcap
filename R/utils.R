@@ -17,10 +17,12 @@ NULL
 split_choices<-function(x){
   x<-gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
   x<-x %>% strsplit(" [:|:] ") %>% unlist()
-  data.frame(
+  x<-data.frame(
     code=x %>% strsplit(", ") %>% sapply(`[`, 1),
     name=x %>% strsplit(", ")%>% sapply(`[`, -1) %>% sapply(function(y){paste0(y,collapse = ", ")})
   )
+  rownames(x)<-NULL
+  x
 }
 
 make_codebook<-function(DB){
@@ -169,4 +171,8 @@ find_df_diff <- function (new, old,ref_cols=NULL){
 
 count_DB_cells <- function(DB){
   DB$data %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
+}
+
+all_character_cols <- function(df){
+  as.data.frame(lapply(df,as.character))
 }
