@@ -1,58 +1,83 @@
-get_redcap_project_info <- function(DB){
+redcap_api_base <- function(url,token,content,additional_args=NULL){
+  body <-list(
+    "token"= token,
+    content=content,
+    format='csv',
+    returnFormat='json'
+  )
+  if(!missing(additional_args)||is.null(additional_args)){
+    body <- body %>% append(additional_args)
+  }
   httr::POST(
-    url = DB$redcap_uri,
-    body = list(
-      "token"= validate_redcap_token(DB,silent = F) ,
-      content='project',
-      format='csv',
-      returnFormat='json'
-    ),
+    url = url,
+    body = body,
     encode = "form"
   )
 }
 
+process_response <- function(response,error_action){
+  content <- httr::content(response)
+  if(httr::http_error(response)){
+    if(!is.missing(error_action)){
+      if(!error_action%in%c("stop","warn"))stop("error_action must be 'stop' or 'warn'")
+      general_error<-response$status_code
+      specific_error<-response$status_code
+      message <- paste0("HTTP error ",response$status_code, ". ",content[["error"]])
+      if(error_action=="stop"){
+        stop(message)
+      }
+      warning(message,immediate. = T)
+    }
+    return(NA)
+  }
+  return(all_character_cols(content))
+}
+
+get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
+  allowed_content <- c("project","arm","event","metadata","instrument","repeatingFormsEvents","user","userRole","userRoleMapping","log")
+  if(!content%in%allowed_content)stop("Must use the following content... ",paste0(allowed_content,collapse = ", "))
+  redcap_api_base(DB$redcap_uri,validate_redcap_token(DB),content,additional_args=additional_args) %>% process_response(error_action)
+}
+
+get_redcap_file <-
+
+test_redcap <- function(DB){
+  ERROR <-T
+  while(ERROR){
+    version <- redcap_api_base(DB$redcap_uri,validate_redcap_token(DB),"version")
+    ERROR <-version %>% process_response()
+    if(ERROR){
+      warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
+      if(!missing(project_info))warning("HTTP error ",project_info %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
+      message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
+      set_redcap_token(DB)
+    }
+  }
+  message("Connected to REDCap!")
+  DB$version <- version %>% httr::content(as="text") %>% as.character()
+  DB
+}
+
 get_redcap_metadata<-function(DB){
   DB$last_metadata_update=Sys.time()
-  DB$metadata=REDCapR::redcap_metadata_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))$data
+  DB$project_info <- get_redcap_info(DB,"project")
+  DB$title=DB$project_info$project_title
+  DB$PID=DB$project_info$project_id
+  DB$arms <- get_redcap_info(DB,"arm")
+  DB$events <- get_redcap_info(DB,"event","warn")
+  DB$metadata <- get_redcap_info(DB,"metadata","warn")
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
       field_name=paste0(unique(DB$metadata$form_name),"_complete"),form_name=unique(DB$metadata$form_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
     )
   ) %>% unique()
-  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
-  if(!is.null(DB$metadata)){
-    x<-which(DB$metadata$field_type=="radio")
-    if(length(x)>0){
-      for(field in DB$metadata$field_name[x]){
+  if(is.data.frame(DB$metadata)){
+    radios<-which(DB$metadata$field_type=="radio")
+    if(length(radios)>0){
+      for(field in DB$metadata$field_name[radios]){
         DB[["choices"]][[field]]<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field)] %>% split_choices()
       }
     }
-  }
-  DB$instruments=REDCapR::redcap_instruments(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))$data
-  repeating<-httr::content(
-    httr::POST(
-      url = DB$redcap_uri,
-      body = list(
-        "token"=validate_redcap_token(DB),
-        content='repeatingFormsEvents',
-        format='csv',
-        returnFormat='json'
-      ),
-      encode = "form"
-    )
-  )$form_name
-  DB$instruments$repeating <- DB$instruments$instrument_name%in%repeating
-  if(length(repeating)>0){
-    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
-      data.frame(
-        field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
-      )
-    ) %>% unique()
-    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
-      data.frame(
-        field_name="redcap_repeat_instrument",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
-      )
-    ) %>% unique()
   }
   if(any(DB$metadata$field_type=="checkbox")){
     for(field_name in DB$metadata$field_name[which(DB$metadata$field_type=="checkbox")]){
@@ -65,16 +90,31 @@ get_redcap_metadata<-function(DB){
           field_type="checkbox_choice",
           select_choices_or_calculations=c("0, Unchecked | 1, Checked")
         )
-      )
+      ) %>% all_character_cols()
     }
   }
-  DB$users<-get_redcap_users(DB)
-  DB$version=paste0(unlist(REDCapR::redcap_version(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB))),collapse = ".")
-  DB$codebook <- make_codebook(DB)
-  missing_codes <- missing_codes2(DB)
-  if(!is.null(missing_codes)){
-    DB$missing_codes <- missing_codes
+
+  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
+  DB$instruments <- get_redcap_info(DB,"instrument","warn")
+  DB$instruments$repeating <- F
+  # if(DB$project_info$has_repeating_instruments_or_events=="1")
+  repeating <- get_redcap_info(DB,"repeatingFormsEvents")
+  if(is.data.frame(repeating)){
+    DB$instruments$repeating <- DB$instruments$instrument_name%in%repeating
+    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
+      data.frame(
+        field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
+      )
+    ) %>% unique()
+    DB$metadata<-DB$metadata %>%dplyr::bind_rows(
+      data.frame(
+        field_name="redcap_repeat_instrument",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
+      )
+    ) %>% unique()
   }
+  DB$users <- get_redcap_users(DB)
+  DB$codebook <- make_codebook(DB)
+  DB$missing_codes <- missing_codes2(DB)
   DB$log<-check_redcap_log(DB,last = 2,units = "mins")
   DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$home_link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
@@ -84,50 +124,157 @@ get_redcap_metadata<-function(DB){
   DB
 }
 
-get_redcap_users<-function(DB){
-  merge(
-    merge(
-      httr::content(
-        httr::POST(
-          url = DB$redcap_uri,
-          body = list(
-            "token"=validate_redcap_token(DB),
-            content='userRole',
-            format='csv',
-            returnFormat='json'
-          ), encode = "form")
-      ) %>% dplyr::select("unique_role_name","role_label"),
-      httr::content(
-        httr::POST(
-          url = DB$redcap_uri,
-          body = list(
-            "token"=validate_redcap_token(DB),
-            content='userRoleMapping',
-            format='csv',
-            returnFormat='json'
-          ), encode = "form")
-      ),
-      by="unique_role_name"),
-    httr::content(
-      httr::POST(
-        url = DB$redcap_uri,
-        body = list(
-          "token"=validate_redcap_token(DB),
-          content='user',
-          format='csv',
-          returnFormat='json'
-        ), encode = "form")
-    ),
-    by="username"
-  )
-}
-
 get_redcap_data<-function(DB,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
-  raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records)$data
-  DB<-DB %>% raw_process_redcap(raw = raw,clean = clean)
-  DB$all_records <- all_records(DB)
+  raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(clean,"label","raw"))$data %>% all_character_cols()
+  DB <- raw_process_redcap(raw = raw,DB = DB)
+  if(is.null(records)){
+    DB$all_records <- all_records(DB)
+  }
   DB
+}
+
+raw_process_redcap <- function(raw,DB,clean=T){
+  if(nrow(raw)>0){
+    for(instrument_name in DB$instruments$instrument_name){
+      if(instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+        DB[["data"]][[instrument_name]]<-raw[which(raw$redcap_repeat_instrument==instrument_name),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
+      }
+      if(!instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+        if("redcap_repeat_instrument" %in% colnames(raw)){
+          DB[["data"]][[instrument_name]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
+        }else{
+          DB[["data"]][[instrument_name]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
+        }
+      }
+      DB[["data"]][[instrument_name]] <- DB[["data"]][[instrument_name]] %>% all_character_cols()
+      if(instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
+        if (nrow(DB[["data"]][[instrument_name]])>0){
+          DB[["data"]][[instrument_name]]$redcap_repeat_instrument<-instrument_name
+        }#had to add for empty instruments
+      }
+    }
+  }
+  # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
+  DB$clean<-clean
+  DB
+}
+
+raw_to_clean_redcap <- function(DB){
+  if(DB$clean)stop("DB is already clean (not raw coded values)")
+  use_missing_codes <- !is.data.frame(DB$missing_codes)
+  if(nrow(raw)>0){
+    for(instrument_name in DB$instruments$instrument_name){
+      for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type%in%c("radio","dropdown"))]){
+        z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field_name)] %>% split_choices()
+        DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+          OUT<-NA
+          if(!is.na(C)){
+            coded_redcap<-which(z$code==C)
+            if(length(coded_redcap)>0){
+              OUT<-z$name[coded_redcap]
+            }else{
+              if(use_missing_codes){
+                coded_redcap2<-which(DB$missing_codes$code==C)
+                if(length(coded_redcap2)>0){
+                  OUT<-DB$missing_codes$name[coded_redcap2]
+                }else{
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                }
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              }
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
+
+      }
+      for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type=="yesno")]){
+        z<-data.frame(
+          code=c(0,1),
+          name=c("No","Yes")
+        )
+        DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+          OUT<-NA
+          if(!is.na(C)){
+            D<-which(z$code==C)
+            if(length(D)>0){
+              OUT<-z$name[D]
+            }
+            if(length(D)==0){
+              if(use_missing_codes){
+                E<-which(DB$missing_codes$code==C)
+                if(length(E)==0){
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                }
+                if(length(E)>0){
+                  OUT<-DB$missing_codes$name[E]
+                }
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              }
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
+      }
+      for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type=="checkbox_choice")]){
+        z<-data.frame(
+          code=c(0,1),
+          name=c("Unchecked","Checked")
+        )
+        DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+          OUT<-NA
+          if(!is.na(C)){
+            D<-which(z$code==C)
+            if(length(D)>0){
+              OUT<-z$name[D]
+            }
+            if(length(D)==0){
+              if(use_missing_codes){
+                E<-which(DB$missing_codes$code==C)
+                if(length(E)==0){
+                  stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                }
+                if(length(E)>0){
+                  OUT<-DB$missing_codes$name[E]
+                }
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              }
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
+      }
+      if(use_missing_codes){
+        for(field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&!DB$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
+          z<-DB$missing_codes
+          DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+            OUT<-C
+            if(!is.na(C)){
+              D<-which(z$code==C)
+              if(length(D)>0){
+                OUT<-z$name[D]
+              }
+            }
+            OUT
+          }) %>% unlist() %>% as.character()
+        }
+      }
+    }
+  }
+  # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
+  DB$clean<-clean
+  DB
+}
+
+get_redcap_users<-function(DB){
+  userRole <-get_redcap_info(DB,"userRole") %>% dplyr::select("unique_role_name","role_label")
+  userRoleMapping<- get_redcap_info(DB,"userRoleMapping")
+  user<- get_redcap_info(DB,"user")
+  merge(merge(userRole,userRoleMapping,by="unique_role_name"),user, by="username")
 }
 
 select_redcap_records<-function(DB, records=NULL){
@@ -147,136 +294,6 @@ select_redcap_records<-function(DB, records=NULL){
   DB_selected
 }
 
-raw_process_redcap <- function(DB,raw,clean=T){
-  use_missing_codes <- !is.null(DB$missing_codes)
-  if(nrow(raw)>0){
-    for(x in DB$instruments$instrument_name){
-      if(x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        DB[["data"]][[x]]<-raw[which(raw$redcap_repeat_instrument==x),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
-      }
-      if(!x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        if("redcap_repeat_instrument" %in% colnames(raw)){
-          DB[["data"]][[x]]<-raw[which(is.na(raw$redcap_repeat_instrument)),unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
-        }else{
-          DB[["data"]][[x]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_name%in%colnames(raw))]))]
-        }
-      }
-      for(COL in colnames(DB[["data"]][[x]])){
-        DB[["data"]][[x]][[COL]]<-DB[["data"]][[x]][[COL]] %>% as.character()
-      }
-      if(clean){
-        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type%in%c("radio","dropdown"))]){
-          z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==y)] %>% split_choices()
-          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-            OUT<-NA
-            if(!is.na(C)){
-              coded_redcap<-which(z$code==C)
-              if(length(coded_redcap)>0){
-                OUT<-z$name[coded_redcap]
-              }else{
-                if(use_missing_codes){
-                  coded_redcap2<-which(DB$missing_codes$code==C)
-                  if(length(coded_redcap2)>0){
-                    OUT<-DB$missing_codes$name[coded_redcap2]
-                  }else{
-                    stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-                  }
-                }else{
-                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-                }
-              }
-            }
-            OUT
-          }) %>% unlist() %>% as.character()
-
-        }
-        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="yesno")]){
-          z<-data.frame(
-            code=c(0,1),
-            name=c("No","Yes")
-          )
-          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-            OUT<-NA
-            if(!is.na(C)){
-              D<-which(z$code==C)
-              if(length(D)>0){
-                OUT<-z$name[D]
-              }
-              if(length(D)==0){
-                if(use_missing_codes){
-                  E<-which(DB$missing_codes$code==C)
-                  if(length(E)==0){
-                    stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-                  }
-                  if(length(E)>0){
-                    OUT<-DB$missing_codes$name[E]
-                  }
-                }else{
-                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-                }
-              }
-            }
-            OUT
-          }) %>% unlist() %>% as.character()
-        }
-        for (y in DB$metadata$field_name[which(DB$metadata$form_name==x&DB$metadata$field_type=="checkbox_choice")]){
-          z<-data.frame(
-            code=c(0,1),
-            name=c("Unchecked","Checked")
-          )
-          DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-            OUT<-NA
-            if(!is.na(C)){
-              D<-which(z$code==C)
-              if(length(D)>0){
-                OUT<-z$name[D]
-              }
-              if(length(D)==0){
-                if(use_missing_codes){
-                  E<-which(DB$missing_codes$code==C)
-                  if(length(E)==0){
-                    stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C,". Also not a missing code.")
-                  }
-                  if(length(E)>0){
-                    OUT<-DB$missing_codes$name[E]
-                  }
-                }else{
-                  stop("Mismatch in choices compared to REDCap (above)! Table: ",x,", Column: ", y,", Choice: ",C)
-                }
-              }
-            }
-            OUT
-          }) %>% unlist() %>% as.character()
-        }
-
-        if(use_missing_codes){
-          for(y in DB$metadata$field_name[which(DB$metadata$form_name==x&!DB$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
-            z<-DB$missing_codes
-            DB[["data"]][[x]][[y]]<-DB[["data"]][[x]][[y]] %>% sapply(function(C){
-              OUT<-C
-              if(!is.na(C)){
-                D<-which(z$code==C)
-                if(length(D)>0){
-                  OUT<-z$name[D]
-                }
-              }
-              OUT
-            }) %>% unlist() %>% as.character()
-          }
-        }
-      }
-      if(x%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
-        if (nrow(DB[["data"]][[x]])>0){
-          DB[["data"]][[x]]$redcap_repeat_instrument<-x
-        }#had to add for empty instruments
-      }
-    }
-  }
-  # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
-  DB$clean<-clean
-  DB
-}
-
 clean_to_raw_redcap <- function(DB){
   DB <- validate_DB(DB)
   for(TABLE in names(DB[["data"]])){
@@ -287,7 +304,7 @@ clean_to_raw_redcap <- function(DB){
 }
 
 clean_to_raw_form <- function(FORM,DB){
-  use_missing_codes <- !is.null(DB$missing_codes)
+  use_missing_codes <- !is.na(DB$missing_codes)
   # if(!deparse(substitute(FORM))%in%DB$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%DB$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$metadata$field_name`")
   instrument <- DB$metadata$form_name[
@@ -390,23 +407,7 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   if(begin_time!=""){
     x<-begin_time
   }
-  httr::content(
-    httr::POST(
-      url = DB$redcap_uri,
-      body = list(
-        "token"=validate_redcap_token(DB),
-        content='log',
-        logtype='',
-        user='',
-        record='',
-        beginTime=x,
-        endTime='',
-        format='csv',
-        returnFormat='csv'
-      ),
-      encode = "form"
-    )
-  ) %>% clean_redcap_log()
+  get_redcap_info(DB,"log",additional_args = list(beginTime=x)) %>% clean_redcap_log()
 }
 
 clean_redcap_log <- function(log){
@@ -473,11 +474,11 @@ missing_codes2 <- function(DB){
       return(DB$project_info$missing_data_codes %>% split_choices())
     }
     if(is_na){
-      return(NULL)
+      return(NA)
     }
   }
   if(!included){
-    return(NULL)
+    return(NA)
   }
 }
 
@@ -507,13 +508,13 @@ drop_redcap_dir<-function(DB,records=NULL){
 read_redcap_dir<-function(DB){
   DB <- validate_DB(DB)
   path<-file.path(get_dir(DB),"REDCap","upload")
-  if(!file.exists(path))stop("No REDCap files found")
+  if(!file.exists(path))stop("No REDCap files found at path --> ",path)
   x<-list.files.real(path)
   x<-x[which(gsub("\\.xlsx","",x)%in%DB$instruments$instrument_name)]
   DB_import<-DB
   DB_import[["data"]]<-list()
   for(y in x){
-    DB_import[["data"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y))
+    DB_import[["data"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
   }
   DB_import
 }
@@ -530,7 +531,7 @@ read_redcap_dir<-function(DB){
 #' @export
 upload_form_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
   REDCapR::redcap_write(
-    ds_to_write = to_be_uploaded,
+    ds_to_write = to_be_uploaded %>% all_character_cols(),
     batch_size=batch_size,
     interbatch_delay=0.2,
     continue_on_error=FALSE,
@@ -565,7 +566,7 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
     DB<-clean_to_raw_redcap(DB)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  if(is.null(DB[["data"]]))stop("`DB$data` is empty")
+  if(is.na(DB[["data"]]))stop("`DB$data` is empty")
   for(TABLE in names(DB[["data"]])){
     to_be_uploaded <- DB[["data"]][[TABLE]]
     if(nrow(to_be_uploaded)>0){
@@ -575,7 +576,7 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
         do_it <-utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
-        upload_form_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
+        upload_form_to_redcap(to_be_uploaded=all_character_cols(to_be_uploaded),DB=DB,batch_size=batch_size)
       }
     }
   }
@@ -608,7 +609,7 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(any(!names(DB_import[["data"]])%in%names(DB[["data"]])))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$instruments$instrument_name`")
-  if(is.null(DB_import[["data"]]))stop("`DB_import$data` is empty")
+  if(is.na(DB_import[["data"]]))stop("`DB_import$data` is empty")
   for(TABLE in names(DB_import[["data"]])){
     ref_cols <- DB$id_col
     if(TABLE%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
@@ -618,11 +619,3 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
   }
   DB_import
 }
-
-
-
-
-
-
-
-
