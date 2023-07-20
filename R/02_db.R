@@ -101,9 +101,9 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
     if(missing(short_name))stop("`short_name` is required for DBs that haven't been validated")
     if(missing(token_name))stop("`token_name` is required for DBs that haven't been validated")
     if(missing(redcap_base_link))stop("`redcap_base_link` is required for DBs that haven't been validated")
-    DB$short_name <- short_name
-    DB$token_name <- token_name
-    DB$redcap_base_link <- redcap_base_link
+    DB$short_name <- short_name %>% validate_env_name()
+    DB$token_name <- token_name %>% validate_env_name()
+    DB$redcap_base_link <- redcap_base_link %>% validate_web_link()
     DB$redcap_uri <- DB$redcap_base_link  %>% paste0("api/")
     DB <- validate_DB(DB)
   }else{

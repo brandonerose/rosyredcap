@@ -176,3 +176,12 @@ count_DB_cells <- function(DB){
 all_character_cols <- function(df){
   as.data.frame(lapply(df,as.character))
 }
+
+addSlashIfNeeded <- function(input_string) {
+  if (!endsWith(input_string, "/")) {
+    output_string <- gsub("$", "/", input_string)
+  } else {
+    output_string <- input_string
+  }
+  return(output_string)
+}
