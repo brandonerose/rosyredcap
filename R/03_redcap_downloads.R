@@ -18,15 +18,15 @@ redcap_api_base <- function(url,token,content,additional_args=NULL){
 process_response <- function(response,error_action){
   content <- httr::content(response)
   if(httr::http_error(response)){
-    if(!is.missing(error_action)){
-      if(!error_action%in%c("stop","warn"))stop("error_action must be 'stop' or 'warn'")
-      general_error<-response$status_code
-      specific_error<-response$status_code
-      message <- paste0("HTTP error ",response$status_code, ". ",content[["error"]])
-      if(error_action=="stop"){
-        stop(message)
+    if(!missing(error_action)){
+      if(!is.null(error_action)){
+        if(!error_action%in%c("stop","warn"))stop("error_action must be 'stop' or 'warn'")
+        general_error<-response$status_code
+        specific_error<-http_errors$Description[which(http_errors$Value==response$status_code)]
+        message <- paste0("HTTP error ",general_error, ". ",specific_error,". ",content[["error"]])
+        if(error_action=="stop")stop(message)
+        warning(message,immediate. = T)
       }
-      warning(message,immediate. = T)
     }
     return(NA)
   }
@@ -37,10 +37,10 @@ test_redcap <- function(DB){
   ERROR <-T
   while(ERROR){
     version <- redcap_api_base(DB$redcap_uri,validate_redcap_token(DB),"version")
-    ERROR <-version %>% process_response()
+    ERROR <-version %>% httr::http_error()
     if(ERROR){
       warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
-      if(!missing(project_info))warning("HTTP error ",project_info %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
+      warning("HTTP error ",version %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
       message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
       set_redcap_token(DB)
     }
@@ -53,10 +53,10 @@ test_redcap <- function(DB){
 get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
   allowed_content <- c("project","arm","event","metadata","instrument","repeatingFormsEvents","user","userRole","userRoleMapping","log")
   if(!content%in%allowed_content)stop("Must use the following content... ",paste0(allowed_content,collapse = ", "))
-  redcap_api_base(DB$redcap_uri,validate_redcap_token(DB),content,additional_args=additional_args) %>% process_response(error_action)
+  redcap_api_base(url=DB$redcap_uri,token = validate_redcap_token(DB),content = content,additional_args=additional_args) %>% process_response(error_action)
 }
 
-get_redcap_file <- function(){
+get_redcap_file <- function(additional_args){
   #placeholder
 }
 
@@ -102,7 +102,7 @@ get_redcap_metadata<-function(DB){
   # if(DB$project_info$has_repeating_instruments_or_events=="1")
   repeating <- get_redcap_info(DB,"repeatingFormsEvents")
   if(is.data.frame(repeating)){
-    DB$instruments$repeating <- DB$instruments$instrument_name%in%repeating
+    DB$instruments$repeating <- DB$instruments$instrument_name%in%repeating$form_name
     DB$metadata<-DB$metadata %>%dplyr::bind_rows(
       data.frame(
         field_name="redcap_repeat_instance",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
