@@ -1,3 +1,5 @@
+# rosyredcap 2.1.1
+
 # rosyredcap 2.1.0
 * several internal code changes for readability and effeciency
 * working on allowing for multi-arm and multi event projects
