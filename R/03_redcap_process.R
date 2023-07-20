@@ -1,6 +1,11 @@
 raw_process_redcap <- function(raw,DB,clean=T){
   if(nrow(raw)>0){
-    for(instrument_name in DB$instruments$instrument_name){
+    if(clean){
+      instrument_names <- DB$instruments$instrument_label
+    }else{
+      instrument_names <- DB$instruments$instrument_name
+    }
+    for(instrument_name in instrument_names){
       if(instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
         DB[["data"]][[instrument_name]]<-raw[which(raw$redcap_repeat_instrument==instrument_name),unique(c(DB$id_col,"redcap_repeat_instance",DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
       }

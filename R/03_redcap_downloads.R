@@ -129,7 +129,7 @@ get_redcap_metadata<-function(DB){
 get_redcap_data<-function(DB,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
   raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(clean,"label","raw"))$data %>% all_character_cols()
-  DB <- raw_process_redcap(raw = raw,DB = DB)
+  DB <- raw_process_redcap(raw = raw,DB = DB,clean = clean)
   if(is.null(records)){
     DB$all_records <- all_records(DB)
   }
