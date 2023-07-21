@@ -180,6 +180,7 @@ show_DB <- function(DB,also_metadata=T){
       names(L) <- NAME
       data_list <- data_list %>% append(L)    }
   }
+  data_list
 }
 
 #' @title Deletes DB object from directory (solves occasional problems)
