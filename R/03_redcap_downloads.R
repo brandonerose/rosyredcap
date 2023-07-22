@@ -65,10 +65,13 @@ get_redcap_metadata<-function(DB){
   DB$project_info <- get_redcap_info(DB,"project")
   DB$title=DB$project_info$project_title
   DB$PID=DB$project_info$project_id
+  DB$metadata <- get_redcap_info(DB,"metadata","stop")
+  DB$metadata$section_header <- DB$metadata$section_header %>% remove_html_tags()
+  DB$metadata$field_label <- DB$metadata$field_label %>% remove_html_tags()
   DB$arms <- get_redcap_info(DB,"arm")
   DB$events <- get_redcap_info(DB,"event","warn")
   DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
-  DB$metadata <- get_redcap_info(DB,"metadata","warn")
+
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
       field_name=paste0(unique(DB$metadata$form_name),"_complete"),form_name=unique(DB$metadata$form_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"

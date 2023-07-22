@@ -185,3 +185,12 @@ addSlashIfNeeded <- function(input_string) {
   }
   return(output_string)
 }
+
+remove_html_tags <- function(text_vector) {
+  # Regular expression to match HTML tags
+  html_pattern <- "<[^>]+>"
+  # Use gsub to remove the HTML tags from each element in the vector
+  cleaned_vector <- gsub(html_pattern, "", text_vector)
+  return(cleaned_vector)
+}
+

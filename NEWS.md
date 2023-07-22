@@ -1,6 +1,7 @@
 # rosyredcap 2.1.2
 * fixed bugs with multi events and repeating instance projects
 * projects with multiple arm remain to be tested
+* remove html tags from metadata (interferes with excel saves)
 
 # rosyredcap 2.1.1
 * patch for repeat instrument bug
