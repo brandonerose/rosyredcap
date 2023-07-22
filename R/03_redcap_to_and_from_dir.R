@@ -18,7 +18,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T){
   for(x in to_save){
     DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(get_dir(DB),"REDCap",paste0(x,".xlsx")))
   }
-  for (x in c("metadata","instruments","users")){ #,"log" #taking too long
+  for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
     DB_selected[[x]] %>% write_xl(DB,path=file.path(get_dir(DB),"REDCap","other",paste0(x,".xlsx")))
   }
 }
