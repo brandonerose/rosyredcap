@@ -51,7 +51,7 @@ test_redcap <- function(DB){
 }
 
 get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
-  allowed_content <- c("project","arm","event","metadata","instrument","repeatingFormsEvents","user","userRole","userRoleMapping","log")
+  allowed_content <- c("project","arm","event","metadata","instrument","repeatingFormsEvents","user","userRole","userRoleMapping","log","formEventMapping")
   if(!content%in%allowed_content)stop("Must use the following content... ",paste0(allowed_content,collapse = ", "))
   redcap_api_base(url=DB$redcap_uri,token = validate_redcap_token(DB),content = content,additional_args=additional_args) %>% process_response(error_action)
 }
@@ -67,6 +67,7 @@ get_redcap_metadata<-function(DB){
   DB$PID=DB$project_info$project_id
   DB$arms <- get_redcap_info(DB,"arm")
   DB$events <- get_redcap_info(DB,"event","warn")
+  DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
   DB$metadata <- get_redcap_info(DB,"metadata","warn")
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
