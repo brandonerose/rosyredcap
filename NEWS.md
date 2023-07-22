@@ -1,4 +1,6 @@
 # rosyredcap 2.1.2
+* fixed bugs with multi events and repeating instance projects
+* projects with multiple arm remain to be tested
 
 # rosyredcap 2.1.1
 * patch for repeat instrument bug
