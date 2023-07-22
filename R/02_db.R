@@ -1,6 +1,6 @@
 #' @title blank DB object
 #' @return blank_DB list for reference
-blank_DB<- function(){
+blank_DB<- function(){ # can sort this better in version 3.0.0
   list(
     title=NULL,
     PID=NULL,
@@ -29,6 +29,8 @@ blank_DB<- function(){
     API_link = NULL,
     API_playground_link = NULL,
     clean = NULL,
+    has_event_mappings = NULL,
+    has_repeating = NULL,
     all_records = NULL,
     data=NULL
   )

@@ -10,6 +10,8 @@ drop_redcap_dir(DB, records = NULL, allow_mod = T)
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{records}{character vector of records you want dropped to your directory}
+
+\item{allow_mod}{logical for whether non-instrument names are allowed}
 }
 \value{
 messages for confirmation

@@ -1,6 +1,7 @@
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @param records character vector of records you want dropped to your directory
+#' @param allow_mod logical for whether non-instrument names are allowed
 #' @return messages for confirmation
 #' @export
 drop_redcap_dir<-function(DB,records=NULL,allow_mod=T){

@@ -50,6 +50,8 @@ raw_process_redcap <- function(raw,DB,clean=T){
     }
   }
   DB$clean<-clean
+  DB$has_event_mappings <- has_event_mappings
+  DB$has_repeating <- has_repeating
   DB
 }
 
