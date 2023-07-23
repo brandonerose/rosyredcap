@@ -39,6 +39,7 @@ raw_process_redcap <- function(raw,DB,clean=T){
       if(has_repeating){
         is_repeating_instrument <- instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]
         if(!is_repeating_instrument){
+          DB[["data"]][[instrument_name]] <- DB[["data"]][[instrument_name]][which(is.na(DB[["data"]][[instrument_name]]$redcap_repeat_instrument)),]
           DB[["data"]][[instrument_name]]$redcap_repeat_instrument <- NULL
           DB[["data"]][[instrument_name]]$redcap_repeat_instance <- NULL
         }
