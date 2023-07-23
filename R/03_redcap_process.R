@@ -238,6 +238,9 @@ missing_codes2 <- function(DB){
   }
 }
 
+#' @title Merge non-repeating, not ready for multi-event projects
+#' @inheritParams save_DB
+#' @return DB object that has merged all non repeating forms
 merge_non_repeating_DB <- function(DB){
   if("megrged" %in% names(DB$data))stop("Already merged!")
   instrument_names <- DB$instruments$instrument_name[which(!DB$instruments$repeating)] %>% as.list()
@@ -255,6 +258,9 @@ merge_non_repeating_DB <- function(DB){
   DB
 }
 
+#' @title Unmerge non-repeating, not ready for multi-event projects
+#' @inheritParams save_DB
+#' @return DB object that has merged all non repeating forms
 unmerge_non_repeating_DB <- function(DB){
   if(!"megrged" %in% names(DB$data))stop("No DB$data named as 'merged'!")
   instrument_names <- DB$data$merged %>% colnames() %>% sapply(function(COL){DB$metadata$form_name[which(DB$metadata$field_name==COL)]}) %>% unique() %>% as.list()
