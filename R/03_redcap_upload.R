@@ -45,7 +45,7 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
     DB<-clean_to_raw_redcap(DB)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  if(is.na(DB[["data"]]))stop("`DB$data` is empty")
+  if(is.null(DB[["data"]]))stop("`DB$data` is empty")
   for(TABLE in names(DB[["data"]])){
     to_be_uploaded <- DB[["data"]][[TABLE]]
     if(nrow(to_be_uploaded)>0){
@@ -88,7 +88,7 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(any(!names(DB_import[["data"]])%in%names(DB[["data"]])))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$instruments$instrument_name`")
-  if(is.na(DB_import[["data"]]))stop("`DB_import$data` is empty")
+  if(is.null(DB_import[["data"]]))stop("`DB_import$data` is empty")
   for(TABLE in names(DB_import[["data"]])){
     ref_cols <- DB$id_col
     if(TABLE%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]){
