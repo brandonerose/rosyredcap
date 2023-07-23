@@ -273,3 +273,32 @@ unmerge_non_repeating_DB <- function(DB){
   DB
 }
 
+#' @title Deidentify the REDCap DB according to REDCap or your choices
+#' @inheritParams save_DB
+#' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$metadata$identifier =="y` will be used.
+#' @return DB object that has deidentified forms
+#' @export
+deidentify_DB <- function(DB,identifiers){
+  DB <- validate_DB(DB)
+  missing_identifiers <- missing(identifiers)
+  if(!missing_identifiers){
+    identifiers <- identifiers %>% unique()
+    bad_identifiers<-identifiers[which(!identifiers%in%DB$metadata$field_name)]
+    if(length(bad_identifiers)>0)stop("You have an identifier that is not included in the set of `DB$metadata$field_name` --> ",bad_identifiers %>% paste0(collapse = ", "))
+    if(DB$id_col%in%identifiers)stop("Your REDCap ID, ",DB$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
+  }
+  if(missing_identifiers){
+    identifiers<- DB$metadata$field_name[which(DB$metadata$identifier=="y")]
+    if(length(identifiers)==0)warning("You have no identifiers marked in `DB$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
+  }
+  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data), lapply(DB$data, colnames)) %>% .[sapply(., length) > 0]
+  if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
+  for (FORM in names(drop_list)) {
+    for(DROP in drop_list[[FORM]]){
+      DB$data[[FORM]][[DROP]] <- NULL
+      message("Dropped ",DROP," from ", FORM)
+    }
+  }
+  DB
+}
+
