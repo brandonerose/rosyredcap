@@ -36,7 +36,7 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB<-validate_DB(DB)
   if(ask){
-    if(count_DB_cells(DB)>4000){
+    if(count_DB_cells(DB)>5000){
       stop <-utils::menu(choices = c("YES - I want to stop and double check what I'm about to upload","NO - Move forward with larger upload"),title = "This is a large upload. Do you want to stop and double check it first?")
       if(stop==1)stop("Double check DB object prior to upload")
     }
@@ -44,19 +44,24 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(is.null(DB[["data"]]))stop("`DB$data` is empty")
   for(TABLE in names(DB[["data"]])){
-    to_be_uploaded <- DB[["data"]][[TABLE]]
-    if(nrow(to_be_uploaded)>0){
+    to_be_uploaded_raw <- DB[["data"]][[TABLE]]
+    if(nrow(to_be_uploaded_raw)>0){
+      if(DB$clean){
+        to_be_uploaded_clean <- to_be_uploaded_raw
+        to_be_uploaded_raw <- to_be_uploaded_clean %>% clean_to_raw_form(DB)
+      }
       do_it <- 1
       if(ask){
-        print.data.frame(to_be_uploaded)
+        if(DB$clean){
+          print("Clean Data")
+          print.data.frame(to_be_uploaded_clean%>% head(n=40))
+        }
+        print("Raw Data")
+        print.data.frame(to_be_uploaded_raw %>% head(n=40))
         do_it <-utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
-        to_be_uploaded <- all_character_cols(to_be_uploaded)
-        if(DB$clean){
-          to_be_uploaded<- to_be_uploaded %>% clean_to_raw_form(DB)
-        }
-        upload_form_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
+        upload_form_to_redcap(to_be_uploaded=to_be_uploaded_raw,DB=DB,batch_size=batch_size)
       }
     }
   }
