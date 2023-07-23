@@ -192,3 +192,35 @@ remove_html_tags <- function(text_vector) {
   return(cleaned_vector)
 }
 
+clean_DB_date<-function(dates_in,date_imputation){
+  #followup add min max
+  x<-which(is_date(dates_in)&!is_date_full(dates_in))
+  y<-which(!is_date(dates_in))
+
+  date_out<-dates_in
+  if(length(y)>0){
+    date_out[y] <- NA
+  }
+  if(length(x)>0){
+    if(missing(date_imputation)) date_imputation <- NULL
+
+    if(is.null(date_imputation)){
+      date_out[x]<- NA
+
+    }
+    if(!is.null(date_imputation)){
+      date_out[x] <- dates_in[x] %>% sapply(function(date){
+        admiral::impute_dtc_dt(
+          date,
+          highest_imputation = "M", # "n" for normal date
+          date_imputation = date_imputation
+          # min_dates = min_dates %>% lubridate::ymd() %>% as.list(),
+          # max_dates = max_dates %>% lubridate::ymd() %>% as.list()
+        )
+      })
+    }
+  }
+  date_out
+}
+
+
