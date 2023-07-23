@@ -83,7 +83,7 @@ clean_to_raw_redcap <- function(DB){
 }
 
 clean_to_raw_form <- function(FORM,DB){
-  use_missing_codes <- !is.na(DB$missing_codes)
+  use_missing_codes <- !is.data.frame(DB$missing_codes)
   # if(!deparse(substitute(FORM))%in%DB$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%DB$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$metadata$field_name`")
   instrument <- DB$metadata$form_name[
