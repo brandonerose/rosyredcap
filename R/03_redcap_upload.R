@@ -41,9 +41,6 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
       if(stop==1)stop("Double check DB object prior to upload")
     }
   }
-  if(DB$clean){
-    DB<-clean_to_raw_redcap(DB)
-  }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(is.null(DB[["data"]]))stop("`DB$data` is empty")
   for(TABLE in names(DB[["data"]])){
@@ -55,7 +52,11 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
         do_it <-utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
-        upload_form_to_redcap(to_be_uploaded=all_character_cols(to_be_uploaded),DB=DB,batch_size=batch_size)
+        to_be_uploaded <- all_character_cols(to_be_uploaded)
+        if(DB$clean){
+          to_be_uploaded<- to_be_uploaded %>% clean_to_raw_form(DB)
+        }
+        upload_form_to_redcap(to_be_uploaded=to_be_uploaded,DB=DB,batch_size=batch_size)
       }
     }
   }
