@@ -56,19 +56,21 @@ raw_process_redcap <- function(raw,DB,clean=T){
   DB
 }
 
-select_redcap_records<-function(DB, records=NULL){
+#' @title Deidentify the REDCap DB according to REDCap or your choices
+#' @inheritParams save_DB
+#' @param records character vector of the IDs you want to filter the DB by
+#' @return DB object that has been filtered to only include the specified records
+#' @export
+select_redcap_records<-function(DB, records){
+  if (length(records)==0)stop("Must supply records")
   DB_selected<-DB
   DB_selected$data<-list()
-  if(!is.null(records)){
-    BAD <-records[which(!records%in%DB$data$identity[[DB$id_col]])]
-    if(length(BAD)>0)stop(message("Following records are not found in DB: ", paste0(BAD,collapse = ", ")))
-  }
-  for(x in DB$instruments$instrument_name){
-    OUT <- DB[["data"]][[x]]
-    if(!is.null(records)){
-      OUT<-OUT[which(OUT[[DB$id_col]]%in%records),]
-    }
-    DB_selected[["data"]][[x]]<-OUT
+  BAD <-records[which(!records%in%DB$all_records)]
+  GOOD <-records[which(records%in%DB$all_records)]
+  if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
+  if (length(GOOD)==0)stop("Must supply valid records")
+  for(FORM in names(DB$data)){
+    DB[["data"]][[x]] <-DB[["data"]][[x]][which(OUT[[DB$id_col]]%in%GOOD),]
   }
   DB_selected
 }
