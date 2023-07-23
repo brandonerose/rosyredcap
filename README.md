@@ -11,7 +11,11 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 Use your REDCap API token to create an updatable R list object (DB) to
 be used downstream for analysis, data exports, shiny apps, and even data
-imports! We are still in development.
+imports! We are still in development. At this time this package is **not
+suited for Multi-Arm projects or massive REDCap projects**. If the
+functions are taking more than a minute or two you can use the internal
+functions of the package to build a subset. More to come in future
+versions!
 
 ## Installation
 
