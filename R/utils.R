@@ -13,7 +13,6 @@
 #' @return The result of calling `rhs(lhs)`.
 NULL
 
-
 split_choices<-function(x){
   x<-gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
   x<-x %>% strsplit(" [:|:] ") %>% unlist()
@@ -57,7 +56,6 @@ write_xl<-function(DF,DB,path,with_links = T){# add instance links
 list.files.real<-function(path){
   grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
 }
-
 
 validate_env_name <- function(env_name) {
   # Check if the name is empty
