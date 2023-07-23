@@ -1,3 +1,7 @@
+# rosyredcap 2.2.0
+* added deidentify_DB and 
+* internally preparing for other DB processing such as merging based on events and non-repeating etc.
+
 # rosyredcap 2.1.2
 * fixed bugs with multi events and repeating instance projects
 * projects with multiple arm remain to be tested
