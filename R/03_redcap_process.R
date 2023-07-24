@@ -62,9 +62,9 @@ raw_process_redcap <- function(raw,DB,clean=T){
 #' @return DB object that has been filtered to only include the specified records
 #' @export
 select_redcap_records<-function(DB, records=NULL){
-  if (length(records)==0)stop("Must supply records")
   DB_selected<-DB
   if(!is.null(records)){
+    if (length(records)==0)stop("Must supply records")
     DB_selected$data<-list()
     BAD <-records[which(!records%in%DB$all_records)]
     GOOD <-records[which(records%in%DB$all_records)]
