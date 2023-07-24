@@ -12,6 +12,7 @@ BugReports: https://github.com/brandonerose/rosyredcap/issues
 Depends: 
     R (>= 2.10)
 Imports: 
+    admiral,
     dplyr,
     hoardr,
     httr,

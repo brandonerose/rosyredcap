@@ -56,7 +56,7 @@ raw_process_redcap <- function(raw,DB,clean=T){
   DB
 }
 
-#' @title Deidentify the REDCap DB according to REDCap or your choices
+#' @title Select REDCap records from DB
 #' @inheritParams save_DB
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
