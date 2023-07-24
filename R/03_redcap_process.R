@@ -61,16 +61,18 @@ raw_process_redcap <- function(raw,DB,clean=T){
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-select_redcap_records<-function(DB, records){
+select_redcap_records<-function(DB, records=NULL){
   if (length(records)==0)stop("Must supply records")
   DB_selected<-DB
-  DB_selected$data<-list()
-  BAD <-records[which(!records%in%DB$all_records)]
-  GOOD <-records[which(records%in%DB$all_records)]
-  if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
-  if (length(GOOD)==0)stop("Must supply valid records")
-  for(FORM in names(DB$data)){
-    DB[["data"]][[x]] <-DB[["data"]][[x]][which(OUT[[DB$id_col]]%in%GOOD),]
+  if(!is.null(records)){
+    DB_selected$data<-list()
+    BAD <-records[which(!records%in%DB$all_records)]
+    GOOD <-records[which(records%in%DB$all_records)]
+    if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
+    if (length(GOOD)==0)stop("Must supply valid records")
+    for(FORM in names(DB$data)){
+      DB[["data"]][[x]] <-DB[["data"]][[x]][which(OUT[[DB$id_col]]%in%GOOD),]
+    }
   }
   DB_selected
 }
