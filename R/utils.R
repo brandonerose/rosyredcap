@@ -222,5 +222,3 @@ clean_DB_date<-function(dates_in,date_imputation){
   }
   date_out
 }
-
-
