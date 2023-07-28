@@ -54,10 +54,10 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
       if(ask){
         if(DB$clean){
           print("Clean Data")
-          print.data.frame(to_be_uploaded_clean%>% head(n=40))
+          print.data.frame(to_be_uploaded_clean%>% utils::head(n=40))
         }
         print("Raw Data")
-        print.data.frame(to_be_uploaded_raw %>% head(n=40))
+        print.data.frame(to_be_uploaded_raw %>% utils::head(n=40))
         do_it <-utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
