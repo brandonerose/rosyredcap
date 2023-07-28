@@ -295,7 +295,8 @@ deidentify_DB <- function(DB,identifiers){
     identifiers<- DB$metadata$field_name[which(DB$metadata$identifier=="y")]
     if(length(identifiers)==0)warning("You have no identifiers marked in `DB$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
   }
-  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data), lapply(DB$data, colnames)) %>% .[sapply(., length) > 0]
+  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data), lapply(DB$data, colnames))
+  drop_list <- drop_list[sapply(drop_list, length) > 0]
   if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
   for (FORM in names(drop_list)) {
     for(DROP in drop_list[[FORM]]){
@@ -342,7 +343,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
         levels <- NULL
         if(!is.na(class)){
           if(class == "factor"){
-            levels <- metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices() %>% .[[2]]
+            levels <- (metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices())[[2]]
             if(drop_blanks){
               levels <- levels[which(levels%in%unique(DB$data[[FORM]][[COLUMN]]))]
             }
@@ -356,7 +357,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
           DB$data[[FORM]]
         }
       }
-      DB$data[[FORM]][[COLUMN]]<-DB$data[[FORM]][[COLUMN]] %>% clean_for_table(
+      DB$data[[FORM]][[COLUMN]]<-DB$data[[FORM]][[COLUMN]] %>% clean_column_for_table(
         class = class,
         label = label,
         units = units,
