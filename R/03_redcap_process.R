@@ -306,3 +306,100 @@ deidentify_DB <- function(DB,identifiers){
   DB
 }
 
+#' @title clean DB columns for plotting using the metadata
+#' @description
+#'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
+#' @param DB DB from load_DB or setup_DB
+#' @param drop_blanks logical for dropping n=0 choices
+#' @param drop_unknowns logical for dropping missing codes
+#' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
+#' @return DB object cleaned for table or plots
+#' @export
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
+  metadata <- DB$metadata
+  metadata$field_type_R <- NA
+  metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
+  metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
+  here_is_units_df <- NULL
+  if(!missing(units_df)){
+    if(!is.data.frame(units_df))stop("units_df must be a dataframe")
+    if(nrow(units_df)>0){
+      here_is_units_df <- units_df
+    }
+  }
+  for(FORM in names(DB$data)){
+    for(COLUMN in colnames(DB$data[[FORM]])){
+      if(COLUMN %in% metadata$field_name){
+        units <- NULL
+        if(!is.null(here_is_units_df)){
+          if(COLUMN%in%units_df$field_name){
+            units <- units_df$units[which(units_df$field_name==COLUMN)]
+            if(length(units)>1)stop("only provide one unit per field name")
+          }
+        }
+        class <- metadata$field_type_R[which(metadata$field_name==COLUMN)][[1]]
+        label <- ifelse(is.na(metadata$field_label[which(metadata$field_name==COLUMN)]),COLUMN,metadata$field_label[which(metadata$field_name==COLUMN)])[[1]]
+        levels <- NULL
+        if(!is.na(class)){
+          if(class == "factor"){
+            levels <- metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices() %>% .[[2]]
+            if(drop_blanks){
+              levels <- levels[which(levels%in%unique(DB$data[[FORM]][[COLUMN]]))]
+            }
+            if(!drop_unknowns){
+              levels <- levels %>% append(unique(DB$data[[FORM]][[COLUMN]])) %>% unique() %>% drop_nas()
+            }
+          }
+          if(class == "integer"){
+
+          }
+          DB$data[[FORM]]
+        }
+      }
+      DB$data[[FORM]][[COLUMN]]<-DB$data[[FORM]][[COLUMN]] %>% clean_for_table(
+        class = class,
+        label = label,
+        units = units,
+        levels = levels
+      )
+    }
+  }
+  DB
+}
+
+#' @title clean column for plotting; manual addition of clean_DB
+#' @description
+#'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
+#' @param col the column vector
+#' @param class character for column type: integer, factor, numeric
+#' @param label character for label
+#' @param units character for units
+#' @param levels character vector of levels for factor
+#' @return cleaned column
+#' @export
+clean_column_for_table<-function(col,class,label,units,levels){
+  if(!missing(class)){
+    if(!is.null(class)){
+      if(!is.na(class)){
+        if(class=="integer"){
+          col <-   col %>% as.integer()
+        }
+        if(class=="factor"){
+          col <-   col %>% factor(levels = levels,ordered = T)
+        }
+        if(class=="numeric"){
+          col <-   col %>% as.numeric()
+        }
+      }
+    }
+  }
+  if(!missing(label)){
+    attr(col, "label") <- label
+  }
+  if(!missing(units)){
+    attr(col, "units") <- units
+  }
+  col
+}
+
+
