@@ -99,6 +99,9 @@ get_redcap_metadata<-function(DB){
       ) %>% all_character_cols()
     }
   }
+  if(any(DB$metadata$field_type=="yesno")){
+    DB$metadata$select_choices_or_calculations[which(DB$metadata$field_type=="yesno")] <- c("0, No | 1, Yes")
+  }
 
   DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
   DB$instruments <- get_redcap_info(DB,"instrument","warn")
