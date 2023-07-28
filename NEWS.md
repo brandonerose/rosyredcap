@@ -1,3 +1,5 @@
+# rosyredcap 2.3.0
+
 # rosyredcap 2.2.0
 * added deidentify_DB and 
 * internally preparing for other DB processing such as merging based on events and non-repeating etc.
