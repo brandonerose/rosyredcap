@@ -60,7 +60,7 @@ get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
 #' @inheritParams save_DB
 #' @param original_file_names logical for using original uploaded filenames vs system defined
 #' @param overwrite logical rewriting over the downladed files in your directory. A better alternative is deleting files you want to update.
-#' @return data.frame of log that has been cleaned and has extra summary columns
+#' @return message
 #' @export
 get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
   file_rows <- which(DB$metadata$field_type=="file")
@@ -80,27 +80,30 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
         repeat_instrument = form[["redcap_repeat_instrument"]][i]
         repeat_instance = form[["redcap_repeat_instance"]][i]
         if(!original_file_names){
-          if(anyDuplicated(filename)>0){
+          if(anyDuplicated(file_name)>0){
             warning(paste0("You have duplicate file names in ",form_name,", ",field_name,". Therefore will use system generated names"),immediate. = T)
             original_file_names <- F
           }
         }
-        file_name <- ifelse(original_file_names,filename,paste0(form_name,"_",field_name,"_",ifelse(is_repeating,"inst_",""),repeat_instance,"ID_",record_id,".",tools::file_ext(filename)))
-        if(!file.exists(file.path(out_dir_folder,file_name))||overwrite){
+        file_name <- ifelse(original_file_names,file_name,paste0(form_name,"_",field_name,"_",ifelse(is_repeating,"inst_",""),repeat_instance,"ID_",record_id,".",tools::file_ext(file_name)))
+        if(!file.exists(file.path(out_dir_folder,))||overwrite){
           REDCapR::redcap_download_file_oneshot(
-            redcap_uri = PFAS$redcap_uri,
+            redcap_uri = DB$redcap_uri,
             token = validate_redcap_token(DB),
             field = field_name,
-            record = PFAS$data$results$record_id[i],
+            record = DB$data$results$record_id[i],
             directory = out_dir_folder,
             file_name = file_name,
             repeat_instrument = repeat_instrument,
-            repeat_instance = repeat_instance
+            repeat_instance = repeat_instance,
+            verbose = F
           )
+          message("`",file_name,"` saved at --> ",out_dir_folder)
         }
       }
     }
   }
+  message("Checked for files!")
 }
 
 get_redcap_metadata<-function(DB){

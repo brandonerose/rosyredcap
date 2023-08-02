@@ -14,7 +14,7 @@ get_redcap_files(DB, original_file_names = F, overwrite = F)
 \item{overwrite}{logical rewriting over the downladed files in your directory. A better alternative is deleting files you want to update.}
 }
 \value{
-data.frame of log that has been cleaned and has extra summary columns
+message
 }
 \description{
 Drop redcap files to directory
