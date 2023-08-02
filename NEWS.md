@@ -1,6 +1,8 @@
 # rosyredcap 2.4.0
+* added get file function
 
 # rosyredcap 2.3.0
+* added a clean_DB function that uses the redcat metadata to convert all functions for better plotting
 
 # rosyredcap 2.2.0
 * added deidentify_DB and 
