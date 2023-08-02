@@ -4,7 +4,14 @@
 \alias{update_DB}
 \title{Shows DB in the env}
 \usage{
-update_DB(DB, force = F, day_of_log = 10, clean = T)
+update_DB(
+  DB,
+  force = F,
+  day_of_log = 10,
+  clean = T,
+  get_files = T,
+  original_file_names = F
+)
 }
 \arguments{
 \item{DB}{DB from load_DB or setup_DB}

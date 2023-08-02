@@ -56,8 +56,51 @@ get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
   redcap_api_base(url=DB$redcap_uri,token = validate_redcap_token(DB),content = content,additional_args=additional_args) %>% process_response(error_action)
 }
 
-get_redcap_file <- function(additional_args){
-  #placeholder
+#' @title Drop redcap files to directory
+#' @inheritParams save_DB
+#' @param original_file_names logical for using original uploaded filenames vs system defined
+#' @param overwrite logical rewriting over the downladed files in your directory. A better alternative is deleting files you want to update.
+#' @return data.frame of log that has been cleaned and has extra summary columns
+#' @export
+get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
+  file_rows <- which(DB$metadata$field_type=="file")
+  out_dir <- file.path(DB$dir_path,"REDCap","files")
+  if(length(file_rows)>0){
+    dir.create(out_dir,showWarnings = F)
+    for(field_name in DB$metadata$field_name[file_rows]){
+      out_dir_folder <- file.path(out_dir,field_name)
+      dir.create(out_dir_folder,showWarnings = F)
+      form_name <- DB$metadata$form_name[which(DB$metadata$field_name == field_name)]
+      is_repeating <- DB$instruments$repeating[which(DB$instruments$instrument_name==form_name)]
+      form <- DB$data[[form_name]]
+      rows_to_save <- which(!is.na(form[[field_name]]))
+      for(i in rows_to_save){
+        file_name <-form[[field_name]][i]
+        record_id <- form[[DB$id_col]][i]
+        repeat_instrument = form[["redcap_repeat_instrument"]][i]
+        repeat_instance = form[["redcap_repeat_instance"]][i]
+        if(!original_file_names){
+          if(anyDuplicated(filename)>0){
+            warning(paste0("You have duplicate file names in ",form_name,", ",field_name,". Therefore will use system generated names"),immediate. = T)
+            original_file_names <- F
+          }
+        }
+        file_name <- ifelse(original_file_names,filename,paste0(form_name,"_",field_name,"_",ifelse(is_repeating,"inst_",""),repeat_instance,"ID_",record_id,".",tools::file_ext(filename)))
+        if(!file.exists(file.path(out_dir_folder,file_name))||overwrite){
+          REDCapR::redcap_download_file_oneshot(
+            redcap_uri = PFAS$redcap_uri,
+            token = validate_redcap_token(DB),
+            field = field_name,
+            record = PFAS$data$results$record_id[i],
+            directory = out_dir_folder,
+            file_name = file_name,
+            repeat_instrument = repeat_instrument,
+            repeat_instance = repeat_instance
+          )
+        }
+      }
+    }
+  }
 }
 
 get_redcap_metadata<-function(DB){

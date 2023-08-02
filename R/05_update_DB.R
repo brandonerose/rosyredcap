@@ -5,7 +5,7 @@
 #' @param clean logical for whether or not to return raw or clean REDCap. Default is TRUE.
 #' @return messages for confirmation
 #' @export
-update_DB<-function(DB,force=F,day_of_log = 10,clean = T){
+update_DB<-function(DB,force=F,day_of_log = 10,clean = T,get_files = T,original_file_names=F){
   IDs<-NULL
   DB <- validate_DB(DB)
   if(!is.null(DB$clean)){
@@ -69,6 +69,9 @@ update_DB<-function(DB,force=F,day_of_log = 10,clean = T){
     }else{
       message("Up to date already!")
     }
+  }
+  if(get_files){
+    get_redcap_files(DB,original_file_names=original_file_names)
   }
   DB
 }
