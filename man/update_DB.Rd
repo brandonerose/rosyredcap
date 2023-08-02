@@ -20,7 +20,11 @@ update_DB(
 
 \item{day_of_log}{numbers of days to be checked in the log}
 
-\item{clean}{logical for whether or not to return raw or clean REDCap. Default is TRUE.}
+\item{clean}{logical for wether or not to return raw or clean REDCap. Default is TRUE.}
+
+\item{get_files}{logical for whether or not to get files from redcap.}
+
+\item{original_file_names}{logical for whether or not to use original file names.}
 }
 \value{
 messages for confirmation

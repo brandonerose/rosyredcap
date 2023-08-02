@@ -2,7 +2,9 @@
 #' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update
 #' @param day_of_log numbers of days to be checked in the log
-#' @param clean logical for whether or not to return raw or clean REDCap. Default is TRUE.
+#' @param clean logical for wether or not to return raw or clean REDCap. Default is TRUE.
+#' @param get_files logical for whether or not to get files from redcap.
+#' @param original_file_names logical for whether or not to use original file names.
 #' @return messages for confirmation
 #' @export
 update_DB<-function(DB,force=F,day_of_log = 10,clean = T,get_files = T,original_file_names=F){
