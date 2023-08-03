@@ -1,4 +1,4 @@
-upload_file_to_redcap <- function(file,record, field,repeat_instance = NULL,event=NULL){
+upload_file_to_redcap <- function(file,record, field,repeat_instance = character(0),event=character(0)){
   # DB <- validate_DB(DB)
   file<-normalizePath(file)
   if(!file.exists(file)) stop("File does not exist! --> ",file)
@@ -21,7 +21,7 @@ upload_file_to_redcap <- function(file,record, field,repeat_instance = NULL,even
   message("File deleted! --> ",file)
 }
 
-delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, event = NULL){
+delete_file_from_redcap <- function(DB,record, field,repeat_instance = character(0), event = character(0)){
   # DB <- validate_DB(DB)
   response <- httr::POST(
     url = DB$redcap_uri,
@@ -31,8 +31,6 @@ delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, eve
       content='file',
       record =record,
       field =field,
-      event =event,
-      repeat_instance = repeat_instance,
       returnFormat='csv'
     )
   )
