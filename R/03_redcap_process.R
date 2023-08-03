@@ -1,4 +1,6 @@
 raw_process_redcap <- function(raw,DB,clean=T){
+  has_event_mappings <- "redcap_event_name" %in% colnames(raw)
+  has_repeating <- "redcap_repeat_instrument" %in% colnames(raw)
   if(nrow(raw)>0){
     if(clean){
       if("redcap_repeat_instrument" %in% colnames(raw)){
@@ -20,8 +22,6 @@ raw_process_redcap <- function(raw,DB,clean=T){
         })
       }
     }
-    has_event_mappings <- "redcap_event_name" %in% colnames(raw)
-    has_repeating <- "redcap_repeat_instrument" %in% colnames(raw)
     add_ons <- NULL
     if(has_event_mappings){
       add_ons <- add_ons %>% append("redcap_event_name")
