@@ -4,10 +4,10 @@
 \alias{clean_to_raw_form}
 \title{Clean to Raw REDCap forms}
 \usage{
-clean_to_raw_form(form, DB)
+clean_to_raw_form(FORM, DB)
 }
 \arguments{
-\item{form}{data.frame of clean REDCap to be converted to raw REDCap (for uploads)}
+\item{FORM}{data.frame of clean REDCap to be converted to raw REDCap (for uploads)}
 
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 }
