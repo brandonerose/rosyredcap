@@ -88,10 +88,10 @@ clean_to_raw_redcap <- function(DB){
 
 #' @title Clean to Raw REDCap forms
 #' @inheritParams save_DB
-#' @param form data.frame of clean REDCap to be converted to raw REDCap (for uploads)
+#' @param FORM data.frame of clean REDCap to be converted to raw REDCap (for uploads)
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-clean_to_raw_form <- function(form,DB){
+clean_to_raw_form <- function(FORM,DB){
   use_missing_codes <- is.data.frame(DB$missing_codes)
   # if(!deparse(substitute(FORM))%in%DB$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%DB$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$metadata$field_name`")
