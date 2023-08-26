@@ -86,7 +86,12 @@ clean_to_raw_redcap <- function(DB){
   DB
 }
 
-clean_to_raw_form <- function(FORM,DB){
+#' @title Clean to Raw REDCap forms
+#' @inheritParams save_DB
+#' @param form data.frame of clean REDCap to be converted to raw REDCap (for uploads)
+#' @return DB object that has been filtered to only include the specified records
+#' @export
+clean_to_raw_form <- function(form,DB){
   use_missing_codes <- is.data.frame(DB$missing_codes)
   # if(!deparse(substitute(FORM))%in%DB$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%DB$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$metadata$field_name`")
@@ -310,7 +315,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @title clean DB columns for plotting using the metadata
 #' @description
 #'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
-#' @param DB DB from load_DB or setup_DB
+#' @inheritParams save_DB
 #' @param drop_blanks logical for dropping n=0 choices
 #' @param drop_unknowns logical for dropping missing codes
 #' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
@@ -403,4 +408,21 @@ clean_column_for_table<-function(col,class,label,units,levels){
   col
 }
 
-
+#' @title add REDCap ID to any dataframe using a ref_id
+#' @description
+#'  add REDCap ID to any dataframe using a ref_id
+#' @param DF dataframe
+#' @inheritParams save_DB
+#' @param ref_id column name that matches a REDCap variable name that could be an ALT id such as MRN
+#' @return original dataframe with REDCap id_col added as the first column
+#' @export
+add_ID_to_DF<-function(DF,DB,ref_id){
+  if(!ref_id%in%DB$metadata$field_name)stop("The ref_id not valid. Must be a REDCap raw colname")
+  form<-DB$metadata$form_name[which(DB$metadata$field_name==ref_id)]
+  DF[[ref_id]] %>% sapply(function(ID){
+    DB$data[[form]][[DB$id_col]][which(DB$data[[form]][[ref_id]]==ID)]
+  }) %>% as.data.frame()->y
+  colnames(y)<-"record_id"
+  DF<-cbind(y,DF)
+  DF
+}
