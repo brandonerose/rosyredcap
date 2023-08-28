@@ -117,14 +117,16 @@ get_redcap_metadata<-function(DB){
   DB$arms <- get_redcap_info(DB,"arm")
   DB$events <- get_redcap_info(DB,"event","warn")
   DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
+  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
+  DB$instruments <- get_redcap_info(DB,"instrument","warn")
 
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
-      field_name=paste0(unique(DB$metadata$form_name),"_complete"),form_name=unique(DB$metadata$form_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
+      field_name=paste0(unique(DB$instruments$instrument_name),"_complete"),form_name=unique(DB$instruments$instrument_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
     )
   ) %>% unique()
   if(is.data.frame(DB$metadata)){
-    radios<-which(DB$metadata$field_type=="radio")
+    radios<-which(DB$metadata$field_type%in%c("radio","dropdown"))
     if(length(radios)>0){
       for(field in DB$metadata$field_name[radios]){
         DB[["choices"]][[field]]<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field)] %>% split_choices()
@@ -149,8 +151,7 @@ get_redcap_metadata<-function(DB){
     DB$metadata$select_choices_or_calculations[which(DB$metadata$field_type=="yesno")] <- c("0, No | 1, Yes")
   }
 
-  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
-  DB$instruments <- get_redcap_info(DB,"instrument","warn")
+
   DB$instruments$repeating <- F
   # if(DB$project_info$has_repeating_instruments_or_events=="1")
   repeating <- get_redcap_info(DB,"repeatingFormsEvents")
@@ -181,7 +182,11 @@ get_redcap_metadata<-function(DB){
 
 get_redcap_data<-function(DB,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
-  raw <- REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(clean,"label","raw"))$data %>% all_character_cols()
+  raw <- get_raw_redcap(
+    DB=DB,
+    clean=clean,
+    records=records
+  )
   DB <- raw_process_redcap(raw = raw,DB = DB,clean = clean)
   if(is.null(records)){
     DB$all_records <- all_records(DB)
@@ -217,4 +222,14 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
     x<-begin_time
   }
   get_redcap_info(DB,"log",additional_args = list(beginTime=x)) %>% clean_redcap_log()
+}
+
+#' @title Check the REDCap log
+#' @inheritParams save_DB
+#' @param clean T/F for clean vs raw labels
+#' @param records optional records
+#' @return data.frame of raw_redcap
+#' @export
+get_raw_redcap <- function(DB,clean=T,records=NULL){
+  REDCapR::redcap_read(redcap_uri=DB$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(clean,"label","raw"))$data %>% all_character_cols()
 }
