@@ -1,4 +1,8 @@
+# rosyredcap 2.4.2
+* fixed choices df missing dropdowns
+
 # rosyredcap 2.4.1
+* added add id_col to DF function
 
 # rosyredcap 2.4.0
 * added get file function
