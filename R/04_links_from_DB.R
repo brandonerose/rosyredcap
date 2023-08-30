@@ -40,7 +40,7 @@ link_REDCap_project <- function(DB){
 link_REDCap_record <- function(DB,record,page,instance){
   link <- paste0(DB$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID)
   if(!missing(record)){
-    if(!record%in%DB$all_records(DB))stop(record," is not one of the records inside DB")
+    if(!record%in%DB$all_records)stop(record," is not one of the records inside DB")
     link <- link %>% paste0("&id=",record)
   }
   if(!missing(page)){
