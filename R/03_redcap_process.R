@@ -250,16 +250,17 @@ missing_codes2 <- function(DB){
 #' @title Merge non-repeating, not ready for multi-event projects
 #' @inheritParams save_DB
 #' @return DB object that has merged all non repeating forms
+#' @export
 merge_non_repeating_DB <- function(DB){
   if("megrged" %in% names(DB$data))stop("Already merged!")
   instrument_names <- DB$instruments$instrument_name[which(!DB$instruments$repeating)] %>% as.list()
-  if (!length(instrument_names)>1) stop('No need to merge you only have one form that is non-repeating')
-  merged <- merge(DB$data[[instrument_names[[1]]]],DB$data[[instrument_names[[2]]]],by=DB$id_col)
+  if (length(instrument_names)==1) stop('No need to merge you only have one form that is non-repeating')
+  merged <- merge(DB$data[[instrument_names[[1]]]],DB$data[[instrument_names[[2]]]],by=DB$id_col,all.x = T)
   DB$data[[instrument_names[[1]]]] <- NULL
   DB$data[[instrument_names[[2]]]] <- NULL
   instrument_names[1:2]<-NULL
   while (length(instrument_names)>0) {
-    merged <- merge(merged,DB$data[[instrument_names[[1]]]],by=DB$id_col)
+    merged <- merge(merged,DB$data[[instrument_names[[1]]]],by=DB$id_col,all.x = T)
     DB$data[[instrument_names[[1]]]] <- NULL
     instrument_names[[1]]<-NULL
   }
