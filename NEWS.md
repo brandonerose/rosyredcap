@@ -1,3 +1,5 @@
+# rosyredcap 2.4.3
+
 # rosyredcap 2.4.2
 * fixed choices df missing dropdowns
 
