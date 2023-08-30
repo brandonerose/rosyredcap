@@ -1,4 +1,5 @@
 # rosyredcap 2.4.3
+* add merge_non_repeating_DB() and fix buh by adding all.x=T
 
 # rosyredcap 2.4.2
 * fixed choices df missing dropdowns
