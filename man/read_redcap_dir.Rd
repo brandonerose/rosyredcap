@@ -4,7 +4,7 @@
 \alias{read_redcap_dir}
 \title{Reads DB from the dropped REDCap files in dir/REDCap/upload}
 \usage{
-read_redcap_dir(DB)
+read_redcap_dir(DB, allow_all = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
