@@ -427,3 +427,17 @@ add_ID_to_DF<-function(DF,DB,ref_id){
   DF<-cbind(y,DF)
   DF
 }
+
+#' @title grab data table for an individual(s)
+#' @description
+#' grab data table for an individual(s)
+#' @inheritParams select_redcap_records
+#' @return list of data tables
+#' @export
+grab_record_tables<-function(DB, records){
+  OUT <-list()
+  for(TABLE in names(DB$data)){
+    OUT[[TABLE]] <-   DB[["data"]][[TABLE]][which(DB[["data"]][[TABLE]][[DB$id_col]]%in%records),]
+  }
+  OUT
+}

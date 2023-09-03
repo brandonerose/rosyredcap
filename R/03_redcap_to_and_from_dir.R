@@ -37,7 +37,7 @@ read_redcap_dir<-function(DB,allow_all=T){
   }
   DB_import<-DB
   DB_import[["data"]]<-list()
-  for(y in x){
+  for(y in x){#not done yet
     DB_import[["data"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
   }
   DB_import
