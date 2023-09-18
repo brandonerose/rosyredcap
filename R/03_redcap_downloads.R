@@ -125,14 +125,6 @@ get_redcap_metadata<-function(DB){
       field_name=paste0(unique(DB$instruments$instrument_name),"_complete"),form_name=unique(DB$instruments$instrument_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
     )
   ) %>% unique()
-  if(is.data.frame(DB$metadata)){
-    radios<-which(DB$metadata$field_type%in%c("radio","dropdown"))
-    if(length(radios)>0){
-      for(field in DB$metadata$field_name[radios]){
-        DB[["choices"]][[field]]<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field)] %>% split_choices()
-      }
-    }
-  }
   if(any(DB$metadata$field_type=="checkbox")){
     for(field_name in DB$metadata$field_name[which(DB$metadata$field_type=="checkbox")]){
       x<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field_name)] %>% split_choices()
@@ -140,7 +132,8 @@ get_redcap_metadata<-function(DB){
         data.frame(
           field_name=paste0(field_name,"___",x$code),
           form_name=DB$metadata$form_name[which(DB$metadata$field_name==field_name)]  ,
-          field_label=paste0(DB$metadata$field_label[which(DB$metadata$field_name==field_name)]," - ",x$name),
+          field_label=x$name,
+          # field_label_full=paste0(DB$metadata$field_label[which(DB$metadata$field_name==field_name)]," - ",x$name),
           field_type="checkbox_choice",
           select_choices_or_calculations=c("0, Unchecked | 1, Checked")
         )
@@ -150,8 +143,14 @@ get_redcap_metadata<-function(DB){
   if(any(DB$metadata$field_type=="yesno")){
     DB$metadata$select_choices_or_calculations[which(DB$metadata$field_type=="yesno")] <- c("0, No | 1, Yes")
   }
-
-
+  if(is.data.frame(DB$metadata)){
+    choices<-which(DB$metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
+    if(length(choices)>0){
+      for(field in DB$metadata$field_name[choices]){
+        DB[["choices"]][[field]]<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field)] %>% split_choices()
+      }
+    }
+  }
   DB$instruments$repeating <- F
   # if(DB$project_info$has_repeating_instruments_or_events=="1")
   repeating <- get_redcap_info(DB,"repeatingFormsEvents")
