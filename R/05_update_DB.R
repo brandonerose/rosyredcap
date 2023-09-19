@@ -7,7 +7,7 @@
 #' @param original_file_names logical for whether or not to use original file names.
 #' @return messages for confirmation
 #' @export
-update_DB<-function(DB,force=F,day_of_log = 10,clean = T,get_files = T,original_file_names=F){
+update_DB<-function(DB,force=F,day_of_log = 10,clean = T,get_files = F,original_file_names=F){
   IDs<-NULL
   DB <- validate_DB(DB)
   if(!is.null(DB$clean)){
@@ -30,7 +30,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,clean = T,get_files = T,original_
       ilog3<-ilog[which(is.na(ilog$record_id)),]
       ilog3$timestamp<-NULL
       ilog3<-ilog3 %>% unique()
-      ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |custom record dashboard|User regenerate own API token",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
+      ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |custom record dashboard|User regenerate own API token|Create report",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
       if(nrow(ilog3)>0){
         force<-T
         message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
