@@ -8,6 +8,8 @@ read_redcap_dir(DB, allow_all = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
+
+\item{allow_all}{logical TF for allowing DB$data names that are not also instrument names}
 }
 \value{
 messages for confirmation

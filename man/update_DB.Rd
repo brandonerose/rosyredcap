@@ -9,7 +9,7 @@ update_DB(
   force = F,
   day_of_log = 10,
   clean = T,
-  get_files = T,
+  get_files = F,
   original_file_names = F
 )
 }

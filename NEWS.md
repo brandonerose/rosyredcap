@@ -1,5 +1,8 @@
 # rosyredcap 2.4.4
 * added fixes to codebook for checkboxes
+* change update DB get files to FALSE as a default
+* all for directory conflicts so long as the DB object is otherwise valid, allows for shared directories
+* updating things that should trigger a full update (not done)
 
 # rosyredcap 2.4.3
 * add merge_non_repeating_DB() and fix bug by adding all.x=T

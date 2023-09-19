@@ -25,6 +25,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T){
 
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
+#' @param allow_all logical TF for allowing DB$data names that are not also instrument names
 #' @return messages for confirmation
 #' @export
 read_redcap_dir<-function(DB,allow_all=T){
