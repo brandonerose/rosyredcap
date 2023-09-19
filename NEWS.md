@@ -1,5 +1,8 @@
+# rosyredcap 2.4.4
+* added fixes to codebook for checkboxes
+
 # rosyredcap 2.4.3
-* add merge_non_repeating_DB() and fix buh by adding all.x=T
+* add merge_non_repeating_DB() and fix bug by adding all.x=T
 
 # rosyredcap 2.4.2
 * fixed choices df missing dropdowns
@@ -11,7 +14,7 @@
 * added get file function
 
 # rosyredcap 2.3.0
-* added a clean_DB function that uses the redcat metadata to convert all functions for better plotting
+* added a clean_DB function that uses the REDCap metadata to convert all functions for better plotting
 
 # rosyredcap 2.2.0
 * added deidentify_DB and 
