@@ -46,7 +46,7 @@ validate_DB<-function(DB,silent = T){
   if(is.null(DB$dir_path)){
     stop("`DB$dir_path` is NULL!, Did you use `setup_DB()`?")
   }else{
-    if( ! DB$dir_path %>% file.exists()) stop("`DB$dir_path`, '",DB$dir_path,"', does not exist!, Did you use `setup_DB()`?")
+    if( ! DB$dir_path %>% file.exists()) warning("`DB$dir_path`, '",DB$dir_path,"', does not exist!, Did you use `setup_DB()`?\nThis can also happen with shared directories.",immediate. = T)
   }
   if(is.null(DB$short_name)){
     stop("`DB$short_name` is NULL!, Did you use `setup_DB()`?")
