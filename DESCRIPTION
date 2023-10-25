@@ -20,6 +20,7 @@ Imports:
     openxlsx,
     readxl,
     REDCapR,
+    rio,
     stringr,
     tools,
     utils
