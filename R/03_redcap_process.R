@@ -324,6 +324,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @return DB object cleaned for table or plots
 #' @export
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
+  DB<-summarize_DB(DB,drop_dir = drop_dir)
   metadata <- DB$metadata
   metadata$field_type_R <- NA
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
@@ -377,7 +378,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
       )
     }
   }
-  DB<-summarize_DB(DB,drop_dir = drop_dir)
   DB
 }
 
