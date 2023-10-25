@@ -196,6 +196,22 @@ drop_nas <- function(x) {
   x[!sapply(x, is.na)]
 }
 
+full.file.info <- function(path,showWarnings = T) {
+  if(showWarnings){
+    if(! file.exists(path))warning("path does not exist: ",path,immediate. = T)
+  }
+  file_info <- data.frame(
+    file = list.files(path) ,
+    path = list.files(path, full.names = T)
+  )
+  file_info <- cbind(
+    file_info,
+    file.info(file_info$path)
+  )
+  rownames(file_info) <- NULL
+  return(file_info)
+}
+
 sync_dir <- function(from,to,top_level=T){
   if(top_level){
     if(!file.exists(from))stop("from path '",from, "' doesn't exist")
