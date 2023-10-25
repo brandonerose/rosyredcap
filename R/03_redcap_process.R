@@ -351,6 +351,11 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
         if(!is.na(class)){
           if(class == "factor"){
             levels <- (metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices())[[2]]
+            if(any(duplicated(levels))){
+              DUPS <- levels %>% duplicated() %>% which()
+              warning("You have a variable (",COLUMN,") with dupplicate names (",levels[DUPS] %>% paste0(collapse = ", "),"). This is not great but for this proccess they will be merged and treated as identical responses.")
+              levels <- levels %>% unique()
+            }
             if(drop_blanks){
               levels <- levels[which(levels%in%unique(DB$data[[FORM]][[COLUMN]]))]
             }
