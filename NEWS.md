@@ -1,3 +1,5 @@
+# rosyredcap 2.5.0
+
 # rosyredcap 2.4.4
 * added fixes to codebook for checkboxes
 * change update DB get files to FALSE as a default
