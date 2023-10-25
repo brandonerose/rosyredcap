@@ -320,9 +320,10 @@ deidentify_DB <- function(DB,identifiers){
 #' @param drop_blanks logical for dropping n=0 choices
 #' @param drop_unknowns logical for dropping missing codes
 #' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
+#' @param drop_dir logical for dropping to the directory on this step. Default TRUE.
 #' @return DB object cleaned for table or plots
 #' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
   metadata <- DB$metadata
   metadata$field_type_R <- NA
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
@@ -371,6 +372,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
       )
     }
   }
+  DB<-summarize_DB(DB,drop_dir = drop_dir)
   DB
 }
 

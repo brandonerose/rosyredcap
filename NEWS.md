@@ -1,4 +1,5 @@
 # rosyredcap 2.5.0
+* added new codebook annotation feature which will need to be tested, works for simpler REDCaps
 
 # rosyredcap 2.4.4
 * added fixes to codebook for checkboxes

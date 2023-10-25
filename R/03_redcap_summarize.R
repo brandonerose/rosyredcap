@@ -7,7 +7,9 @@ summarize_DB <- function (DB,drop_dir=T){
   codebook <- DB$codebook
   merged <- DB$data$merged
 
-  codebook<-codebook %>% merge(metadata %>% dplyr::select(field_name,field_label,field_type,text_validation_type_or_show_slider_number),by="field_name")
+  codebook<-codebook %>% merge(
+    metadata %>% dplyr::select(
+      "form_name","field_name","field_label","field_type","text_validation_type_or_show_slider_number"),by="field_name")
 
 
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
@@ -33,8 +35,21 @@ summarize_DB <- function (DB,drop_dir=T){
   }) %>% unlist()
   codebook$perc <-  codebook$n/codebook$n_total
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
+  path <- file.path(get_dir(DB), "output", "annotated_codebook.xlsx")
+  codebook %>% rio::export(path)
+  message("Saved at -> ","'",path,"'")
+  metadata <-unique(metadata$form_name) %>%
+    lapply(function(IN){
+      metadata[which(metadata$form_name==IN),]
+    }) %>% dplyr::bind_rows()
+  codebook <-unique(metadata$form_name) %>%
+    lapply(function(IN){
+      codebook[which(codebook$form_name==IN),]
+    }) %>% dplyr::bind_rows()
 
-  codebook %>% rio::export(file.path(get_dir(DB), "output", "annotated_codebook.xlsx"))
+  DB$metadata <- metadata
+  DB$codebook <- codebook
+  DB$merged <- merged
   #save ===============
-  DB_clean
+  DB
 }
