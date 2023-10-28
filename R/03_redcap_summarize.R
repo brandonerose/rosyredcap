@@ -26,9 +26,9 @@ summarize_DB <- function (DB,drop_dir=T){
     })
 
   metadata <- metadata[which(!metadata$field_type=="checkbox_choice"),]
-  i <- 1:nrow(codebook) %>% sample(1)
+  # i <- 1:nrow(codebook) %>% sample(1)
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(merged[,codebook$field_name[i]]==codebook$name[i],na.rm = T)
+      sum(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
   codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
     sum(!is.na(merged[,codebook$field_name[i]]),na.rm = T)
