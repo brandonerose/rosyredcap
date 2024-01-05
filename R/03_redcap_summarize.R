@@ -46,10 +46,8 @@ summarize_DB <- function (DB,drop_dir=T){
     lapply(function(IN){
       codebook[which(codebook$form_name==IN),]
     }) %>% dplyr::bind_rows()
-
-  DB$metadata <- metadata
-  DB$codebook <- codebook
-  DB$merged <- merged
-  #save ===============
-  DB
+  list(
+    metadata = metadata,
+    codebook = codebook
+  ) %>% return()
 }
