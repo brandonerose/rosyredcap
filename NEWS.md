@@ -1,3 +1,5 @@
+# rosyredcap 2.5.1
+
 # rosyredcap 2.5.0
 * added new codebook annotation feature which will need to be tested, works for simpler REDCaps
 * found a bug if a variable has identical names (bad metadata), solution to treat as identical and throw warning
