@@ -1,4 +1,5 @@
 # rosyredcap 2.5.1
+* modifying drop_redcap_dir for more customization such as other directories and appending file names
 
 # rosyredcap 2.5.0
 * added new codebook annotation feature which will need to be tested, works for simpler REDCaps

@@ -2,16 +2,26 @@
 #' @inheritParams save_DB
 #' @param records character vector of records you want dropped to your directory
 #' @param allow_mod logical for whether non-instrument names are allowed
+#' @param deidentify logical for deidentification
 #' @param dir_other optional character string of another file path where the files should be saved
+#' @param only_redcap logical for whether to only include redcap and not metadata
+#' @param append_name optional character string for adding to the front of file names
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name){
   DB <- validate_DB(DB)
+  if(deidentify){
+    DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
+  }
   root_dir <- get_dir(DB)
   if(!missing(dir_other)){
     if(file.exists(dir_other)){
       root_dir <- dir_other
     }
+  }
+  appended_name <- ""
+  if(!missing(append_name)){
+    appended_name <- paste0(append_name,"_")
   }
   dir.create(file.path(root_dir,"REDCap"),showWarnings = F)
   dir.create(file.path(root_dir,"REDCap","other"),showWarnings = F)
@@ -23,10 +33,12 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other){
     to_save <- DB$instruments$instrument_name
   }
   for(x in to_save){
-    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap",paste0(x,".xlsx")))
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap",paste0(appended_name,x,".xlsx")))
   }
-  for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
-    DB_selected[[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap","other",paste0(x,".xlsx")))
+  if(!only_redcap){
+    for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
+      DB_selected[[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap","other",paste0(x,".xlsx")))
+    }
   }
 }
 

@@ -4,7 +4,15 @@
 \alias{drop_redcap_dir}
 \title{Shows DB in the env}
 \usage{
-drop_redcap_dir(DB, records = NULL, allow_mod = T, dir_other)
+drop_redcap_dir(
+  DB,
+  records = NULL,
+  allow_mod = T,
+  dir_other,
+  only_redcap = F,
+  deidentify = F,
+  append_name
+)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
@@ -14,6 +22,12 @@ drop_redcap_dir(DB, records = NULL, allow_mod = T, dir_other)
 \item{allow_mod}{logical for whether non-instrument names are allowed}
 
 \item{dir_other}{optional character string of another file path where the files should be saved}
+
+\item{only_redcap}{logical for whether to only include redcap and not metadata}
+
+\item{deidentify}{logical for deidentification}
+
+\item{append_name}{optional character string for adding to the front of file names}
 }
 \value{
 messages for confirmation
