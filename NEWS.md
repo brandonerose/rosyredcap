@@ -1,3 +1,5 @@
+# rosyredcap 2.5.2
+
 # rosyredcap 2.5.1
 * modifying drop_redcap_dir for more customization such as other directories and appending file names
 
