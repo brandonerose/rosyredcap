@@ -1,6 +1,8 @@
 summarize_DB <- function (DB,drop_dir=T){
   # dropdir ----
-  DB$data$merged <- merge_non_repeating_DB(DB)[["data"]][["merged"]]
+  if(!"merged"%in%names(DB$data)){
+    DB$data$merged <- merge_non_repeating_DB(DB)[["data"]][["merged"]]
+  }
   if(drop_dir){DB %>% drop_redcap_dir()}
   #metadata/codebook =============
   metadata <- DB$metadata
