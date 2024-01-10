@@ -11,7 +11,8 @@ drop_redcap_dir(
   dir_other,
   only_redcap = F,
   deidentify = F,
-  append_name
+  append_name,
+  str_trunc_length = 20000
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ drop_redcap_dir(
 \item{deidentify}{logical for deidentification}
 
 \item{append_name}{optional character string for adding to the front of file names}
+
+\item{str_trunc_length}{optional integer for truncation}
 }
 \value{
 messages for confirmation

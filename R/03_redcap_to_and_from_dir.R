@@ -6,9 +6,10 @@
 #' @param dir_other optional character string of another file path where the files should be saved
 #' @param only_redcap logical for whether to only include redcap and not metadata
 #' @param append_name optional character string for adding to the front of file names
+#' @param str_trunc_length optional integer for truncation
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=20000){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -33,7 +34,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     to_save <- DB$instruments$instrument_name
   }
   for(x in to_save){
-    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap",paste0(appended_name,x,".xlsx")))
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap",paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length)
   }
   if(!only_redcap){
     for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long

@@ -36,10 +36,11 @@ make_codebook<-function(DB){
   OUT
 }
 
-write_xl<-function(DF,DB,path,with_links = T){# add instance links
+write_xl<-function(DF,DB,path,str_trunc_length=15000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
   COL<-which(colnames(DF)==DB$id_col)
+  DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
   if(nrow(DF)>0&&length(COL)>0&&with_links){
     DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$id_col]],"&arm=1")
     class(DF$redcap_link) <- "hyperlink"
