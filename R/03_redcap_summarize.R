@@ -1,13 +1,10 @@
 summarize_DB <- function (DB,drop_dir=T){
   # dropdir ----
-  if(!"merged"%in%names(DB$data)){
-    DB$data$merged <- merge_non_repeating_DB(DB)[["data"]][["merged"]]
-  }
+
   if(drop_dir){DB %>% drop_redcap_dir()}
   #metadata/codebook =============
   metadata <- DB$metadata
   codebook <- DB$codebook
-  merged <- DB$data$merged
 
   codebook<-codebook %>% merge(
     metadata %>% dplyr::select(
@@ -30,10 +27,10 @@ summarize_DB <- function (DB,drop_dir=T){
   metadata <- metadata[which(!metadata$field_type=="checkbox_choice"),]
   # i <- 1:nrow(codebook) %>% sample(1)
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(merged[,codebook$field_name[i]]==codebook$name[i],na.rm = T)
+    sum(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
   codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(!is.na(merged[,codebook$field_name[i]]),na.rm = T)
+    sum(!is.na(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
   }) %>% unlist()
   codebook$perc <-  codebook$n/codebook$n_total
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
