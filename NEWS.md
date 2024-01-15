@@ -1,3 +1,5 @@
+# rosyredcap 2.6.0
+
 # rosyredcap 2.5.3
 
 # rosyredcap 2.5.2
