@@ -12,7 +12,8 @@ drop_redcap_dir(
   only_redcap = F,
   deidentify = F,
   append_name,
-  str_trunc_length = 32000
+  str_trunc_length = 32000,
+  with_links = T
 )
 }
 \arguments{

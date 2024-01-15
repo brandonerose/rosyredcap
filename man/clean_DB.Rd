@@ -4,7 +4,13 @@
 \alias{clean_DB}
 \title{clean DB columns for plotting using the metadata}
 \usage{
-clean_DB(DB, drop_blanks = T, drop_unknowns = T, units_df, drop_dir = F)
+clean_DB(
+  DB,
+  drop_blanks = T,
+  drop_unknowns = T,
+  units_df,
+  merge_non_repeating = T
+)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
@@ -14,8 +20,6 @@ clean_DB(DB, drop_blanks = T, drop_unknowns = T, units_df, drop_dir = F)
 \item{drop_unknowns}{logical for dropping missing codes}
 
 \item{units_df}{data.frame with two columns: `field_name` in the metadata and `units` to set units}
-
-\item{drop_dir}{logical for dropping to the directory on this step. Default TRUE.}
 }
 \value{
 DB object cleaned for table or plots

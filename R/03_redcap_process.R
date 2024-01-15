@@ -320,16 +320,20 @@ deidentify_DB <- function(DB,identifiers){
 #' @param drop_blanks logical for dropping n=0 choices
 #' @param drop_unknowns logical for dropping missing codes
 #' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
-#' @param drop_dir logical for dropping to the directory on this step. Default TRUE.
 #' @return DB object cleaned for table or plots
 #' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
-  x<-summarize_DB(DB,drop_dir = drop_dir)
-  metadata <- DB$data$metadata <- x$metadata
-  annotated_codebook <- x$codebook
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeating = T){
+  metadata <- DB$metadata
+  metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
+  metadata <-unique(metadata$form_name) %>%
+    lapply(function(IN){
+      metadata[which(metadata$form_name==IN),]
+    }) %>% dplyr::bind_rows()
   metadata$field_type_R <- NA
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
+  DB$metadata <- metadata
+  DB$codebook<-annotate_codebook(DB)
   here_is_units_df <- NULL
   if(!missing(units_df)){
     if(!is.data.frame(units_df))stop("units_df must be a dataframe")
@@ -379,8 +383,9 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
       )
     }
   }
-  x$codebook
-  DB$data$annotated_codebook <- annotated_codebook
+  if(merge_non_repeating){
+    DB <- merge_non_repeating_DB(DB)
+  }
   return(DB)
 }
 

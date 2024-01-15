@@ -36,7 +36,7 @@ make_codebook<-function(DB){
   OUT
 }
 
-write_xl<-function(DF,DB,path,str_trunc_length=15000,with_links = T){# add instance links
+write_xl<-function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
   COL<-which(colnames(DF)==DB$id_col)

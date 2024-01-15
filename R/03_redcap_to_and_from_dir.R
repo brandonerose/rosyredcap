@@ -9,7 +9,7 @@
 #' @param str_trunc_length optional integer for truncation
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -41,11 +41,11 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     to_save <- DB$instruments$instrument_name
   }
   for(x in to_save){
-    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(sub_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length)
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(sub_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
   }
   if(!only_redcap){
     for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
-      DB_selected[[x]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(x,".xlsx")))
+      DB_selected[[x]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,x,".xlsx")))
     }
   }
 }

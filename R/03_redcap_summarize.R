@@ -1,16 +1,16 @@
-summarize_DB <- function (DB,drop_dir=T){
-  # dropdir ----
+annotate_codebook <- function (DB){
 
   #metadata/codebook =============
   metadata <- DB$metadata
   codebook <- DB$codebook
+  codebook <- unique(metadata$field_name) %>%
+    lapply(function(IN){
+      codebook[which(codebook$field_name==IN),]
+    }) %>% dplyr::bind_rows()
 
   codebook<-codebook %>% merge(
     metadata %>% dplyr::select(
-      "form_name","field_name","field_label","field_type","text_validation_type_or_show_slider_number"),by="field_name")
-
-
-  metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
+      "form_name","field_name","field_label","field_type","text_validation_type_or_show_slider_number"),by="field_name",sort=F)
 
   codebook$field_name_raw <- codebook$field_name
   codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")]<-codebook$field_name[which(codebook$field_type=="checkbox_choice")] %>%
@@ -23,8 +23,6 @@ summarize_DB <- function (DB,drop_dir=T){
       metadata$field_label[which(metadata$field_name==X)] %>% unique()
     })
 
-  metadata <- metadata[which(!metadata$field_type=="checkbox_choice"),]
-  # i <- 1:nrow(codebook) %>% sample(1)
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
     sum(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
@@ -34,22 +32,5 @@ summarize_DB <- function (DB,drop_dir=T){
   codebook$perc <-  codebook$n/codebook$n_total
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
 
-  metadata <-unique(metadata$form_name) %>%
-    lapply(function(IN){
-      metadata[which(metadata$form_name==IN),]
-    }) %>% dplyr::bind_rows()
-  codebook <-unique(metadata$form_name) %>%
-    lapply(function(IN){
-      codebook[which(codebook$form_name==IN),]
-    }) %>% dplyr::bind_rows()
-  if(drop_dir){
-    DB %>% drop_redcap_dir()
-    path <- file.path(get_dir(DB), "output", "annotated_codebook.xlsx")
-    codebook %>% rio::export(path)
-    message("Saved at -> ","'",path,"'")
-  }
-  list(
-    metadata = metadata,
-    codebook = codebook
-  ) %>% return()
+  return(codebook)
 }
