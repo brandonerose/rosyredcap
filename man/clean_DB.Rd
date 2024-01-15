@@ -9,7 +9,7 @@ clean_DB(
   drop_blanks = T,
   drop_unknowns = T,
   units_df,
-  merge_non_repeating = T
+  merge_non_repeating = F
 )
 }
 \arguments{
