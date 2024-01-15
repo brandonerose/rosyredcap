@@ -324,7 +324,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @return DB object cleaned for table or plots
 #' @export
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
-  x<-summarize_DB(DB,drop_dir = F)
+  x<-summarize_DB(DB,drop_dir = drop_dir)
   metadata <- DB$data$metadata <- x$metadata
   DB$data$annotated_codebook <- x$codebook
   metadata$field_type_R <- NA
