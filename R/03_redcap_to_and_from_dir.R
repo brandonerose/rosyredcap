@@ -47,10 +47,9 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
       DB_selected[[x]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,x,".xlsx")))
     }
-  }else{
-    if(annotated_codebook){
-      DB_selected[["codebook"]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,x,".xlsx")))
-    }
+  }
+  if(annotated_codebook){
+    DB_selected[["codebook"]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,"annotated_codebook.xlsx")))
   }
 }
 
