@@ -326,7 +326,7 @@ deidentify_DB <- function(DB,identifiers){
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
   x<-summarize_DB(DB,drop_dir = drop_dir)
   metadata <- DB$data$metadata <- x$metadata
-  DB$data$annotated_codebook <- x$codebook
+  annotated_codebook <- x$codebook
   metadata$field_type_R <- NA
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
@@ -379,7 +379,9 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
       )
     }
   }
-  DB
+  x$codebook
+  DB$data$annotated_codebook <- DB
+  return(DB)
 }
 
 #' @title clean column for plotting; manual addition of clean_DB

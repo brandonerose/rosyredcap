@@ -4,7 +4,7 @@
 \alias{clean_DB}
 \title{clean DB columns for plotting using the metadata}
 \usage{
-clean_DB(DB, drop_blanks = T, drop_unknowns = T, units_df, drop_dir = T)
+clean_DB(DB, drop_blanks = T, drop_unknowns = T, units_df, drop_dir = F)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
