@@ -271,8 +271,9 @@ merge_non_repeating_DB <- function(DB){
 #' @title Unmerge non-repeating, not ready for multi-event projects
 #' @inheritParams save_DB
 #' @return DB object that has merged all non repeating forms
+#' @export
 unmerge_non_repeating_DB <- function(DB){
-  if(!"megrged" %in% names(DB$data))stop("No DB$data named as 'merged'!")
+  if(!"merged" %in% names(DB$data))stop("No DB$data named as 'merged'!")
   instrument_names <- DB$data$merged %>% colnames() %>% sapply(function(COL){DB$metadata$form_name[which(DB$metadata$field_name==COL)]}) %>% unique() %>% as.list()
   merged <- DB$data$merged
   while (length(instrument_names)>0) {
