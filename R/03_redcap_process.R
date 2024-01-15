@@ -278,9 +278,10 @@ unmerge_non_repeating_DB <- function(DB){
   merged <- DB$data$merged
   while (length(instrument_names)>0) {
     instrument_name <-instrument_names[[1]]
-    DB$data[[instrument_name]]<-raw[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
+    DB$data[[instrument_name]]<-merged[,unique(c(DB$id_col,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(merged))]))]
     instrument_names[[1]] <- NULL
   }
+  DB$data$merged<-NULL
   DB
 }
 
