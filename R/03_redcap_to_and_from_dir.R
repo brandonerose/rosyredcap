@@ -15,18 +15,25 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
   }
   root_dir <- get_dir(DB)
+  sub_dir <- file.path(root_dir,"REDCap")
+  sub_dir2 <- file.path(root_dir,"REDCap")
+  trigger_other <- F
   if(!missing(dir_other)){
     if(file.exists(dir_other)){
-      root_dir <- dir_other
+      sub_dir2 <- sub_dir <- root_dir <- dir_other
+      trigger_other <- T
     }
   }
   appended_name <- ""
   if(!missing(append_name)){
     appended_name <- paste0(append_name,"_")
   }
-  dir.create(file.path(root_dir,"REDCap"),showWarnings = F)
-  dir.create(file.path(root_dir,"REDCap","other"),showWarnings = F)
-  dir.create(file.path(root_dir,"REDCap","upload"),showWarnings = F)
+  if(!trigger_other){
+    dir.create(file.path(root_dir,"REDCap"),showWarnings = F)
+    dir.create(file.path(root_dir,"REDCap","other"),showWarnings = F)
+    dir.create(file.path(root_dir,"REDCap","upload"),showWarnings = F)
+  }
+
   DB_selected<- DB %>% select_redcap_records(records)
   if(allow_mod){
     to_save <- names(DB$data)
@@ -34,11 +41,11 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     to_save <- DB$instruments$instrument_name
   }
   for(x in to_save){
-    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap",paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length)
+    DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(sub_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length)
   }
   if(!only_redcap){
     for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
-      DB_selected[[x]] %>% write_xl(DB,path=file.path(root_dir,"REDCap","other",paste0(x,".xlsx")))
+      DB_selected[[x]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(x,".xlsx")))
     }
   }
 }
