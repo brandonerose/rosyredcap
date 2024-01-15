@@ -2,7 +2,7 @@ annotate_codebook <- function (DB){
 
   #metadata/codebook =============
   metadata <- DB$metadata
-  codebook <- DB$codebook
+  codebook <- DB$codebook %>% dplyr::select("field_name", "code", "name")
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
@@ -31,6 +31,6 @@ annotate_codebook <- function (DB){
   }) %>% unlist()
   codebook$perc <-  codebook$n/codebook$n_total
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
-
-  return(codebook)
+  DB$codebook <- codebook
+  return(DB)
 }

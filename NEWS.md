@@ -1,8 +1,5 @@
 # rosyredcap 2.6.0
-
-# rosyredcap 2.5.3
-
-# rosyredcap 2.5.2
+* reorganizing clean_DB and drop_dir
 
 # rosyredcap 2.5.1
 * modifying drop_redcap_dir for more customization such as other directories and appending file names

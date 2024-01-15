@@ -333,7 +333,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
   DB$metadata <- metadata
-  DB$codebook<-annotate_codebook(DB)
+  DB<-annotate_codebook(DB)
   here_is_units_df <- NULL
   if(!missing(units_df)){
     if(!is.data.frame(units_df))stop("units_df must be a dataframe")
