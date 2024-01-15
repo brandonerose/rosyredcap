@@ -1,5 +1,9 @@
 annotate_codebook <- function (DB){
 
+
+  #metadata/codebook =============
+  metadata <- DB$metadata
+  codebook <- DB$codebook %>% dplyr::select("field_name", "code", "name")
   codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
     form_name <- codebook$form_name[i]
     field_name <- codebook$field_name[i]
@@ -17,10 +21,6 @@ annotate_codebook <- function (DB){
     }
     return(form_name)
   }) %>% unlist()
-
-  #metadata/codebook =============
-  metadata <- DB$metadata
-  codebook <- DB$codebook %>% dplyr::select("field_name", "code", "name")
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]

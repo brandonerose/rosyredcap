@@ -9,7 +9,7 @@
 #' @param str_trunc_length optional integer for truncation
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -46,6 +46,10 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
   if(!only_redcap){
     for (x in c("metadata","instruments","users","codebook")){ #,"log" #taking too long
       DB_selected[[x]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,x,".xlsx")))
+    }
+  }else{
+    if(annotated_codebook){
+      DB_selected[["codebook"]] %>% write_xl(DB,path=file.path(sub_dir2,paste0(appended_name,x,".xlsx")))
     }
   }
 }
