@@ -323,7 +323,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @param drop_dir logical for dropping to the directory on this step. Default TRUE.
 #' @return DB object cleaned for table or plots
 #' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=T){
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
   x<-summarize_DB(DB,drop_dir = drop_dir)
   metadata <- DB$data$metadata <- x$metadata
   DB$data$annotated_codebook <- x$codebook
