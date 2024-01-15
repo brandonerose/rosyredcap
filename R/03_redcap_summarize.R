@@ -1,7 +1,6 @@
 summarize_DB <- function (DB,drop_dir=T){
   # dropdir ----
 
-  if(drop_dir){DB %>% drop_redcap_dir()}
   #metadata/codebook =============
   metadata <- DB$metadata
   codebook <- DB$codebook
@@ -34,9 +33,7 @@ summarize_DB <- function (DB,drop_dir=T){
   }) %>% unlist()
   codebook$perc <-  codebook$n/codebook$n_total
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
-  path <- file.path(get_dir(DB), "output", "annotated_codebook.xlsx")
-  codebook %>% rio::export(path)
-  message("Saved at -> ","'",path,"'")
+
   metadata <-unique(metadata$form_name) %>%
     lapply(function(IN){
       metadata[which(metadata$form_name==IN),]
@@ -45,6 +42,12 @@ summarize_DB <- function (DB,drop_dir=T){
     lapply(function(IN){
       codebook[which(codebook$form_name==IN),]
     }) %>% dplyr::bind_rows()
+  if(drop_dir){
+    DB %>% drop_redcap_dir()
+    path <- file.path(get_dir(DB), "output", "annotated_codebook.xlsx")
+    codebook %>% rio::export(path)
+    message("Saved at -> ","'",path,"'")
+  }
   list(
     metadata = metadata,
     codebook = codebook
