@@ -322,7 +322,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
 #' @return DB object cleaned for table or plots
 #' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeating = F){
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeating = T){
   metadata <- DB$metadata
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
   metadata <-unique(metadata$form_name) %>%
