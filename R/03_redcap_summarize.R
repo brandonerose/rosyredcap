@@ -1,5 +1,23 @@
 annotate_codebook <- function (DB){
 
+  codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
+    form_name <- codebook$form_name[i]
+    field_name <- codebook$field_name[i]
+
+    if(!form_name %in% names(DB$data)){
+      if("merged" %in% names(DB$data)){
+        if(field_name%in%colnames(DB$data$merged))return("merged")
+      }
+      if("patient" %in% names(DB$data)){
+        if(field_name%in%colnames(DB$data$merged))return("patient")
+      }
+      for(other in names(DB$data)[which(!names(DB$data)%in%DB$instruments$instrument_name)]){
+        if(field_name%in%colnames(DB$data$other))return(other)
+      }
+    }
+    return(form_name)
+  }) %>% unlist()
+
   #metadata/codebook =============
   metadata <- DB$metadata
   codebook <- DB$codebook %>% dplyr::select("field_name", "code", "name")
