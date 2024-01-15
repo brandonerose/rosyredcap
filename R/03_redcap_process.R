@@ -380,7 +380,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,drop_dir=F){
     }
   }
   x$codebook
-  DB$data$annotated_codebook <- DB
+  DB$data$annotated_codebook <- annotated_codebook
   return(DB)
 }
 
