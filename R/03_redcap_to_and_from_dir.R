@@ -7,9 +7,11 @@
 #' @param only_redcap logical for whether to only include redcap and not metadata
 #' @param append_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
+#' @param annotated_codebook optional logical
+#' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T){
+drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T,forms){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -39,6 +41,9 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     to_save <- names(DB$data)
   }else{
     to_save <- DB$instruments$instrument_name
+  }
+  if(!missing(forms)){
+    to_save <- to_save[which(to_save %in% forms)]
   }
   for(x in to_save){
     DB_selected[["data"]][[x]] %>% write_xl(DB,path=file.path(sub_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
