@@ -53,3 +53,35 @@ annotate_codebook <- function (DB){
   DB$codebook <- codebook
   return(DB)
 }
+
+
+find_in_DB <- function(DB,text, exact = F){
+  DB <- validate_DB(DB)
+  out <- data.frame(
+    record_id = character(0),
+    col = character(0),
+    row = character(0)
+  )
+  if (!exact){
+    text <- tolower(text)
+  }
+  for(form in names(DB$data)){
+    DF <- DB$data[[form]]
+    for(col in colnames(DF)){
+      if (!exact){
+        DF[[col]] <- tolower(DF[[col]])
+      }
+      rows <- which(grepl(text,DF[[col]]))
+      if(length(rows)>0){
+        out <- out %>%dplyr::bind_rows(
+          data.frame(
+            record_id = DF[[DB$id_col]][rows],
+            col = col,
+            row = as.character(rows)
+          )
+        )
+      }
+    }
+  }
+  return(out)
+}

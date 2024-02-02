@@ -13,7 +13,9 @@ drop_redcap_dir(
   deidentify = F,
   append_name,
   str_trunc_length = 32000,
-  with_links = T
+  with_links = T,
+  annotated_codebook = T,
+  forms
 )
 }
 \arguments{
@@ -32,6 +34,10 @@ drop_redcap_dir(
 \item{append_name}{optional character string for adding to the front of file names}
 
 \item{str_trunc_length}{optional integer for truncation}
+
+\item{annotated_codebook}{optional logical}
+
+\item{forms}{optional character vector for only selected forms}
 }
 \value{
 messages for confirmation
