@@ -114,11 +114,27 @@ get_redcap_metadata<-function(DB){
   DB$metadata <- get_redcap_info(DB,"metadata","stop")
   DB$metadata$section_header <- DB$metadata$section_header %>% remove_html_tags()
   DB$metadata$field_label <- DB$metadata$field_label %>% remove_html_tags()
-  DB$arms <- get_redcap_info(DB,"arm")
-  DB$events <- get_redcap_info(DB,"event","warn")
-  DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
-  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
   DB$instruments <- get_redcap_info(DB,"instrument","warn")
+
+  DB$arms <- get_redcap_info(DB,"arm")
+  DB$unique_events <- get_redcap_info(DB,"event","warn")
+  if(is.data.frame(DB$unique_events)){
+    DB$events <- data.frame(
+      event_name = unique(DB$unique_events$event_name),
+      arms = unique(DB$unique_events$event_name) %>% sapply(function(event_name){
+        DB$unique_events$arm_num[which(DB$unique_events$event_name==event_name)] %>% unique() %>% paste0(collapse = " | ")
+      })
+    )
+  }
+  DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
+  DB$has_event_mappings <- is.data.frame(DB$event_mapping)
+  if(DB$has_event_mappings){
+    DB$event_mapping$unique_event_name
+    DB$unique_events$forms = DB$unique_events$unique_event_name %>% sapply(function(unique_events){
+      DB$event_mapping$form[which(DB$event_mapping$unique_event_name==unique_events)] %>% unique() %>% paste0(collapse = " | ")
+    })
+  }
+  DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
 
   DB$metadata<-DB$metadata %>%dplyr::bind_rows(
     data.frame(
@@ -152,6 +168,7 @@ get_redcap_metadata<-function(DB){
     }
   }
   DB$instruments$repeating <- F
+  DB$has_repeating <- F
   # if(DB$project_info$has_repeating_instruments_or_events=="1")
   repeating <- get_redcap_info(DB,"repeatingFormsEvents")
   if(is.data.frame(repeating)){
@@ -166,6 +183,19 @@ get_redcap_metadata<-function(DB){
         field_name="redcap_repeat_instrument",form_name=DB$instruments$instrument_name[which(DB$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
       )
     ) %>% unique()
+  }
+  if(DB$has_event_mappings){
+    DB$instruments$repeating[
+      which(
+        DB$instruments$instrument_name %>% sapply(function(instrument_name){
+          # instrument_name <- DB$instruments$instrument_name %>% sample(1)
+          anyDuplicated(DB$event_mapping$arm_num[which(DB$event_mapping$form==instrument_name)])>0
+        })
+      )
+    ] <- T
+  }
+  if(any(DB$instruments$repeating)){
+    DB$has_repeating <- T
   }
   DB$users <- get_redcap_users(DB)
   DB$codebook <- make_codebook(DB)
@@ -183,12 +213,16 @@ get_redcap_data<-function(DB,clean=T,records=NULL){
   DB$last_data_update=Sys.time()
   raw <- get_raw_redcap(
     DB=DB,
-    clean=clean,
+    clean=F,
     records=records
   )
-  DB <- raw_process_redcap(raw = raw,DB = DB,clean = clean)
+  DB <- raw_process_redcap(raw = raw,DB = DB)
   if(is.null(records)){
     DB$all_records <- all_records(DB)
+  }
+  DB$clean <- F
+  if(clean){
+    DB <- DB %>% raw_to_clean_redcap()
   }
   DB
 }

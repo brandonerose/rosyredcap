@@ -1,58 +1,39 @@
-raw_process_redcap <- function(raw,DB,clean=T){
-  has_event_mappings <- "redcap_event_name" %in% colnames(raw)
-  has_repeating <- "redcap_repeat_instrument" %in% colnames(raw)
+raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
-    if(clean){
-      if("redcap_repeat_instrument" %in% colnames(raw)){
-        raw$redcap_repeat_instrument <- raw$redcap_repeat_instrument %>% sapply(function(redcap_repeat_instrument){
-          OUT <- NA
-          if(!is.na(redcap_repeat_instrument)){
-            OUT <-DB$instruments$instrument_name[which(DB$instruments$instrument_label==redcap_repeat_instrument)]
-          }
-          OUT
-        })
-      }
-      if("redcap_event_name" %in% colnames(raw)){
-        raw$redcap_event_name <- raw$redcap_event_name %>% sapply(function(redcap_event_name){
-          OUT <- NA
-          if(!is.na(redcap_event_name)){
-            OUT <-DB$events$unique_event_name[which(DB$events$event_name==redcap_event_name)]
-          }
-          OUT
-        })
-      }
-    }
     add_ons <- NULL
-    if(has_event_mappings){
+    if(DB$has_event_mappings){
       add_ons <- add_ons %>% append("redcap_event_name")
     }
-    if(has_repeating){
+    if(DB$has_repeating){
       add_ons <- add_ons %>% append("redcap_repeat_instrument")
       add_ons <- add_ons %>% append("redcap_repeat_instance")
     }
+    add_ons <-add_ons[which(add_ons%in%colnames(raw))]
     for(instrument_name in DB$instruments$instrument_name){
       DB[["data"]][[instrument_name]]<-raw[,unique(c(DB$id_col,add_ons,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))]
-      if(has_event_mappings){
+      if(DB$has_event_mappings){
         events_ins <- DB$event_mapping$unique_event_name[which(DB$event_mapping$form==instrument_name)] %>% unique()
         DB[["data"]][[instrument_name]] <-DB[["data"]][[instrument_name]][which(DB[["data"]][[instrument_name]]$redcap_event_name%in%events_ins),]
       }
-      if(has_repeating){
+      if(DB$has_repeating){
         is_repeating_instrument <- instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]
-        if(!is_repeating_instrument){
-          DB[["data"]][[instrument_name]] <- DB[["data"]][[instrument_name]][which(is.na(DB[["data"]][[instrument_name]]$redcap_repeat_instrument)),]
-          DB[["data"]][[instrument_name]]$redcap_repeat_instrument <- NULL
-          DB[["data"]][[instrument_name]]$redcap_repeat_instance <- NULL
-        }
-        if(is_repeating_instrument){
-          DB[["data"]][[instrument_name]] <-DB[["data"]][[instrument_name]][which(DB[["data"]][[instrument_name]]$redcap_repeat_instrument==instrument_name),]
+        # is_repeating_instrument <- instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]
+        if("redcap_repeat_instrument"%in%colnames(raw)){
+          if(!is_repeating_instrument){
+            DB[["data"]][[instrument_name]] <- DB[["data"]][[instrument_name]][which(is.na(DB[["data"]][[instrument_name]]$redcap_repeat_instrument)),]
+            DB[["data"]][[instrument_name]]$redcap_repeat_instrument <- NULL
+            DB[["data"]][[instrument_name]]$redcap_repeat_instance <- NULL
+          }
+          if(is_repeating_instrument){
+            DB[["data"]][[instrument_name]] <-DB[["data"]][[instrument_name]][which(DB[["data"]][[instrument_name]]$redcap_repeat_instrument==instrument_name),]
+          }
+        }else{
+
         }
       }
       DB[["data"]][[instrument_name]] <- DB[["data"]][[instrument_name]] %>% all_character_cols()
     }
   }
-  DB$clean<-clean
-  DB$has_event_mappings <- has_event_mappings
-  DB$has_repeating <- has_repeating
   DB
 }
 
@@ -83,6 +64,114 @@ clean_to_raw_redcap <- function(DB){
     DB[["data"]][[TABLE]] <- clean_to_raw_form(FORM = DB[["data"]][[TABLE]],DB=DB)
   }
   DB$clean<-F
+  DB
+}
+
+raw_to_clean_redcap <- function(DB){
+  if(DB$clean)stop("DB is already clean (not raw coded values)")
+  use_missing_codes <- is.data.frame(DB$missing_codes)
+  for(instrument_name in DB$instruments$instrument_name){
+    for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type%in%c("radio","dropdown"))]){
+      z<-DB$metadata$select_choices_or_calculations[which(DB$metadata$field_name==field_name)] %>% split_choices()
+      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          coded_redcap<-which(z$code==C)
+          if(length(coded_redcap)>0){
+            OUT<-z$name[coded_redcap]
+          }else{
+            if(use_missing_codes){
+              coded_redcap2<-which(DB$missing_codes$code==C)
+              if(length(coded_redcap2)>0){
+                OUT<-DB$missing_codes$name[coded_redcap2]
+              }else{
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+              }
+            }else{
+              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+            }
+          }
+        }
+        OUT
+      }) %>% unlist() %>% as.character()
+
+    }
+    for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type=="yesno")]){
+      z<-data.frame(
+        code=c(0,1),
+        name=c("No","Yes")
+      )
+      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          D<-which(z$code==C)
+          if(length(D)>0){
+            OUT<-z$name[D]
+          }
+          if(length(D)==0){
+            if(use_missing_codes){
+              E<-which(DB$missing_codes$code==C)
+              if(length(E)==0){
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+              }
+              if(length(E)>0){
+                OUT<-DB$missing_codes$name[E]
+              }
+            }else{
+              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+            }
+          }
+        }
+        OUT
+      }) %>% unlist() %>% as.character()
+    }
+    for (field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_type=="checkbox_choice")]){
+      z<-data.frame(
+        code=c(0,1),
+        name=c("Unchecked","Checked")
+      )
+      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT<-NA
+        if(!is.na(C)){
+          D<-which(z$code==C)
+          if(length(D)>0){
+            OUT<-z$name[D]
+          }
+          if(length(D)==0){
+            if(use_missing_codes){
+              E<-which(DB$missing_codes$code==C)
+              if(length(E)==0){
+                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+              }
+              if(length(E)>0){
+                OUT<-DB$missing_codes$name[E]
+              }
+            }else{
+              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+            }
+          }
+        }
+        OUT
+      }) %>% unlist() %>% as.character()
+    }
+    if(use_missing_codes){
+      for(field_name in DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&!DB$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
+        z<-DB$missing_codes
+        DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+          OUT<-C
+          if(!is.na(C)){
+            D<-which(z$code==C)
+            if(length(D)>0){
+              OUT<-z$name[D]
+            }
+          }
+          OUT
+        }) %>% unlist() %>% as.character()
+      }
+    }
+  }
+  # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
+  DB$clean<-T
   DB
 }
 
@@ -254,13 +343,15 @@ missing_codes2 <- function(DB){
 merge_non_repeating_DB <- function(DB){
   if("megrged" %in% names(DB$data))stop("Already merged!")
   instrument_names <- DB$instruments$instrument_name[which(!DB$instruments$repeating)] %>% as.list()
-  if (length(instrument_names)==1) stop('No need to merge you only have one form that is non-repeating')
-  merged <- merge(DB$data[[instrument_names[[1]]]],DB$data[[instrument_names[[2]]]],by=DB$id_col,all.x = T)
+  if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
+  merged <- DB$data[[instrument_names[[1]]]]
   DB$data[[instrument_names[[1]]]] <- NULL
-  DB$data[[instrument_names[[2]]]] <- NULL
-  instrument_names[1:2]<-NULL
+  instrument_names[[1]]<-NULL
   while (length(instrument_names)>0) {
-    merged <- merge(merged,DB$data[[instrument_names[[1]]]],by=DB$id_col,all.x = T)
+    merged$redcap_event_name <- NULL
+    dfx <- DB$data[[instrument_names[[1]]]]
+    (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
+    merged <- merge(merged,dfx,by=in_common,all = T)
     DB$data[[instrument_names[[1]]]] <- NULL
     instrument_names[[1]]<-NULL
   }

@@ -16,6 +16,7 @@ blank_DB<- function(){ # can sort this better in version 3.0.0
     instruments=NULL,
     arms=NULL,
     events=NULL,
+    unique_events = NULL,
     event_mapping = NULL,
     codebook=NULL,
     choices=NULL,
@@ -31,6 +32,7 @@ blank_DB<- function(){ # can sort this better in version 3.0.0
     clean = NULL,
     has_event_mappings = NULL,
     has_repeating = NULL,
+    has_repeating_events = NULL,
     all_records = NULL,
     data=NULL
   )
@@ -178,7 +180,7 @@ show_DB <- function(DB,also_metadata=T){
     data_list <- data_list %>% append(L)
   }
   if(also_metadata){
-    for(NAME in c("metadata","instruments","arms","events","log","users","codebook","project_info")){
+    for(NAME in c("metadata","instruments","arms","events","event_mapping","log","users","codebook","project_info")){
       L <- list(DB[[NAME]])
       names(L) <- NAME
       data_list <- data_list %>% append(L)    }
