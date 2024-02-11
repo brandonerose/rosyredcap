@@ -416,6 +416,9 @@ deidentify_DB <- function(DB,identifiers){
 #' @return DB object cleaned for table or plots
 #' @export
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeating = T){
+  if(merge_non_repeating){
+    DB <- merge_non_repeating_DB(DB)
+  }
   metadata <- DB$metadata
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
   metadata <-unique(metadata$form_name) %>%
@@ -475,9 +478,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
         levels = levels
       )
     }
-  }
-  if(merge_non_repeating){
-    DB <- merge_non_repeating_DB(DB)
   }
   return(DB)
 }
