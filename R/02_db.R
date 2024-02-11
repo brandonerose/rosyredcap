@@ -180,7 +180,7 @@ show_DB <- function(DB,also_metadata=T){
     data_list <- data_list %>% append(L)
   }
   if(also_metadata){
-    for(NAME in c("metadata","instruments","arms","events","event_mapping","log","users","codebook","project_info")){
+    for(NAME in c("metadata","instruments","arms","events","event_mapping","unique_events","log","users","codebook","project_info")){
       L <- list(DB[[NAME]])
       names(L) <- NAME
       data_list <- data_list %>% append(L)    }
