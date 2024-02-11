@@ -1,3 +1,5 @@
+# rosyredcap 2.7.0
+
 # rosyredcap 2.6.0
 * reorganizing clean_DB and drop_dir
 
