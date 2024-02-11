@@ -1,8 +1,19 @@
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
-    add_ons <- c(DB$id_col,"redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
+    raw <-raw %>% all_character_cols()
+    add_ons <- c(DB$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
+
+    if('redcap_event_name'%in%colnames(raw)){
+      raw$id_temp <- 1:nrow(raw)
+      raw<- merge(raw,DB$events[,c("arm_num","event_name","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name",sort = F)
+      add_ons <-add_ons[which(add_ons%in%colnames(raw))]
+
+      cols <- c(add_ons, colnames(raw)) %>% unique()
+      raw <- raw[order(raw$id_temp),cols%>% sapply(function(c){which(colnames(raw)==c)}) %>% as.integer()]
+      raw$id_temp <- NULL
+    }
     add_ons <-add_ons[which(add_ons%in%colnames(raw))]
-    # merge(raw,unique_events[,c("arm_num","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name")
+
     for(instrument_name in DB$instruments$instrument_name){
       add_ons_x <- add_ons
       #instrument_name<- DB$instruments$instrument_name %>% sample(1)
@@ -26,7 +37,7 @@ raw_process_redcap <- function(raw,DB){
         add_ons_x <- add_ons_x[which(!add_ons_x%in%c("redcap_repeat_instrument","redcap_repeat_instance"))]
       }
       cols <- unique(c(add_ons_x,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(raw))]))
-      DB[["data"]][[instrument_name]]<-raw[rows,cols]%>% all_character_cols()
+      DB[["data"]][[instrument_name]]<-raw[rows,cols]
     }
   }
   DB
@@ -341,6 +352,8 @@ merge_non_repeating_DB <- function(DB){
   if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
   merged <- DB$data[[instrument_names[[1]]]]
   merged$redcap_event_name <- NULL
+  # merged$arm_num <- NULL
+  merged$event_name <- NULL
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
   DB$data[[instrument_names[[1]]]] <- NULL
@@ -348,6 +361,8 @@ merge_non_repeating_DB <- function(DB){
   while (length(instrument_names)>0) {
     dfx <- DB$data[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
+    # dfx$arm_num <- NULL
+    dfx$event_name <- NULL
     dfx$redcap_repeat_instrument <- NULL
     dfx$redcap_repeat_instance <- NULL
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
@@ -419,6 +434,25 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
   if(merge_non_repeating){
     DB <- merge_non_repeating_DB(DB)
   }
+  #project
+  #arms
+  DB$summary$arms_n <- 0
+  if(is.data.frame(DB$arms)){
+    DB$summary$arms_n <- DB$arms %>% nrow()
+  }
+
+  #records belong to arms 1 to 1
+  DB$summary$records_n <- DB$all_records %>% length()
+
+  #events belong to arms many to 1
+  DB$summary$events_n <- DB$events %>% nrow()
+
+  #instruments/forms belong to events many to 1 (if no events/arms)
+  DB$summary$instruments_n <- DB$instruments %>% nrow()
+
+  #fields belong to instruments/forms 1 to 1
+  DB$summary$metadata_n <- DB$metadata %>% nrow()
+
   metadata <- DB$metadata
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
   metadata <-unique(metadata$form_name) %>%
@@ -429,7 +463,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
   DB$metadata <- metadata
-  DB<-annotate_codebook(DB)
+  DB <- annotate_codebook(DB)
   here_is_units_df <- NULL
   if(!missing(units_df)){
     if(!is.data.frame(units_df))stop("units_df must be a dataframe")
@@ -479,6 +513,9 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
       )
     }
   }
+
+
+
   return(DB)
 }
 

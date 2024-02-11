@@ -117,21 +117,21 @@ get_redcap_metadata<-function(DB){
   DB$instruments <- get_redcap_info(DB,"instrument","warn")
 
   DB$arms <- get_redcap_info(DB,"arm")
-  DB$unique_events <- get_redcap_info(DB,"event","warn")
-  if(is.data.frame(DB$unique_events)){
-    DB$events <- data.frame(
-      event_name = unique(DB$unique_events$event_name),
-      arms = unique(DB$unique_events$event_name) %>% sapply(function(event_name){
-        DB$unique_events$arm_num[which(DB$unique_events$event_name==event_name)] %>% unique() %>% paste0(collapse = " | ")
-      })
-    )
-  }
+  DB$events <- get_redcap_info(DB,"event","warn")
+  # if(is.data.frame(DB$unique_events)){
+  #   DB$events <- data.frame(
+  #     event_name = unique(DB$unique_events$event_name),
+  #     arms = unique(DB$unique_events$event_name) %>% sapply(function(event_name){
+  #       DB$unique_events$arm_num[which(DB$unique_events$event_name==event_name)] %>% unique() %>% paste0(collapse = " | ")
+  #     })
+  #   )
+  # }
   DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
   DB$has_event_mappings <- is.data.frame(DB$event_mapping)
   if(DB$has_event_mappings){
     DB$event_mapping$unique_event_name
-    DB$unique_events$forms = DB$unique_events$unique_event_name %>% sapply(function(unique_events){
-      DB$event_mapping$form[which(DB$event_mapping$unique_event_name==unique_events)] %>% unique() %>% paste0(collapse = " | ")
+    DB$events$forms = DB$events$unique_event_name %>% sapply(function(events){
+      DB$event_mapping$form[which(DB$event_mapping$unique_event_name==events)] %>% unique() %>% paste0(collapse = " | ")
     })
   }
   DB$id_col<-DB$metadata[1,1] %>% as.character() #RISKY?
