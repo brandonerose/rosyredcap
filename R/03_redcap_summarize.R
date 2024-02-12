@@ -54,7 +54,6 @@ annotate_codebook <- function (DB){
   return(DB)
 }
 
-
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(
@@ -85,3 +84,55 @@ find_in_DB <- function(DB,text, exact = F){
   }
   return(out)
 }
+
+# summarize_DB <- function(DB){
+#
+#   #project
+#   #records belong to arms 1 to 1
+#   DB$summary$records_n <- 0
+#   if(!is.null(DB$all_records)){
+#     DB$summary$records_n <- DB$all_records %>% length()
+#   }
+#   #arms
+#   DB$summary$arms_n <- 0
+#   if(is.data.frame(DB$arms)){
+#     DB$summary$arms_n <- DB$arms %>% nrow()
+#     id_pairs <- DB$instruments$instrument_name %>%  lapply(function(IN){DB$data[[IN]][,c(DB$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
+#     DB$arms$arm_records_n <- DB$arms$arm_num %>% sapply(function(arm){
+#       which(id_pairs$arm_num==arm)%>% length()
+#     })
+#     for(arm in DB$arms$arm_num){
+#       DB$summary[[paste0("arm_",arm,"_records_n")]] <- DB$arms$arm_records_n[which(DB$arms$arm_num==arm)]
+#     }
+#   }
+#   #events belong to arms many to 1
+#   # DB$summary$events_n <- DB$events %>% nrow()
+#   DB$summary$events_n <- 0
+#   if(is.data.frame(DB$events)){
+#     DB$summary$events_n <- DB$events %>% nrow()
+#     DB$summary$event_names_n <- DB$events$event_name %>% unique() %>% length()
+#     # DB$events$unique_event_name %>% lapply(function(event){
+#     #   DB$instruments$instrument_name %>%  sapply(function(IN){
+#     #     which(DB$data[[IN]][["redcap_event_name"]]==event) %>% length()
+#     #   }) %>% sum()
+#     # })
+#     # for(event in ){
+#     #   DB$summary[[paste0(event,"_records_n")]] <- DB$data[[]][which(DB$arms$arm_num==arm)]
+#     # }
+#   }
+#
+#   #instruments/forms belong to events many to 1 (if no events/arms)
+#   DB$summary$instruments_n <- 0
+#   if(is.data.frame(DB$instruments)){
+#     DB$summary$instruments_n <- DB$instruments %>% nrow()
+#   }
+#
+#   #fields belong to instruments/forms 1 to 1
+#   DB$summary$metadata_n <- 0
+#   if(is.data.frame(DB$metadata)){
+#     DB$summary$metadata_n <- DB$metadata[which(!DB$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
+#     DB$metadata$field_type[which(!DB$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
+#   }
+#   DB$summary <- DB$summary
+#   DB
+# }
