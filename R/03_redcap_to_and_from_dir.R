@@ -18,7 +18,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
   }
   root_dir <- get_dir(DB)
   sub_dir <- file.path(root_dir,"REDCap")
-  sub_dir2 <- file.path(root_dir,"REDCap")
+  sub_dir2 <- file.path(root_dir,"REDCap","other")
   trigger_other <- F
   if(!missing(dir_other)){
     if(file.exists(dir_other)){
