@@ -430,29 +430,7 @@ deidentify_DB <- function(DB,identifiers){
 #' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
 #' @return DB object cleaned for table or plots
 #' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeating = T){
-  if(merge_non_repeating){
-    DB <- merge_non_repeating_DB(DB)
-  }
-  #project
-  #arms
-  DB$summary$arms_n <- 0
-  if(is.data.frame(DB$arms)){
-    DB$summary$arms_n <- DB$arms %>% nrow()
-  }
-
-  #records belong to arms 1 to 1
-  DB$summary$records_n <- DB$all_records %>% length()
-
-  #events belong to arms many to 1
-  DB$summary$events_n <- DB$events %>% nrow()
-
-  #instruments/forms belong to events many to 1 (if no events/arms)
-  DB$summary$instruments_n <- DB$instruments %>% nrow()
-
-  #fields belong to instruments/forms 1 to 1
-  DB$summary$metadata_n <- DB$metadata %>% nrow()
-
+clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
   metadata <- DB$metadata
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
   metadata <-unique(metadata$form_name) %>%
@@ -513,9 +491,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df,merge_non_repeati
       )
     }
   }
-
-
-
   return(DB)
 }
 
