@@ -85,6 +85,45 @@ find_in_DB <- function(DB,text, exact = F){
   return(out)
 }
 
+extract_instrument_from_merged <- function(DB){
+  merged <- DB$data$merged
+  if(nrow(merged)>0){
+    add_ons <- c(DB$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
+    add_ons <-add_ons[which(add_ons%in%colnames(merged))]
+    if(!instrument_name%in%DB$instruments$instrument_name)stop("instrument_name must be included in set of DB$instruments$instrument_name")
+    #instrument_name<- DB$instruments$instrument_name %>% sample(1)
+    is_repeating_instrument <- instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]
+    rows <-1:nrow(merged)
+    if(is_repeating_instrument){
+      # rows <- which(merged$redcap_repeat_instrument==instrument_name)
+    }
+    if(!is_repeating_instrument){
+      rows <- which(!is.na(merged[[paste0(instrument_name,"_complete")]]))
+    }
+    #
+    # if(!DB$has_event_mappings){
+    #   if("redcap_repeat_instrument"%in%colnames(merged)){
+    #     if(is_repeating_instrument){
+    #       rows <- which(merged$redcap_repeat_instrument==instrument_name)
+    #     }
+    #     if(!is_repeating_instrument){
+    #       rows <- which(is.na(merged$redcap_repeat_instrument))
+    #     }
+    #   }
+    # }
+    # if(DB$has_event_mappings){
+    #   events_ins <- DB$event_mapping$unique_event_name[which(DB$event_mapping$form==instrument_name)] %>% unique()
+    #   rows <- which(merged$redcap_event_name%in%events_ins)
+    # }
+    # if(!is_repeating_instrument){
+    #   add_ons <- add_ons[which(!add_ons%in%c("redcap_repeat_instrument","redcap_repeat_instance"))]
+    # }
+    cols <- unique(c(add_ons,DB$metadata$field_name[which(DB$metadata$form_name==instrument_name&DB$metadata$field_name%in%colnames(merged))]))
+    return(merged[rows,cols])
+  }
+}
+
+
 # summarize_DB <- function(DB){
 #
 #   #project
