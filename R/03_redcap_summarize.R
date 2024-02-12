@@ -85,7 +85,7 @@ find_in_DB <- function(DB,text, exact = F){
   return(out)
 }
 
-extract_instrument_from_merged <- function(DB){
+extract_instrument_from_merged <- function(DB,instrument_name){
   merged <- DB$data$merged
   if(nrow(merged)>0){
     add_ons <- c(DB$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
