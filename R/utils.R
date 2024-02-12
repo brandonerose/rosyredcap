@@ -270,3 +270,21 @@ sync_dir <- function(from,to,top_level=T){
   }
   if(top_level){message("Up to date!")}
 }
+
+write_list_to_xl<-function(your_list,path){# add instance links
+
+  wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(wb, "sheet")
+  if(!is.list(your_list))stop("your_list must be list")
+  if(nrow(DF)>0&&length(COL)>0&&with_links){
+    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$id_col]],"&arm=1")
+    class(DF$redcap_link) <- "hyperlink"
+    openxlsx::writeData(wb, sheet = 1, x = DF$redcap_link,startRow = 2,startCol = COL)
+    DF$redcap_link<-NULL
+  }
+  openxlsx::writeData(wb, sheet = 1, x = DF)
+  openxlsx::saveWorkbook(
+    wb = wb,
+    file = path, overwrite = TRUE)
+  message("Saved at -> ","'",path,"'")
+}
