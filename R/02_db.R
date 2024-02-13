@@ -222,10 +222,17 @@ all_records <- function(DB){
       cols <- DB$id_col %>% append("arm_num")
     }
   }
-  records <- names(DB$data) %>%  lapply(function(IN){DB$data[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
+  if(cols==1){
+    records <- data.frame(
+      records = names(DB$data) %>%  lapply(function(IN){DB$data[[IN]][,cols]}) %>% unique()
+    )
+    colnames(records) <- cols
+  }
+  if(cols == 2){
+    records <- names(DB$data) %>%  lapply(function(IN){DB$data[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
+  }
   records <- records[order(records[[DB$id_col]]),]
   rownames(records) <- NULL
   if(records[[DB$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$id_col, " in all_records() function")
-  DB$all_records$participant_id
   records
 }

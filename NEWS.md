@@ -1,6 +1,11 @@
+
+
+# BELOW IS PRE-CRAN VERSION HISTORY (Reset)
+
 # rosyredcap 2.7.2
 
 # rosyredcap 2.7.1
+* fixing links for arms
 
 # rosyredcap 2.7.0
 * allowing for arms/events
