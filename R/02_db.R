@@ -216,8 +216,16 @@ delete_DB <- function(DB,dir_path){
 
 all_records <- function(DB){
   records <- NULL
-  for(NAME in names(DB$data)){
-    records<- records %>% append(DB$data[[NAME]][[DB$id_col]])
+  cols <- DB$id_col
+  if(is.data.frame(DB$arms)){
+    if(nrow(DB$arms)>1){
+      cols <- DB$id_col %>% append("arm_num")
+    }
   }
-  records %>% unique()
+  records <- names(DB$data) %>%  lapply(function(IN){DB$data[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
+  records <- records[order(records[[DB$id_col]]),]
+  rownames(records) <- NULL
+  if(records[[DB$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$id_col, " in all_records() function")
+  DB$all_records$participant_id
+  records
 }

@@ -53,8 +53,8 @@ select_redcap_records<-function(DB, records=NULL){
   if(!is.null(records)){
     if (length(records)==0)stop("Must supply records")
     DB_selected$data<-list()
-    BAD <-records[which(!records%in%DB$all_records)]
-    GOOD <-records[which(records%in%DB$all_records)]
+    BAD <-records[which(!records%in%DB$all_records[[DB$id_col]])]
+    GOOD <-records[which(records%in%DB$all_records[[DB$id_col]])]
     if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
     if (length(GOOD)==0)stop("Must supply valid records")
     for(FORM in names(DB$data)){
