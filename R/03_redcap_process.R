@@ -91,10 +91,10 @@ raw_to_clean_redcap <- function(DB){
               if(length(coded_redcap2)>0){
                 OUT<-DB$missing_codes$name[coded_redcap2]
               }else{
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
             }
           }
         }
@@ -118,13 +118,13 @@ raw_to_clean_redcap <- function(DB){
             if(use_missing_codes){
               E<-which(DB$missing_codes$code==C)
               if(length(E)==0){
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
                 OUT<-DB$missing_codes$name[E]
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
             }
           }
         }
@@ -147,13 +147,13 @@ raw_to_clean_redcap <- function(DB){
             if(use_missing_codes){
               E<-which(DB$missing_codes$code==C)
               if(length(E)==0){
-                stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
+                warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
                 OUT<-DB$missing_codes$name[E]
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
+              warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
             }
           }
         }
