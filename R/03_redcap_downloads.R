@@ -210,7 +210,7 @@ get_redcap_metadata<-function(DB){
 }
 
 get_redcap_data<-function(DB,clean=T,records=NULL){
-  DB$last_data_update=Sys.time()
+  DB$last_data_update <- Sys.time()
   raw <- get_raw_redcap(
     DB=DB,
     clean=F,
