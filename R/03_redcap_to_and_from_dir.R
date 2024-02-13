@@ -7,7 +7,8 @@
 #' @param only_redcap logical for whether to only include redcap and not metadata
 #' @param append_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
-#' @param annotated_codebook optional logical
+#' @param annotated_codebook optional logical for adding annoations of n and percent to codebook file
+#' @param with_links optional logical for including links in excel sheets
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export

@@ -35,7 +35,9 @@ drop_redcap_dir(
 
 \item{str_trunc_length}{optional integer for truncation}
 
-\item{annotated_codebook}{optional logical}
+\item{with_links}{optional logical for including links in excel sheets}
+
+\item{annotated_codebook}{optional logical for adding annoations of n and percent to codebook file}
 
 \item{forms}{optional character vector for only selected forms}
 }
