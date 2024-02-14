@@ -83,7 +83,7 @@ validate_dir <- function(dir_path,silent=T){
   #function
   if( ! silent) message("directory --> '",dir_path,"'")
   stop_mes<-"Did you use `set_dir()`?"
-  for(folder in c("R_objects","REDCap","output")){
+  for(folder in c("R_objects","REDCap","output","scripts","input")){
     if ( ! file.exists(file.path(dir_path,folder))) stop("'",dir_path,"/",folder,"' missing! ",stop_mes)
   }
   # if ( ! file.exists(file.path(dir_path,"ref_tables"))) stop("'",dir_path,"/ref_tables' missing! ",stop_mes)
@@ -106,7 +106,7 @@ set_dir <- function(dir_path){
       stop("Path not found. Use absolute path or choose one within R project working directory.")
     }
   }
-  for(folder in c("R_objects","REDCap","output")){
+  for(folder in c("R_objects","REDCap","output","scripts","input")){
     if ( ! file.exists(file.path(dir_path,folder))) {
       dir.create(file.path(dir_path,folder),showWarnings = F)
     }
