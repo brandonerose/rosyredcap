@@ -30,7 +30,7 @@ is_redcap_token <- function(token){
 validate_redcap_token <- function(DB,silent=T,return=T){
   while (!has_redcap_token(DB)) {
     set_redcap_token(DB)
-    message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
+    message("Try going to REDCap --> '",DB$API_link,"' run `link_API_token(DB)")
   }
   if(!silent){
     message("You have a valid token set in your session!")
@@ -47,7 +47,7 @@ validate_redcap_token <- function(DB,silent=T,return=T){
 set_redcap_token <- function(DB){
   token <- readline("What is your PSDB REDCap API token: ")
   while (!is_redcap_token(token)) {
-    warning("You set an invalid token. Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`",immediate. = T)
+    warning("You set an invalid token. Try going to REDCap --> '",DB$API_link,"' or run `link_API_token(DB)`",immediate. = T)
     token <- readline("What is your PSDB REDCap API token: ")
   }
   args =list(args =list(token))

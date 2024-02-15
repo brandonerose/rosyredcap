@@ -41,7 +41,7 @@ test_redcap <- function(DB){
     if(ERROR){
       warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
       warning("HTTP error ",version %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
-      message("Try going to REDCap --> 'https://redcap.miami.edu/redcap_v13.1.29/API/project_api.php?pid=6317' or run `link_API_token(DB)`")
+      message("Try going to REDCap --> '",DB$API_link,"' or run `link_API_token(DB)`")
       set_redcap_token(DB)
     }
   }
