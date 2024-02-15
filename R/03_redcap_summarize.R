@@ -48,7 +48,7 @@ annotate_codebook <- function (DB){
   codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
     sum(!is.na(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
   }) %>% unlist()
-  codebook$perc <-  codebook$n/codebook$n_total
+  codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
   DB$codebook <- codebook
   return(DB)
