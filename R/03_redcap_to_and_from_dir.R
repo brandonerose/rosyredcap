@@ -22,6 +22,12 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
   sub_dir2 <- file.path(root_dir,"REDCap","other")
   trigger_other <- F
   if(!missing(dir_other)){
+    if(!file.exists(dir_other)){
+      choice <- utils::menu(c("Yes","No"),title = "dir_other doesn't exist. Should I create?")
+      if(choice==1){
+        dir.create(dir_other)
+      }
+    }
     if(file.exists(dir_other)){
       sub_dir2 <- sub_dir <- root_dir <- dir_other
       trigger_other <- T
