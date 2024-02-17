@@ -1,0 +1,33 @@
+---
+title: RosyREDCap Report
+author: Brandon Rose, MD, MPH
+date: "`r Sys.Date()`"
+geometry: margin=0.5in
+abstract: This report was generated from the rosyredcap package using R markdown. 
+header-includes: 
+  \usepackage{fancyhdr}
+  \pagestyle{fancy}
+  \setlength\headheight{2.5cm}
+  \fancyhead[R]{\includegraphics[width=1.5cm]{/Users/brandonrose/R/rosyredcap/inst/rmarkdown/logo.png}}
+  \fancyhead[L]{\textbf{RosyREDCap Report}\\\textbf{Generated `r Sys.Date()`}}
+  \fancyfoot[L]{On the left of the footer on all pages \thepage}
+output: 
+  pdf_document:
+    toc: yes
+---
+
+\newpage 
+# About rosyredcap and TheCodingDocs.com
+
+The rosyredcap package is at [github.com/brandonerose/rosyredcap](https://github.com/brandonerose/rosyredcap "rosyredcap R package")
+See instructions above. Install remotes and install rosyredcap
+
+Donate if I helped you out and want more development (anything helps)! [account.venmo.com/u/brandonerose](https://account.venmo.com/u/brandonerose "Venmo Donation")
+
+For more R coding visit [thecodingdocs.com/](https://www.thecodingdocs.com/ "TheCodingDocs.com")
+
+Follow us on Twitter [twitter.com/TheCodingDocs](https://twitter.com/TheCodingDocs "TheCodingDocs Twitter")
+
+Follow me on Twitter [twitter.com/BRoseMDMPH](https://twitter.com/BRoseMDMPH "BRoseMDMPH Twitter")
+
+[![TheCodingDocs.com](`r system.file("rmarkdown", "logo.png", package = "rosyredcap")`)](http://www.thecodingdocs.com)
