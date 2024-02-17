@@ -7,14 +7,17 @@ abstract: This report was generated from the rosyredcap package using R markdown
 header-includes: 
   \usepackage{fancyhdr}
   \pagestyle{fancy}
-  \setlength\headheight{2.5cm}
-  \fancyhead[R]{\includegraphics[width=1.5cm]{/Users/brandonrose/R/rosyredcap/inst/rmarkdown/logo.png}}
+  \setlength\headheight{2cm}
   \fancyhead[L]{\textbf{RosyREDCap Report}\\\textbf{Generated `r Sys.Date()`}}
-  \fancyfoot[L]{On the left of the footer on all pages \thepage}
+  \fancyhead[C]{\href{https://www.thecodingdocs.com}{TheCodingDocs.com}\\\href{https://github.com/brandonerose/rosyredcap}{github.com/brandonerose/rosyredcap}}
+  \fancyhead[R]{\includegraphics[width=1.5cm]{`r system.file("rmarkdown", "TCDblack.png", package = "rosyredcap")`}}
 output: 
   pdf_document:
     toc: yes
+urlcolor: blue
 ---
+
+# Project Summary
 
 \newpage 
 # About rosyredcap and TheCodingDocs.com
@@ -30,4 +33,7 @@ Follow us on Twitter [twitter.com/TheCodingDocs](https://twitter.com/TheCodingDo
 
 Follow me on Twitter [twitter.com/BRoseMDMPH](https://twitter.com/BRoseMDMPH "BRoseMDMPH Twitter")
 
-[![TheCodingDocs.com](`r system.file("rmarkdown", "logo.png", package = "rosyredcap")`)](http://www.thecodingdocs.com)
+[![TheCodingDocs.com](`r system.file("rmarkdown", "TCD.png", package = "rosyredcap")`){ width=450px }](http://www.thecodingdocs.com) [![TheCodingDocs.com](`r system.file("rmarkdown", "logo.png", package = "rosyredcap")`){ width=300px }](https://github.com/brandonerose/rosyredcap)
+
+
+
