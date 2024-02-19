@@ -304,7 +304,7 @@ validate_DB<-function(DB,silent = T){
   #   }
   # }
   if(!silent){
-    if((length(DB[["data"]])==0)>0||is.null(DB$project_info)){
+    if((length(DB$data_extract)==0)>0||is.null(DB$redcap$project_info)){
       warning("Valid list but no data yet!",immediate. = T)
     }
     message("`DB` validated!")
@@ -413,8 +413,8 @@ save_DB<-function(DB){
 show_DB <- function(DB,also_metadata=T){
   DB <- validate_DB(DB)
   data_list <- list()
-  for(NAME in names(DB$data)){
-    L <- list(DB$data[[NAME]])
+  for(NAME in names(DB$data_extract)){
+    L <- list(DB$data_extract[[NAME]])
     names(L) <- NAME
     data_list <- data_list %>% append(L)
   }
@@ -455,24 +455,24 @@ delete_DB <- function(DB,dir_path){
 
 all_records <- function(DB){
   records <- NULL
-  cols <- DB$id_col
+  cols <- DB$redcap$id_col
   if(is.data.frame(DB$arms)){
     if(nrow(DB$arms)>1){
-      cols <- DB$id_col %>% append("arm_num")
+      cols <- DB$redcap$id_col %>% append("arm_num")
     }
   }
   if(length(cols)==1){
     records <- data.frame(
-      records =  names(DB$data) %>% lapply(function(IN){DB$data[[IN]][,cols]}) %>% unlist() %>% unique()
+      records =  names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% unlist() %>% unique()
     )
     colnames(records) <- cols
   }
   if(length(cols) == 2){
-    records <- names(DB$data) %>% lapply(function(IN){DB$data[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
-    # records <- records[order(as.integer(records[[DB$id_col]])),]
+    records <- names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
+    # records <- records[order(as.integer(records[[DB$redcap$id_col]])),]
   }
   rownames(records) <- NULL
-  if(records[[DB$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$id_col, " in all_records() function")
+  if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
   records
 }
 
@@ -580,7 +580,7 @@ validate_DB<-function(DB,silent = T){
   #   }
   # }
   if(!silent){
-    if((length(DB[["data"]])==0)>0||is.null(DB$project_info)){
+    if((length(DB$data_extract)==0)>0||is.null(DB$redcap$project_info)){
       warning("Valid list but no data yet!",immediate. = T)
     }
     message("`DB` validated!")
@@ -689,8 +689,8 @@ save_DB<-function(DB){
 show_DB <- function(DB,also_metadata=T){
   DB <- validate_DB(DB)
   data_list <- list()
-  for(NAME in names(DB$data)){
-    L <- list(DB$data[[NAME]])
+  for(NAME in names(DB$data_extract)){
+    L <- list(DB$data_extract[[NAME]])
     names(L) <- NAME
     data_list <- data_list %>% append(L)
   }
@@ -731,24 +731,24 @@ delete_DB <- function(DB,dir_path){
 
 all_records <- function(DB){
   records <- NULL
-  cols <- DB$id_col
+  cols <- DB$redcap$id_col
   if(is.data.frame(DB$arms)){
     if(nrow(DB$arms)>1){
-      cols <- DB$id_col %>% append("arm_num")
+      cols <- DB$redcap$id_col %>% append("arm_num")
     }
   }
   if(length(cols)==1){
     records <- data.frame(
-      records =  names(DB$data) %>% lapply(function(IN){DB$data[[IN]][,cols]}) %>% unlist() %>% unique()
+      records =  names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% unlist() %>% unique()
     )
     colnames(records) <- cols
   }
   if(length(cols) == 2){
-    records <- names(DB$data) %>% lapply(function(IN){DB$data[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
-    # records <- records[order(as.integer(records[[DB$id_col]])),]
+    records <- names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
+    # records <- records[order(as.integer(records[[DB$redcap$id_col]])),]
   }
   rownames(records) <- NULL
-  if(records[[DB$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$id_col, " in all_records() function")
+  if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
   records
 }
 
@@ -832,7 +832,7 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
       rows_to_save <- which(!is.na(form[[field_name]]))
       for(i in rows_to_save){
         file_name <-form[[field_name]][i]
-        record_id <- form[[DB$id_col]][i]
+        record_id <- form[[DB$redcap$id_col]][i]
         repeat_instrument = form[["redcap_repeat_instrument"]][i]
         repeat_instance = form[["redcap_repeat_instance"]][i]
         if(!original_file_names){
@@ -890,7 +890,7 @@ get_redcap_metadata<-function(DB){
       DB$event_mapping$form[which(DB$event_mapping$unique_event_name==events)] %>% unique() %>% paste0(collapse = " | ")
     })
   }
-  DB$id_col<-DB$redcap$metadata[1,1] %>% as.character() #RISKY?
+  DB$redcap$id_col<-DB$redcap$metadata[1,1] %>% as.character() #RISKY?
 
   DB$redcap$metadata<-DB$redcap$metadata %>%dplyr::bind_rows(
     data.frame(
@@ -918,7 +918,7 @@ get_redcap_metadata<-function(DB){
 
   DB$redcap$instruments$repeating <- F
   DB$has_repeating <- F
-  # if(DB$project_info$has_repeating_instruments_or_events=="1")
+  # if(DB$redcap$project_info$has_repeating_instruments_or_events=="1")
   repeating <- get_redcap_info(DB,"repeatingFormsEvents")
   if(is.data.frame(repeating)){
     DB$redcap$instruments$repeating <- DB$redcap$instruments$instrument_name%in%repeating$form_name
@@ -1174,7 +1174,7 @@ delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, eve
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
     raw <-raw %>% all_character_cols()
-    add_ons <- c(DB$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
+    add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
 
     if('redcap_event_name'%in%colnames(raw)){
       raw$id_temp <- 1:nrow(raw)
@@ -1210,7 +1210,7 @@ raw_process_redcap <- function(raw,DB){
         add_ons_x <- add_ons_x[which(!add_ons_x%in%c("redcap_repeat_instrument","redcap_repeat_instance"))]
       }
       cols <- unique(c(add_ons_x,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(raw))]))
-      DB[["data"]][[instrument_name]]<-raw[rows,cols]
+      DB$data_extract[[instrument_name]]<-raw[rows,cols]
     }
   }
   DB
@@ -1226,11 +1226,11 @@ select_redcap_records<-function(DB, records=NULL){
   if(!is.null(records)){
     if (length(records)==0)stop("Must supply records")
     DB_selected$data<-list()
-    BAD <-records[which(!records%in%DB$all_records[[DB$id_col]])]
-    GOOD <-records[which(records%in%DB$all_records[[DB$id_col]])]
+    BAD <-records[which(!records%in%DB$all_records[[DB$redcap$id_col]])]
+    GOOD <-records[which(records%in%DB$all_records[[DB$redcap$id_col]])]
     if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
-    for(FORM in names(DB$data)){
-      DB_selected[["data"]][[FORM]] <-DB[["data"]][[FORM]][which(DB[["data"]][[FORM]][[DB$id_col]]%in%GOOD),]
+    for(FORM in names(DB$data_extract)){
+      DB_selected[["data"]][[FORM]] <-DB$data_extract[[FORM]][which(DB$data_extract[[FORM]][[DB$redcap$id_col]]%in%GOOD),]
     }
   }
   DB_selected
@@ -1238,8 +1238,8 @@ select_redcap_records<-function(DB, records=NULL){
 
 clean_to_raw_redcap <- function(DB){
   DB <- validate_DB(DB)
-  for(TABLE in names(DB[["data"]])){
-    DB[["data"]][[TABLE]] <- clean_to_raw_form(FORM = DB[["data"]][[TABLE]],DB=DB)
+  for(TABLE in names(DB$data_extract)){
+    DB$data_extract[[TABLE]] <- clean_to_raw_form(FORM = DB$data_extract[[TABLE]],DB=DB)
   }
   DB$clean<-F
   DB
@@ -1251,7 +1251,7 @@ raw_to_clean_redcap <- function(DB){
   for(instrument_name in DB$redcap$instruments$instrument_name){
     for (field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_type%in%c("radio","dropdown"))]){
       z<-DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
-      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           coded_redcap<-which(z$code==C)
@@ -1279,7 +1279,7 @@ raw_to_clean_redcap <- function(DB){
         code=c(0,1),
         name=c("No","Yes")
       )
-      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           D<-which(z$code==C)
@@ -1308,7 +1308,7 @@ raw_to_clean_redcap <- function(DB){
         code=c(0,1),
         name=c("Unchecked","Checked")
       )
-      DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
         OUT<-NA
         if(!is.na(C)){
           D<-which(z$code==C)
@@ -1335,7 +1335,7 @@ raw_to_clean_redcap <- function(DB){
     if(use_missing_codes){
       for(field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&!DB$redcap$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
         z<-DB$missing_codes
-        DB[["data"]][[instrument_name]][[field_name]]<-DB[["data"]][[instrument_name]][[field_name]] %>% sapply(function(C){
+        DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
           OUT<-C
           if(!is.na(C)){
             D<-which(z$code==C)
@@ -1365,7 +1365,7 @@ clean_to_raw_form <- function(FORM,DB){
   instrument <- DB$redcap$metadata$form_name[
     which(
       DB$redcap$metadata$field_name%in%colnames(FORM)&
-        !DB$redcap$metadata$field_name%in%c(DB$id_col,"redcap_repeat_instance","redcap_repeat_instrument")
+        !DB$redcap$metadata$field_name%in%c(DB$redcap$id_col,"redcap_repeat_instance","redcap_repeat_instrument")
     )
   ] %>% unique()
   if(length(instrument)>1)stop("All column names in your form must match only one form in your metadata, `DB$redcap$instruments$instrument_name`")
@@ -1499,11 +1499,11 @@ all_missing_codes <- function(){
 }
 
 missing_codes2 <- function(DB){
-  included <- "missing_data_codes"%in%colnames(DB$project_info)
+  included <- "missing_data_codes"%in%colnames(DB$redcap$project_info)
   if(included){
-    is_na <-is.na(DB$project_info$missing_data_codes)
+    is_na <-is.na(DB$redcap$project_info$missing_data_codes)
     if(!is_na){
-      return(DB$project_info$missing_data_codes %>% split_choices())
+      return(DB$redcap$project_info$missing_data_codes %>% split_choices())
     }
     if(is_na){
       return(NA)
@@ -1519,19 +1519,19 @@ missing_codes2 <- function(DB){
 #' @return DB object that has merged all non repeating forms
 #' @export
 merge_non_repeating_DB <- function(DB){
-  if("megrged" %in% names(DB$data))stop("Already merged!")
+  if("megrged" %in% names(DB$data_extract))stop("Already merged!")
   instrument_names <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)] %>% as.list()
   if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
-  merged <- DB$data[[instrument_names[[1]]]]
+  merged <- DB$data_extract[[instrument_names[[1]]]]
   merged$redcap_event_name <- NULL
   # merged$arm_num <- NULL
   merged$event_name <- NULL
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
-  DB$data[[instrument_names[[1]]]] <- NULL
+  DB$data_extract[[instrument_names[[1]]]] <- NULL
   instrument_names[[1]]<-NULL
   while (length(instrument_names)>0) {
-    dfx <- DB$data[[instrument_names[[1]]]]
+    dfx <- DB$data_extract[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
     # dfx$arm_num <- NULL
     dfx$event_name <- NULL
@@ -1539,10 +1539,10 @@ merge_non_repeating_DB <- function(DB){
     dfx$redcap_repeat_instance <- NULL
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
     merged <- merge(merged,dfx,by=in_common,all = T)
-    DB$data[[instrument_names[[1]]]] <- NULL
+    DB$data_extract[[instrument_names[[1]]]] <- NULL
     instrument_names[[1]]<-NULL
   }
-  DB$data$merged <- merged
+  DB$data_extract$merged <- merged
   DB
 }
 
@@ -1551,15 +1551,15 @@ merge_non_repeating_DB <- function(DB){
 #' @return DB object that has merged all non repeating forms
 #' @export
 unmerge_non_repeating_DB <- function(DB){
-  if(!"merged" %in% names(DB$data))stop("No DB$data named as 'merged'!")
-  instrument_names <- DB$data$merged %>% colnames() %>% sapply(function(COL){DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==COL)]}) %>% unique() %>% as.list()
-  merged <- DB$data$merged
+  if(!"merged" %in% names(DB$data_extract))stop("No DB$data_extract named as 'merged'!")
+  instrument_names <- DB$data_extract$merged %>% colnames() %>% sapply(function(COL){DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==COL)]}) %>% unique() %>% as.list()
+  merged <- DB$data_extract$merged
   while (length(instrument_names)>0) {
     instrument_name <-instrument_names[[1]]
-    DB$data[[instrument_name]]<-merged[,unique(c(DB$id_col,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(merged))]))]
+    DB$data_extract[[instrument_name]]<-merged[,unique(c(DB$redcap$id_col,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(merged))]))]
     instrument_names[[1]] <- NULL
   }
-  DB$data$merged<-NULL
+  DB$data_extract$merged<-NULL
   DB
 }
 
@@ -1575,18 +1575,18 @@ deidentify_DB <- function(DB,identifiers){
     identifiers <- identifiers %>% unique()
     bad_identifiers<-identifiers[which(!identifiers%in%DB$redcap$metadata$field_name)]
     if(length(bad_identifiers)>0)stop("You have an identifier that is not included in the set of `DB$redcap$metadata$field_name` --> ",bad_identifiers %>% paste0(collapse = ", "))
-    if(DB$id_col%in%identifiers)stop("Your REDCap ID, ",DB$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
+    if(DB$redcap$id_col%in%identifiers)stop("Your REDCap ID, ",DB$redcap$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
   }
   if(missing_identifiers){
     identifiers<- DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
     if(length(identifiers)==0)warning("You have no identifiers marked in `DB$redcap$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
   }
-  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data), lapply(DB$data, colnames))
+  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data_extract), lapply(DB$data_extract, colnames))
   drop_list <- drop_list[sapply(drop_list, length) > 0]
   if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
   for (FORM in names(drop_list)) {
     for(DROP in drop_list[[FORM]]){
-      DB$data[[FORM]][[DROP]] <- NULL
+      DB$data_extract[[FORM]][[DROP]] <- NULL
       message("Dropped ",DROP," from ", FORM)
     }
   }
@@ -1624,8 +1624,8 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
       here_is_units_df <- units_df
     }
   }
-  for(FORM in names(DB$data)){
-    for(COLUMN in colnames(DB$data[[FORM]])){
+  for(FORM in names(DB$data_extract)){
+    for(COLUMN in colnames(DB$data_extract[[FORM]])){
       if(COLUMN %in% metadata$field_name){
         units <- NULL
         if(!is.null(here_is_units_df)){
@@ -1646,19 +1646,19 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
               levels <- levels %>% unique()
             }
             if(drop_blanks){
-              levels <- levels[which(levels%in%unique(DB$data[[FORM]][[COLUMN]]))]
+              levels <- levels[which(levels%in%unique(DB$data_extract[[FORM]][[COLUMN]]))]
             }
             if(!drop_unknowns){
-              levels <- levels %>% append(unique(DB$data[[FORM]][[COLUMN]])) %>% unique() %>% drop_nas()
+              levels <- levels %>% append(unique(DB$data_extract[[FORM]][[COLUMN]])) %>% unique() %>% drop_nas()
             }
           }
           if(class == "integer"){
 
           }
-          DB$data[[FORM]]
+          DB$data_extract[[FORM]]
         }
       }
-      DB$data[[FORM]][[COLUMN]]<-DB$data[[FORM]][[COLUMN]] %>% clean_column_for_table(
+      DB$data_extract[[FORM]][[COLUMN]]<-DB$data_extract[[FORM]][[COLUMN]] %>% clean_column_for_table(
         class = class,
         label = label,
         units = units,
@@ -1716,7 +1716,7 @@ add_ID_to_DF<-function(DF,DB,ref_id){
   if(!ref_id%in%DB$redcap$metadata$field_name)stop("The ref_id not valid. Must be a REDCap raw colname")
   form<-DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==ref_id)]
   DF[[ref_id]] %>% sapply(function(ID){
-    DB$data[[form]][[DB$id_col]][which(DB$data[[form]][[ref_id]]==ID)]
+    DB$data_extract[[form]][[DB$redcap$id_col]][which(DB$data_extract[[form]][[ref_id]]==ID)]
   }) %>% as.data.frame()->y
   colnames(y)<-"record_id"
   DF<-cbind(y,DF)
@@ -1731,8 +1731,8 @@ add_ID_to_DF<-function(DF,DB,ref_id){
 #' @export
 grab_record_tables<-function(DB, records){
   OUT <-list()
-  for(TABLE in names(DB$data)){
-    OUT[[TABLE]] <-   DB[["data"]][[TABLE]][which(DB[["data"]][[TABLE]][[DB$id_col]]%in%records),]
+  for(TABLE in names(DB$data_extract)){
+    OUT[[TABLE]] <-   DB$data_extract[[TABLE]][which(DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%records),]
   }
   OUT
 }
@@ -1830,7 +1830,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
 
   DB_selected<- DB %>% select_redcap_records(records)
   if(allow_mod){
-    to_save <- names(DB$data)
+    to_save <- names(DB$data_extract)
   }else{
     to_save <- DB$redcap$instruments$instrument_name
   }
@@ -1852,7 +1852,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
 
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
-#' @param allow_all logical TF for allowing DB$data names that are not also instrument names
+#' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names
 #' @return messages for confirmation
 #' @export
 read_redcap_dir<-function(DB,allow_all=T){
@@ -1921,9 +1921,9 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
     }
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  if(is.null(DB[["data"]]))stop("`DB$data` is empty")
-  for(TABLE in names(DB[["data"]])){
-    to_be_uploaded_raw <- DB[["data"]][[TABLE]]
+  if(is.null(DB$data_extract))stop("`DB$data_extract` is empty")
+  for(TABLE in names(DB$data_extract)){
+    to_be_uploaded_raw <- DB$data_extract[[TABLE]]
     if(nrow(to_be_uploaded_raw)>0){
       if(DB$clean){
         to_be_uploaded_clean <- to_be_uploaded_raw
@@ -1972,14 +1972,14 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
     DB_import<-clean_to_raw_redcap(DB_import)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  if(any(!names(DB_import[["data"]])%in%names(DB[["data"]])))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$redcap$instruments$instrument_name`")
+  if(any(!names(DB_import[["data"]])%in%names(DB$data_extract)))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$redcap$instruments$instrument_name`")
   if(is.null(DB_import[["data"]]))stop("`DB_import$data` is empty")
   for(TABLE in names(DB_import[["data"]])){
-    ref_cols <- DB$id_col
+    ref_cols <- DB$redcap$id_col
     if(TABLE%in%DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)]){
-      ref_cols <- c(DB$id_col,"redcap_repeat_instrument","redcap_repeat_instance")
+      ref_cols <- c(DB$redcap$id_col,"redcap_repeat_instrument","redcap_repeat_instance")
     }
-    DB_import[["data"]][[TABLE]] <- find_df_diff(new= DB_import[["data"]][[TABLE]] , old =  DB[["data"]][[TABLE]], ref_cols = ref_cols)
+    DB_import[["data"]][[TABLE]] <- find_df_diff(new= DB_import[["data"]][[TABLE]] , old =  DB$data_extract[[TABLE]], ref_cols = ref_cols)
   }
   DB_import
 }
@@ -2022,7 +2022,7 @@ link_REDCap_project <- function(DB){
 
 #' @title Shows DB in the env
 #' @inheritParams save_DB
-#' @param record REDCap record id or study id etc, any column names that match `DB$id_col`
+#' @param record REDCap record id or study id etc, any column names that match `DB$redcap$id_col`
 #' @param page REDCap page for the record. Must be one of `DB$instruments$instrument_name`
 #' @param instance REDCap instance if it's a repeating instrument
 #' @return opens browser link
@@ -2030,7 +2030,7 @@ link_REDCap_project <- function(DB){
 link_REDCap_record <- function(DB,record,page,instance){
   link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID)
   if(!missing(record)){
-    if(!record%in%DB$all_records[[DB$id_col]])stop(record," is not one of the records inside DB")
+    if(!record%in%DB$all_records[[DB$redcap$id_col]])stop(record," is not one of the records inside DB")
     if("arm_num"%in%colnames(DB$all_records)){
       link <- link %>% paste0("&arm=", DB$all_records$arm_num[which(DB$all_records$participant_id==record)])
     }
@@ -2118,7 +2118,7 @@ update_DB<-function(DB,force=F,day_of_log = 10,labelled = T,get_files = F,origin
       DB$internals$last_metadata_update<-DB$internals$last_data_update<-DB2$last_data_update
       DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
       for(TABLE  in names(DB$data_extract)){
-        DB$data_extract[[TABLE]]<-DB$data_extract[[TABLE]][which(!DB$data_extract[[TABLE]][[DB$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data_extract[[TABLE]][which(DB2$data_extract[[TABLE]][[DB2$id_col]]%in%IDs),])
+        DB$data_extract[[TABLE]]<-DB$data_extract[[TABLE]][which(!DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data_extract[[TABLE]][which(DB2$data_extract[[TABLE]][[DB2$id_col]]%in%IDs),])
       }
       message("updated: ",paste0(IDs,collapse = ", "))
       DB %>% save_DB()
@@ -2299,16 +2299,16 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
 
   instrument_names <- DB$instruments$instrument_name[which(!DB$instruments$repeating)] %>% as.list()
   if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
-  merged <- DB$data[[instrument_names[[1]]]]
+  merged <- DB$data_extract[[instrument_names[[1]]]]
   merged$redcap_event_name <- NULL
   # merged$arm_num <- NULL
   merged$event_name <- NULL
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
-  DB$data[[instrument_names[[1]]]] <- NULL
+  DB$data_extract[[instrument_names[[1]]]] <- NULL
   instrument_names[[1]]<-NULL
   while (length(instrument_names)>0) {
-    dfx <- DB$data[[instrument_names[[1]]]]
+    dfx <- DB$data_extract[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
     # dfx$arm_num <- NULL
     dfx$event_name <- NULL
@@ -2316,10 +2316,10 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     dfx$redcap_repeat_instance <- NULL
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
     merged <- merge(merged,dfx,by=in_common,all = T)
-    DB$data[[instrument_names[[1]]]] <- NULL
+    DB$data_extract[[instrument_names[[1]]]] <- NULL
     instrument_names[[1]]<-NULL
   }
-  DB$data$merged <- merged
+  DB$data_extract$merged <- merged
   DB
 
 
@@ -2335,7 +2335,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   transform$arms_n <- 0
   if(is.data.frame(DB$arms)){
     transform$arms_n <- DB$arms %>% nrow()
-    id_pairs <- DB$instruments$instrument_name %>%  lapply(function(IN){DB$data[[IN]][,c(DB$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
+    id_pairs <- DB$instruments$instrument_name %>%  lapply(function(IN){DB$data_extract[[IN]][,c(DB$redcap$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
     DB$arms$arm_records_n <- DB$arms$arm_num %>% sapply(function(arm){
       which(id_pairs$arm_num==arm)%>% length()
     })
@@ -2347,10 +2347,10 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     transform$events_n <- DB$events %>% nrow()
     transform$event_names_n <- DB$events$event_name %>% unique() %>% length()
     # 1:nrow(DB$event_mapping) %>% lapply(function(i){
-    #   (DB$data[[DB$event_mapping$form[i]]][['redcap_event_name']]==DB$event_mapping$unique_event_name[i]) %>% which() %>% length()
+    #   (DB$data_extract[[DB$event_mapping$form[i]]][['redcap_event_name']]==DB$event_mapping$unique_event_name[i]) %>% which() %>% length()
     # })
     # for(event in ){
-    #   transform[[paste0(event,"_records_n")]] <- DB$data[[]][which(DB$arms$arm_num==arm)]
+    #   transform[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$arms$arm_num==arm)]
     # }
   }
 
@@ -2359,13 +2359,13 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   if(is.data.frame(DB$instruments)){ # can add expected later
     transform$instruments_n <- DB$instruments %>% nrow()
     DB$instruments$incomplete <- DB$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
+      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
     })
     DB$instruments$unverified <- DB$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Unverified") %>% which() %>% length()
+      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Unverified") %>% which() %>% length()
     })
     DB$instruments$complete <- DB$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Complete") %>% which() %>% length()
+      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Complete") %>% which() %>% length()
     })
   }
 
@@ -2391,15 +2391,15 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     form_name <- codebook$form_name[i]
     field_name <- codebook$field_name[i]
 
-    if(!form_name %in% names(DB$data)){
-      if("merged" %in% names(DB$data)){
-        if(field_name%in%colnames(DB$data$merged))return("merged")
+    if(!form_name %in% names(DB$data_extract)){
+      if("merged" %in% names(DB$data_extract)){
+        if(field_name%in%colnames(DB$data_extract$merged))return("merged")
       }
-      if("patient" %in% names(DB$data)){
-        if(field_name%in%colnames(DB$data$patient))return("patient")
+      if("patient" %in% names(DB$data_extract)){
+        if(field_name%in%colnames(DB$data_extract$patient))return("patient")
       }
-      for(other in names(DB$data)[which(!names(DB$data)%in%DB$instruments$instrument_name)]){
-        if(field_name%in%colnames(DB$data[[other]]))return(other)
+      for(other in names(DB$data_extract)[which(!names(DB$data_extract)%in%DB$instruments$instrument_name)]){
+        if(field_name%in%colnames(DB$data_extract[[other]]))return(other)
       }
     }
     return(form_name)
@@ -2417,10 +2417,10 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     })
 
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
+    sum(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
   codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(!is.na(DB$data[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
+    sum(!is.na(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
   }) %>% unlist()
   codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
@@ -2462,8 +2462,8 @@ find_in_DB <- function(DB,text, exact = F){
   if (!exact){
     text <- tolower(text)
   }
-  for(form in names(DB$data)){
-    DF <- DB$data[[form]]
+  for(form in names(DB$data_extract)){
+    DF <- DB$data_extract[[form]]
     for(col in colnames(DF)){
       if (!exact){
         DF[[col]] <- tolower(DF[[col]])
@@ -2472,7 +2472,7 @@ find_in_DB <- function(DB,text, exact = F){
       if(length(rows)>0){
         out <- out %>%dplyr::bind_rows(
           data.frame(
-            record_id = DF[[DB$id_col]][rows],
+            record_id = DF[[DB$redcap$id_col]][rows],
             col = col,
             row = as.character(rows)
           )
@@ -2485,9 +2485,9 @@ find_in_DB <- function(DB,text, exact = F){
 
 
 extract_instrument_from_merged <- function(DB,instrument_name){
-  merged <- DB$data$merged
+  merged <- DB$data_extract$merged
   if(nrow(merged)>0){
-    add_ons <- c(DB$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
+    add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
     add_ons <-add_ons[which(add_ons%in%colnames(merged))]
     if(!instrument_name%in%DB$instruments$instrument_name)stop("instrument_name must be included in set of DB$instruments$instrument_name")
     #instrument_name<- DB$instruments$instrument_name %>% sample(1)
@@ -2546,10 +2546,10 @@ NULL
 write_xl<-function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
-  COL<-which(colnames(DF)==DB$id_col)
+  COL<-which(colnames(DF)==DB$redcap$id_col)
   DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
   if(nrow(DF)>0&&length(COL)>0&&with_links){
-    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$id_col]])
+    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$redcap$id_col]])
     if("arm_num"%in%colnames(DF)){
       DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
     }
@@ -2679,7 +2679,7 @@ find_df_diff <- function (new, old,ref_cols=NULL){
 }
 
 count_DB_cells <- function(DB){
-  DB$data %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
+  DB$data_extract %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
 }
 
 all_character_cols <- function(df){
