@@ -20,6 +20,8 @@ Imports:
     openxlsx,
     readxl,
     REDCapR,
+    rio,
+    rmarkdown,
     stringr,
     tools,
     utils
