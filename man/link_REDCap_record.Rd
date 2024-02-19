@@ -9,7 +9,7 @@ link_REDCap_record(DB, record, page, instance)
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
-\item{record}{REDCap record id or study id etc, any column names that match `DB$id_col`}
+\item{record}{REDCap record id or study id etc, any column names that match `DB$redcap$id_col`}
 
 \item{page}{REDCap page for the record. Must be one of `DB$instruments$instrument_name`}
 
