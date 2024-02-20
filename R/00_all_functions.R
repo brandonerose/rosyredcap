@@ -1,4 +1,4 @@
-#setup-----
+# setup-----
 
 cache <- NULL
 .onLoad <- function(libname, pkgname){
@@ -131,7 +131,7 @@ get_dir <- function(DB){
   dir_path
 }
 
-#----- tokens ----------
+# tokens ----------
 
 has_redcap_token <- function(DB,silent=T){
   DB <- validate_DB(DB)
@@ -203,7 +203,7 @@ view_redcap_token <- function(DB){
 
 
 
-#DB ---------
+# DB ---------
 
 #' @title blank DB object
 #' @return blank_DB list for reference
@@ -479,7 +479,7 @@ all_records <- function(DB){
   records
 }
 
-#redcap API-----------
+# redcap API-----------
 
 redcap_api_base <- function(url,token,content,additional_args=NULL){
   body  <- list(
@@ -529,7 +529,7 @@ test_redcap <- function(DB){
     }
   }
   message("Connected to REDCap!")
-  DB$version <- version %>% httr::content(as="text") %>% as.character()
+  DB$redcap$version <- version %>% httr::content(as="text") %>% as.character()
   DB
 }
 
@@ -596,10 +596,7 @@ get_redcap_metadata <- function(DB){
   DB$redcap$project_title <-  DB$redcap$project_info$project_title
   DB$redcap$project_id <- DB$redcap$project_info$project_id
   DB$redcap$is_longitudinal <- DB$redcap$project_info$is_longitudinal == "1"
-
-
-
-
+  DB$redcap$missing_codes <- missing_codes2(DB)
   # is longitudinal ------
   if(DB$redcap$is_longitudinal){
     DB$redcap$arms <- get_redcap_info(DB,"arm")
@@ -694,18 +691,17 @@ get_redcap_metadata <- function(DB){
   # metadata_remap <- generate_default_remap(DB)
   DB$redcap$users <- get_redcap_users(DB)
   DB$redcap$codebook <- make_codebook(DB)
-  DB$redcap$missing_codes <- missing_codes2(DB)
   DB$redcap$log <- check_redcap_log(DB,last = 2,units = "mins")
   DB$redcap$users$current_user <- DB$redcap$users$username==DB$redcap$log$username[which(DB$redcap$log$details=="Export REDCap version (API)") %>% dplyr::first()]
-  DB$links$home_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
-  DB$links$redcap_records_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_status_dashboard.php?pid=",DB$PID)
-  DB$links$redcap_API_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/API/project_api.php?pid=",DB$PID)
-  DB$links$redcap_API_playground_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/API/playground.php?pid=",DB$PID)
+  DB$links$home_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/index.php?pid=",DB$redcap$project_id)
+  DB$links$redcap_records_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/DataEntry/record_status_dashboard.php?pid=",DB$redcap$project_id)
+  DB$links$redcap_API_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/API/project_api.php?pid=",DB$redcap$project_id)
+  DB$links$redcap_API_playground_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/API/playground.php?pid=",DB$redcap$project_id)
   DB
 }
 
 get_redcap_data <- function(DB,clean=T,records=NULL){
-  DB$last_data_update <- Sys.time()
+  DB$internals$last_data_update <- Sys.time()
   raw <- get_raw_redcap(
     DB=DB,
     clean=F,
@@ -715,7 +711,7 @@ get_redcap_data <- function(DB,clean=T,records=NULL){
   if(is.null(records)){
     DB$all_records <- all_records(DB)
   }
-  DB$clean <- F
+  DB$internals$data_extract_labelled <- F
   if(clean){
     DB <- DB %>% raw_to_clean_redcap()
   }
@@ -758,8 +754,8 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
 #' @param records optional records
 #' @return data.frame of raw_redcap
 #' @export
-get_raw_redcap <- function(DB,clean=T,records=NULL){
-  REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(clean,"label","raw"))$data %>% all_character_cols()
+get_raw_redcap <- function(DB,labelled=T,records=NULL){
+  REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% all_character_cols()
 }
 
 
@@ -914,7 +910,7 @@ delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, eve
   message("File Deleted!")
 }
 
-#process ---------
+# process ---------
 
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
@@ -986,12 +982,12 @@ clean_to_raw_redcap <- function(DB){
   for(TABLE in names(DB$data_extract)){
     DB$data_extract[[TABLE]] <- clean_to_raw_form(FORM = DB$data_extract[[TABLE]],DB=DB)
   }
-  DB$clean <- F
+  DB$internals$data_extract_labelled <- F
   DB
 }
 
 raw_to_clean_redcap <- function(DB){
-  if(DB$clean)stop("DB is already clean (not raw coded values)")
+  if(DB$internals$data_extract_labelled)stop("DB is already labelled (not raw coded values)")
   use_missing_codes <- is.data.frame(DB$redcap$missing_codes)
   for(instrument_name in DB$redcap$instruments$instrument_name){
     for (field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_type%in%c("radio","dropdown"))]){
@@ -1094,13 +1090,13 @@ raw_to_clean_redcap <- function(DB){
     }
   }
   # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
-  DB$clean <- T
+  DB$internals$data_extract_labelled <- T
   DB
 }
 
 #' @title Clean to Raw REDCap forms
 #' @inheritParams save_DB
-#' @param FORM data.frame of clean REDCap to be converted to raw REDCap (for uploads)
+#' @param FORM data.frame of labelled REDCap to be converted to raw REDCap (for uploads)
 #' @return DB object that has been filtered to only include the specified records
 #' @export
 clean_to_raw_form <- function(FORM,DB){
@@ -1526,7 +1522,7 @@ make_codebook <- function(DB){
 # summarize ---------------
 
 
-#toa and from dir -----------
+# to and from dir -----------
 
 #' @title Shows DB in the env
 #' @inheritParams save_DB
@@ -1670,13 +1666,13 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
   for(TABLE in names(DB$data_extract)){
     to_be_uploaded_raw <- DB$data_extract[[TABLE]]
     if(nrow(to_be_uploaded_raw)>0){
-      if(DB$clean){
+      if(DB$internals$data_extract_labelled){
         to_be_uploaded_clean <- to_be_uploaded_raw
         to_be_uploaded_raw <- to_be_uploaded_clean %>% clean_to_raw_form(DB)
       }
       do_it <- 1
       if(ask){
-        if(DB$clean){
+        if(DB$internals$data_extract_labelled){
           print("Clean Data")
           print.data.frame(to_be_uploaded_clean%>% utils::head(n=40))
         }
@@ -1713,7 +1709,7 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
       DB_import$data[[DROP]] <- NULL
     }
   }
-  if(DB_import$clean&!DB$clean){
+  if(DB_import$internals$data_extract_labelled&!DB$internals$data_extract_labelled){
     DB_import <- clean_to_raw_redcap(DB_import)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
@@ -1731,7 +1727,7 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
 
 
 
-#link --------
+# link --------
 
 #' @title Link to get a new API token for your project (if you access)
 #' @inheritParams save_DB
@@ -1773,7 +1769,7 @@ link_REDCap_project <- function(DB){
 #' @return opens browser link
 #' @export
 link_REDCap_record <- function(DB,record,page,instance){
-  link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID)
+  link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id)
   if(!missing(record)){
     if(!record%in%DB$all_records[[DB$redcap$id_col]])stop(record," is not one of the records inside DB")
     if("arm_num"%in%colnames(DB$all_records)){
@@ -1795,7 +1791,7 @@ link_REDCap_record <- function(DB,record,page,instance){
 
 
 
-#upload --------
+# upload --------
 
 #' @title Shows DB in the env
 #' @param DB DB from load_DB or setup_DB
@@ -2302,7 +2298,7 @@ write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add ins
   COL <- which(colnames(DF)==DB$redcap$id_col)
   DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
   if(nrow(DF)>0&&length(COL)>0&&with_links){
-    DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$redcap$id_col]])
+    DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id,"&id=",DF[[DB$redcap$id_col]])
     if("arm_num"%in%colnames(DF)){
       DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
     }
