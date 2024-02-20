@@ -5,8 +5,6 @@
 \title{Reads DB from the directory}
 \usage{
 load_DB(dir_path, blank = F)
-
-load_DB(dir_path, blank = F)
 }
 \arguments{
 \item{dir_path}{character file path of the directory}
@@ -15,11 +13,7 @@ load_DB(dir_path, blank = F)
 }
 \value{
 DB
-
-DB
 }
 \description{
-Reads DB from the directory
-
 Reads DB from the directory
 }

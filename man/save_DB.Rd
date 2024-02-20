@@ -5,19 +5,13 @@
 \title{Saves DB in the directory}
 \usage{
 save_DB(DB)
-
-save_DB(DB)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 }
 \value{
 Message
-
-Message
 }
 \description{
-Saves DB in the directory
-
 Saves DB in the directory
 }

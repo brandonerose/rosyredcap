@@ -5,8 +5,6 @@
 \title{Deletes DB object from directory (solves occasional problems)}
 \usage{
 delete_DB(DB, dir_path)
-
-delete_DB(DB, dir_path)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
@@ -15,11 +13,7 @@ delete_DB(DB, dir_path)
 }
 \value{
 message
-
-message
 }
 \description{
-Deletes DB object from directory (solves occasional problems)
-
 Deletes DB object from directory (solves occasional problems)
 }

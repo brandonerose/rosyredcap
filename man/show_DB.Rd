@@ -5,8 +5,6 @@
 \title{Shows DB in the env}
 \usage{
 show_DB(DB, also_metadata = T)
-
-show_DB(DB, also_metadata = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
@@ -15,15 +13,8 @@ show_DB(DB, also_metadata = T)
 }
 \value{
 DB tables
-
-DB tables
 }
 \description{
-To add all of these to your global environment you could run the following code...
-`data_list <- show_DB(DB)`
-`for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
-This code is not allowed on CRAN to avoid name conflicts
-
 To add all of these to your global environment you could run the following code...
 `data_list <- show_DB(DB)`
 `for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`

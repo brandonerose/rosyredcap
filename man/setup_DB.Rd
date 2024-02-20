@@ -5,8 +5,6 @@
 \title{Setup for DB including token}
 \usage{
 setup_DB(short_name, dir_path, token_name, redcap_base_link, force = F)
-
-setup_DB(short_name, dir_path, token_name, redcap_base_link, force = F)
 }
 \arguments{
 \item{short_name}{character name as a shortcut}
@@ -21,11 +19,7 @@ setup_DB(short_name, dir_path, token_name, redcap_base_link, force = F)
 }
 \value{
 DB
-
-DB
 }
 \description{
-Setup for DB including token
-
 Setup for DB including token
 }

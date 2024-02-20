@@ -5,16 +5,10 @@
 \title{blank DB object}
 \usage{
 blank_DB()
-
-blank_DB()
 }
 \value{
 blank_DB list for reference
-
-blank_DB list for reference
 }
 \description{
-blank DB object
-
 blank DB object
 }

@@ -1,30 +1,30 @@
 #setup-----
 
-cache<-NULL
-.onLoad<-function(libname, pkgname){
-  x<-hoardr::hoard()
+cache <- NULL
+.onLoad <- function(libname, pkgname){
+  x <- hoardr::hoard()
   x$cache_path_set(path=.packageName,type="user_cache_dir")
   x$mkdir()
-  cache<<-x
+  cache <- x
 }
 
 cache_path <- function(){
   cache$cache_path_get() %>% normalizePath()
 }
 
-cache_exists<- function(){
+cache_exists <-  function(){
   cache_path() %>% file.exists()
 }
 
 #' @title Clear your cached projects
 #' @return message confirmation
 #' @export
-cache_clear<- function(){
+cache_clear <-  function(){
   cache$delete_all()
   message("Cache cleared!")
 }
 
-cache_projects_exists<- function(){
+cache_projects_exists <-  function(){
   if(cache_exists()){
     cache_path() %>% file.path("projects.rds") %>% file.exists()
   }else{
@@ -42,7 +42,7 @@ cache_projects_exists<- function(){
 #' @export
 get_projects <- function(){
   if(cache_projects_exists()){
-    projects<-cache_path() %>% file.path("projects.rds") %>% readRDS()
+    projects <- cache_path() %>% file.path("projects.rds") %>% readRDS()
     return(projects)
   }else{
     "You have no projects cached. Try `add_project`" %>% message()
@@ -57,8 +57,8 @@ blank_project_cols <- function(){
 }
 
 blank_projects <- function(){
-  x<-matrix(data = character(0),ncol = length(blank_project_cols())) %>% as.data.frame()
-  colnames(x)<-blank_project_cols()
+  x <- matrix(data = character(0),ncol = length(blank_project_cols())) %>% as.data.frame()
+  colnames(x) <- blank_project_cols()
   x
 }
 
@@ -69,9 +69,9 @@ add_project <- function(DB){
   for(COL in blank_project_cols()){
     OUT <- OUT %>% append(as.character(DB[[COL]]))
   }
-  OUT<- OUT %>% as.data.frame() %>% t() %>% as.data.frame()
+  OUT <-  OUT %>% as.data.frame() %>% t() %>% as.data.frame()
   colnames(OUT) <- blank_project_cols()
-  rownames(OUT)<-NULL
+  rownames(OUT) <- NULL
   OUT
   projects <- projects %>% dplyr::bind_rows(OUT)
   saveRDS(projects, file = cache$cache_path_get() %>% normalizePath() %>% file.path("projects.rds"))
@@ -79,12 +79,12 @@ add_project <- function(DB){
 
 validate_dir <- function(dir_path,silent=T){
   #param check
-  dir_path<-clean_dir_path(dir_path)
+  dir_path <- clean_dir_path(dir_path)
   if ( ! file.exists(dir_path)) stop("dir_path does not exist")
   if ( ! is.logical(silent)) stop("silent parameter must be T/F")
   #function
   if( ! silent) message("directory --> '",dir_path,"'")
-  stop_mes<-"Did you use `set_dir()`?"
+  stop_mes <- "Did you use `set_dir()`?"
   for(folder in c("R_objects","REDCap","output","scripts","input")){
     if ( ! file.exists(file.path(dir_path,folder))) stop("'",dir_path,"/",folder,"' missing! ",stop_mes)
   }
@@ -99,7 +99,7 @@ clean_dir_path <- function(dir_path){
 }
 
 set_dir <- function(dir_path){
-  dir_path<-clean_dir_path(dir_path)
+  dir_path <- clean_dir_path(dir_path)
   if( ! file.exists(dir_path)){
     if(utils::menu(choices = c("Yes","No"),title = "No file path found, create?")==1){
       dir.create(file.path(dir_path))
@@ -121,7 +121,7 @@ set_dir <- function(dir_path){
 #' @export
 get_dir <- function(DB){
   dir_path <- DB$dir_path
-  stop_mes<-"Did you use `set_dir()`?"
+  stop_mes <- "Did you use `set_dir()`?"
   if ( ! file.exists(dir_path)) {
     warning("Searched for directory --> '",dir_path,"' ...")
     stop(paste0("Does not exist. ", stop_mes))
@@ -197,290 +197,17 @@ set_redcap_token <- function(DB){
 #' @return REDCap API token currently stored in the session
 #' @export
 view_redcap_token <- function(DB){
-  DB <-validate_DB(DB)
+  DB  <- validate_DB(DB)
   validate_redcap_token(DB,silent = F,return = T)
 }
 
 
-#' @title blank DB object
-#' @return blank_DB list for reference
-blank_DB<- function(){ # can sort this better in version 3.0.0
-  list(
-    short_name=NULL,
-    token_name=NULL,
-    dir_path=NULL,
-    internals = list(
-      last_metadata_update=NULL,
-      last_data_update=NULL,
-      last_data_transformation = NULL,
-      data_extract_labelled = NULL,
-      data_extract_clean = NULL
-    ),
-    redcap = list(
-      project_id=NULL,
-      project_title= NULL,
-      id_col=NULL,
-      version=NULL,
-      project_info=NULL,
-      metadata=NULL,
-      instruments=NULL,
-      arms=NULL,
-      events=NULL,
-      event_mapping = NULL,
-      missing_codes=NULL,
-      log=NULL,
-      users=NULL,
-      current_user=NULL,
-      codebook=NULL,
-      choices=NULL,
-      raw_structure_cols = NULL,
-      is_longitudinal = NULL,
-      has_arms = NULL,
-      has_multiple_arms = NULL,
-      has_repeating_instruments_or_events = NULL,
-      has_repeating_instruments = NULL,
-      has_repeating_events = NULL
-    ),
-    auto_jobs = NULL,
-    remap = list(
-      metadata_map=NULL,
-      metadata_new=NULL,
-      instruments_map=NULL,
-      instruments_new=NULL,
-      arms_map=NULL,
-      arms_new=NULL,
-      events_map=NULL,
-      events_new=NULL,
-      event_mapping_map=NULL,
-      event_mapping_new=NULL
-    ),
-    data_extract = NULL,
-    data_transform = NULL,
-    data_upload = NULL,
-    all_records = NULL,
-    links = list(
-      redcap_base_link = NULL,
-      redcap_uri = NULL,
-      redcap_home_link = NULL,
-      redcap_records_link = NULL,
-      redcap_API_link = NULL,
-      redcap_API_playground_link = NULL,
-      github_link = "https://github.com/brandonerose/rosyredcap",
-      thecodingdocs_link = "https://www.thecodingdocs.com/"
-    )
-  )
-}
-
-validate_DB<-function(DB,silent = T){
-  #param check
-  if( ! is.list(DB)) stop("DB must be a list")
-  #function
-  if( ! all(names(blank_DB())%in%names(DB))){
-    stop("`DB` does not have the appropriate names. Did you use `load_DB()` or `setup_DB()` to generate it?")
-  }
-  if(is.null(DB$dir_path)){
-    stop("`DB$dir_path` is NULL!, Did you use `setup_DB()`?")
-  }else{
-    if( ! DB$dir_path %>% file.exists()) warning("`DB$dir_path`, '",DB$dir_path,"', does not exist!, Did you use `setup_DB()`?\nThis can also happen with shared directories.",immediate. = T)
-  }
-  if(is.null(DB$short_name)){
-    stop("`DB$short_name` is NULL!, Did you use `setup_DB()`?")
-  }else{
-    DB$short_name %>% validate_env_name()
-  }
-  if(is.null(DB$token_name)){
-    stop("`DB$token_name` is NULL!, Did you use `setup_DB()`?")
-  }else{
-    DB$token_name %>% validate_env_name()
-  }
-  if(is.null(DB$links$redcap_base_link)){
-    stop("`DB$links$redcap_base_link` is NULL!, Did you use `setup_DB()`?")
-  }else{
-    DB$links$redcap_base_link %>% validate_web_link()
-  }
-  # for (CHECK in c("title","PID","version","last_metadata_update","last_data_update","home_link","API_playground_link")){
-  #   if(is.null(DB[[CHECK]])){
-  #     stop("`DB$",CHECK,"` is NULL!, Did you use `setup_DB()`?")
-  #   }
-  # }
-  if(!silent){
-    if((length(DB$data_extract)==0)>0||is.null(DB$redcap$project_info)){
-      warning("Valid list but no data yet!",immediate. = T)
-    }
-    message("`DB` validated!")
-  }
-  DB
-}
-#add year check
-
-#' @title Setup for DB including token
-#' @param short_name character name as a shortcut
-#' @param dir_path character file path of the directory
-#' @param token_name character string of what the token is called when using Sys.setenv and Sys.getenv
-#' @param redcap_base_link character of the base REDCap link, ex. https://redcap.miami.edu
-#' @param force logical for force blank load vs last save
-#' @return DB
-#' @export
-setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
-  #param check
-  missing_dir_path<-missing(dir_path)
-  if(missing_dir_path){
-    warning("If you don't supply a directory, rosyredcap will only run in R session. Package is best with a directory",immediate. = T)
-    DB <- blank_DB()
-  }
-  if(!missing_dir_path){
-    dir_path<-set_dir(dir_path)
-    DB<-load_DB(dir_path,blank = force)
-    DB$dir_path <- dir_path
-  }
-  if(
-    force |
-    is.null(DB$internals$last_metadata_update) |
-    is.null(DB$redcap$project_info) |
-    is.null(DB$short_name) |
-    is.null(DB$token_name) |
-    is.null(DB$links$redcap_uri) |
-    is.null(DB$redcap$project_title) |
-    is.null(DB$redcap$project_id)
-  ){
-    if(missing(short_name))stop("`short_name` is required for DBs that haven't been validated")
-    if(missing(token_name))stop("`token_name` is required for DBs that haven't been validated")
-    if(missing(redcap_base_link))stop("`redcap_base_link` is required for DBs that haven't been validated")
-    DB$short_name <- short_name %>% validate_env_name()
-    DB$token_name <- token_name %>% validate_env_name()
-    DB$links$redcap_base_link <- redcap_base_link %>% validate_web_link()
-    DB$links$redcap_uri <- DB$links$redcap_base_link  %>% paste0("api/")
-    DB <- validate_DB(DB)
-  }else{
-    if(! missing(short_name)){
-      if(DB$short_name != short_name)stop("The `short_name`, ",short_name,", you provided does not match the one the was loaded ",DB$short_name)
-    }
-    if(! missing(token_name)){
-      if(DB$token_name != token_name)stop("The `token_name`, ",token_name,", you provided does not match the one the was loaded ",DB$token_name)
-    }
-    if(! missing(redcap_base_link)){
-      if(DB$links$redcap_base_link != redcap_base_link)stop("The `redcap_base_link`, ",redcap_base_link,", you provided does not match the one the was loaded ",DB$links$redcap_base_link)
-    }
-  }
-  DB
-}
-
-#' @title Reads DB from the directory
-#' @inheritParams setup_DB
-#' @param blank logical for blank load or last save
-#' @return DB
-#' @export
-load_DB<-function(dir_path,blank=F){
-  if(blank){
-    DB <- blank_DB()
-  }else{
-    DB_path<-file.path(dir_path,"R_objects","DB.rdata")
-    if(file.exists(DB_path)){
-      DB <-readRDS(file=DB_path)
-      validate_DB(DB)
-    }else{
-      DB <- blank_DB()
-    }
-  }
-  #DB summary----
-  DB
-}
-
-#' @title Saves DB in the directory
-#' @param DB object generated using `load_DB()` or `setup_DB()`
-#' @return Message
-#' @export
-save_DB<-function(DB){
-  #param check
-  if( ! is.list(DB)) stop("DB must be a list")
-  #function
-  DB %>% validate_DB() %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
-  add_project(DB)
-  # save_xls_wrapper(DB)
-  message("Saved!")
-}
-
-#' @title Shows DB in the env
-#' @inheritParams save_DB
-#' @param also_metadata logical for including metadata
-#' @description
-#' To add all of these to your global environment you could run the following code...
-#' `data_list <- show_DB(DB)`
-#' `for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
-#' This code is not allowed on CRAN to avoid name conflicts
-#' @return DB tables
-#' @export
-show_DB <- function(DB,also_metadata=T){
-  DB <- validate_DB(DB)
-  data_list <- list()
-  for(NAME in names(DB$data_extract)){
-    L <- list(DB$data_extract[[NAME]])
-    names(L) <- NAME
-    data_list <- data_list %>% append(L)
-  }
-  if(also_metadata){
-    for(NAME in c("metadata","instruments","arms","events","event_mapping","log","users","codebook","project_info")){#"unique_events"
-      L <- list(DB[[NAME]])
-      names(L) <- NAME
-      data_list <- data_list %>% append(L)
-    }
-  }
-  data_list %>% list2env(envir = .GlobalEnv)
-}
-
-#' @title Deletes DB object from directory (solves occasional problems)
-#' @inheritParams save_DB
-#' @inheritParams setup_DB
-#' @param dir_path character file path of the directory
-#' @return message
-#' @export
-delete_DB <- function(DB,dir_path){
-  if(!missing(DB)){
-    DB <- validate_DB(DB)
-    DIR <- DB$dir_path
-    if(!missing(dir_path))warning("You only need to provide a directory path using a DB object OR dir_path. DB will be used by default.",immediate. = T)
-  } else {
-    if(missing(dir_path))stop("You must provide a directory path using a DB object or dir_path")
-    DIR <- dir_path
-  }
-  DIR <-validate_dir(DIR,silent = F)
-  delete_this <- file.path(DIR,"R_objects","DB.Rdata")
-  if(file.exists(delete_this)){
-    unlink(delete_this)
-    message("Deleted saved DB")
-  }else{
-    warning("The DB object you wanted to is not there. Did you delete already? ",delete_this)
-  }
-}
-
-all_records <- function(DB){
-  records <- NULL
-  cols <- DB$redcap$id_col
-  if(is.data.frame(DB$arms)){
-    if(nrow(DB$arms)>1){
-      cols <- DB$redcap$id_col %>% append("arm_num")
-    }
-  }
-  if(length(cols)==1){
-    records <- data.frame(
-      records =  names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% unlist() %>% unique()
-    )
-    colnames(records) <- cols
-  }
-  if(length(cols) == 2){
-    records <- names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
-    # records <- records[order(as.integer(records[[DB$redcap$id_col]])),]
-  }
-  rownames(records) <- NULL
-  if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
-  records
-}
 
 #DB ---------
 
 #' @title blank DB object
 #' @return blank_DB list for reference
-blank_DB<- function(){ # can sort this better in version 3.0.0
+blank_DB <-  function(){ # can sort this better in version 3.0.0
   list(
     short_name=NULL,
     token_name=NULL,
@@ -513,6 +240,7 @@ blank_DB<- function(){ # can sort this better in version 3.0.0
       is_longitudinal = NULL,
       has_arms = NULL,
       has_multiple_arms = NULL,
+      has_arms_that_matter = NULL,
       has_repeating_instruments_or_events = NULL,
       has_repeating_instruments = NULL,
       has_repeating_events = NULL
@@ -547,7 +275,7 @@ blank_DB<- function(){ # can sort this better in version 3.0.0
   )
 }
 
-validate_DB<-function(DB,silent = T){
+validate_DB <- function(DB,silent = T){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
@@ -599,14 +327,14 @@ validate_DB<-function(DB,silent = T){
 #' @export
 setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
   #param check
-  missing_dir_path<-missing(dir_path)
+  missing_dir_path <- missing(dir_path)
   if(missing_dir_path){
     warning("If you don't supply a directory, rosyredcap will only run in R session. Package is best with a directory",immediate. = T)
     DB <- blank_DB()
   }
   if(!missing_dir_path){
-    dir_path<-set_dir(dir_path)
-    DB<-load_DB(dir_path,blank = force)
+    dir_path <- set_dir(dir_path)
+    DB <- load_DB(dir_path,blank = force)
     DB$dir_path <- dir_path
   }
   if(
@@ -646,19 +374,18 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
 #' @param blank logical for blank load or last save
 #' @return DB
 #' @export
-load_DB<-function(dir_path,blank=F){
+load_DB <- function(dir_path,blank=F){
   if(blank){
     DB <- blank_DB()
   }else{
-    DB_path<-file.path(dir_path,"R_objects","DB.rdata")
+    DB_path <- file.path(dir_path,"R_objects","DB.rdata")
     if(file.exists(DB_path)){
-      DB <-readRDS(file=DB_path)
+      DB  <- readRDS(file=DB_path)
       validate_DB(DB)
     }else{
       DB <- blank_DB()
     }
   }
-  #DB summary----
   DB
 }
 
@@ -666,7 +393,7 @@ load_DB<-function(dir_path,blank=F){
 #' @param DB object generated using `load_DB()` or `setup_DB()`
 #' @return Message
 #' @export
-save_DB<-function(DB){
+save_DB <- function(DB){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
@@ -719,7 +446,7 @@ delete_DB <- function(DB,dir_path){
     if(missing(dir_path))stop("You must provide a directory path using a DB object or dir_path")
     DIR <- dir_path
   }
-  DIR <-validate_dir(DIR,silent = F)
+  DIR  <- validate_dir(DIR,silent = F)
   delete_this <- file.path(DIR,"R_objects","DB.Rdata")
   if(file.exists(delete_this)){
     unlink(delete_this)
@@ -732,8 +459,8 @@ delete_DB <- function(DB,dir_path){
 all_records <- function(DB){
   records <- NULL
   cols <- DB$redcap$id_col
-  if(is.data.frame(DB$arms)){
-    if(nrow(DB$arms)>1){
+  if(is.data.frame(DB$redcap$arms)){
+    if(nrow(DB$redcap$arms)>1){
       cols <- DB$redcap$id_col %>% append("arm_num")
     }
   }
@@ -752,10 +479,10 @@ all_records <- function(DB){
   records
 }
 
-#download -----------
+#redcap API-----------
 
 redcap_api_base <- function(url,token,content,additional_args=NULL){
-  body <-list(
+  body  <- list(
     "token"= token,
     content=content,
     format='csv',
@@ -777,8 +504,8 @@ process_response <- function(response,error_action){
     if(!missing(error_action)){
       if(!is.null(error_action)){
         if(!error_action%in%c("stop","warn"))stop("error_action must be 'stop' or 'warn'")
-        general_error<-response$status_code
-        specific_error<-http_errors$Description[which(http_errors$Value==response$status_code)]
+        general_error <- response$status_code
+        specific_error <- http_errors$Description[which(http_errors$Value==response$status_code)]
         message <- paste0("HTTP error ",general_error, ". ",specific_error,". ",content[["error"]])
         if(error_action=="stop")stop(message)
         warning(message,immediate. = T)
@@ -790,10 +517,10 @@ process_response <- function(response,error_action){
 }
 
 test_redcap <- function(DB){
-  ERROR <-T
+  ERROR  <- T
   while(ERROR){
     version <- redcap_api_base(DB$links$redcap_uri,validate_redcap_token(DB),"version")
-    ERROR <-version %>% httr::http_error()
+    ERROR  <- version %>% httr::http_error()
     if(ERROR){
       warning('Your REDCap API token check failed. Invalid token or API privileges. Contact Admin! Consider rerunnning `setup_DB()`',immediate. = T)
       warning("HTTP error ",version %>% httr::status_code(), ". Check your token, internet connection, and redcap base link.",immediate. = T)
@@ -831,7 +558,7 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
       form <- DB$data_extract[[form_name]]
       rows_to_save <- which(!is.na(form[[field_name]]))
       for(i in rows_to_save){
-        file_name <-form[[field_name]][i]
+        file_name  <- form[[field_name]][i]
         record_id <- form[[DB$redcap$id_col]][i]
         repeat_instrument = form[["redcap_repeat_instrument"]][i]
         repeat_instance = form[["redcap_repeat_instance"]][i]
@@ -862,45 +589,92 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
   message("Checked for files!")
 }
 
-get_redcap_metadata<-function(DB){
-  DB$internals$last_metadata_update=Sys.time()
+get_redcap_metadata <- function(DB){
+  DB$internals$last_metadata_update <- Sys.time()
+  # info ----------
   DB$redcap$project_info <- get_redcap_info(DB,"project")
   DB$redcap$project_title <-  DB$redcap$project_info$project_title
   DB$redcap$project_id <- DB$redcap$project_info$project_id
+  DB$redcap$is_longitudinal <- DB$redcap$project_info$is_longitudinal == "1"
+
+
+
+
+  # is longitudinal ------
+  if(DB$redcap$is_longitudinal){
+    DB$redcap$arms <- get_redcap_info(DB,"arm")
+    DB$redcap$has_arms <- T
+    DB$redcap$has_multiple_arms <- nrow(DB$redcap$arms)>1
+    # DB$redcap$has_arms_that_matter <- nrow(DB$redcap$arms)>1
+    DB$redcap$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
+    DB$redcap$events <- get_redcap_info(DB,"event","warn")
+    DB$redcap$events$forms <- DB$redcap$events$unique_event_name %>% sapply(function(events){
+      DB$redcap$event_mapping$form[which(DB$redcap$event_mapping$unique_event_name==events)] %>% unique() %>% paste0(collapse = " | ")
+    })
+    # if(is.data.frame(DB$unique_events)){
+    #   DB$redcap$events <- data.frame(
+    #     event_name = unique(DB$unique_events$event_name),
+    #     arms = unique(DB$unique_events$event_name) %>% sapply(function(event_name){
+    #       DB$unique_events$arm_num[which(DB$unique_events$event_name==event_name)] %>% unique() %>% paste0(collapse = " | ")
+    #     })
+    #   )
+    # }
+    DB$redcap$instruments$repeating[
+      which(
+        DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
+          # instrument_name <- DB$redcap$instruments$instrument_name %>% sample(1)
+          anyDuplicated(DB$redcap$event_mapping$arm_num[which(DB$redcap$event_mapping$form==instrument_name)] %>% unique())>0
+        })
+      )
+    ] <- T
+  }else{
+    DB$redcap$has_arms <- F
+    DB$redcap$has_multiple_arms <- NA
+    DB$redcap$has_arms_that_matter <- NA
+    DB$redcap$event_mapping  <- NA
+    DB$redcap$events <- NA
+  }
+  #instruments --------
+  DB$redcap$instruments <- get_redcap_info(DB,"instrument","warn")
+  DB$redcap$instruments$repeating <- F
+  DB$redcap$has_repeating_instruments <- F
+  # if(DB$redcap$project_info$has_repeating_instruments_or_events=="1")
+  repeating <- get_redcap_info(DB,"repeatingFormsEvents")
+  if(is.data.frame(repeating)){
+    DB$redcap$instruments$repeating <- DB$redcap$instruments$instrument_name%in%repeating$form_name
+    #   DB$redcap$metadata <- DB$redcap$metadata %>%dplyr::bind_rows(
+    #     data.frame(
+    #       field_name="redcap_repeat_instance",form_name=DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
+    #     )
+    #   ) %>% unique()
+    #   DB$redcap$metadata <- DB$redcap$metadata %>%dplyr::bind_rows(
+    #     data.frame(
+    #       field_name="redcap_repeat_instrument",form_name=DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
+    #     )
+    #   ) %>% unique()
+  }
+  if(any(DB$redcap$instruments$repeating)){
+    DB$redcap$has_repeating_instruments <- T
+  }
+  #metadata ----------
   DB$redcap$metadata <- get_redcap_info(DB,"metadata","stop")
   DB$redcap$metadata$section_header <- DB$redcap$metadata$section_header %>% remove_html_tags()
   DB$redcap$metadata$field_label <- DB$redcap$metadata$field_label %>% remove_html_tags()
-  DB$redcap$instruments <- get_redcap_info(DB,"instrument","warn")
+  DB$redcap$id_col <- DB$redcap$metadata[1,1] %>% as.character() #RISKY?
 
-  DB$arms <- get_redcap_info(DB,"arm")
-  DB$events <- get_redcap_info(DB,"event","warn")
-  # if(is.data.frame(DB$unique_events)){
-  #   DB$events <- data.frame(
-  #     event_name = unique(DB$unique_events$event_name),
-  #     arms = unique(DB$unique_events$event_name) %>% sapply(function(event_name){
-  #       DB$unique_events$arm_num[which(DB$unique_events$event_name==event_name)] %>% unique() %>% paste0(collapse = " | ")
-  #     })
-  #   )
-  # }
-  DB$event_mapping  <- get_redcap_info(DB,"formEventMapping","warn")
-  DB$has_event_mappings <- is.data.frame(DB$event_mapping)
-  if(DB$has_event_mappings){
-    DB$event_mapping$unique_event_name
-    DB$events$forms = DB$events$unique_event_name %>% sapply(function(events){
-      DB$event_mapping$form[which(DB$event_mapping$unique_event_name==events)] %>% unique() %>% paste0(collapse = " | ")
-    })
-  }
-  DB$redcap$id_col<-DB$redcap$metadata[1,1] %>% as.character() #RISKY?
-
-  DB$redcap$metadata<-DB$redcap$metadata %>%dplyr::bind_rows(
-    data.frame(
-      field_name=paste0(unique(DB$redcap$instruments$instrument_name),"_complete"),form_name=unique(DB$redcap$instruments$instrument_name),field_type="radio",select_choices_or_calculations="0, Incomplete | 1, Unverified | 2, Complete"
-    )
-  ) %>% unique()
+  DB$redcap$metadata <- DB$redcap$metadata %>%
+    dplyr::bind_rows(
+      data.frame(
+        field_name = paste0(unique(DB$redcap$instruments$instrument_name),"_complete"),
+        form_name = unique(DB$redcap$instruments$instrument_name),
+        field_type = "radio",
+        select_choices_or_calculations = "0, Incomplete | 1, Unverified | 2, Complete"
+      )
+    ) %>% unique()
   if(any(DB$redcap$metadata$field_type=="checkbox")){
     for(field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$field_type=="checkbox")]){
-      x<-DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
-      DB$redcap$metadata<-DB$redcap$metadata %>%dplyr::bind_rows(
+      x <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
+      DB$redcap$metadata <- DB$redcap$metadata %>%dplyr::bind_rows(
         data.frame(
           field_name=paste0(field_name,"___",x$code),
           form_name=DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==field_name)]  ,
@@ -916,50 +690,21 @@ get_redcap_metadata<-function(DB){
     DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_type=="yesno")] <- c("0, No | 1, Yes")
   }
 
-  DB$redcap$instruments$repeating <- F
-  DB$has_repeating <- F
-  # if(DB$redcap$project_info$has_repeating_instruments_or_events=="1")
-  repeating <- get_redcap_info(DB,"repeatingFormsEvents")
-  if(is.data.frame(repeating)){
-    DB$redcap$instruments$repeating <- DB$redcap$instruments$instrument_name%in%repeating$form_name
-    DB$redcap$metadata<-DB$redcap$metadata %>%dplyr::bind_rows(
-      data.frame(
-        field_name="redcap_repeat_instance",form_name=DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)] ,field_label="REDCap Repeat Instance",field_type="text",select_choices_or_calculations=NA
-      )
-    ) %>% unique()
-    DB$redcap$metadata<-DB$redcap$metadata %>%dplyr::bind_rows(
-      data.frame(
-        field_name="redcap_repeat_instrument",form_name=DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)] ,field_label="REDCap Repeat Instrument",field_type="text",select_choices_or_calculations=NA
-      )
-    ) %>% unique()
-  }
-  if(DB$has_event_mappings){
-    DB$redcap$instruments$repeating[
-      which(
-        DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-          # instrument_name <- DB$redcap$instruments$instrument_name %>% sample(1)
-          anyDuplicated(DB$event_mapping$arm_num[which(DB$event_mapping$form==instrument_name)] %>% unique())>0
-        })
-      )
-    ] <- T
-  }
-  if(any(DB$redcap$instruments$repeating)){
-    DB$has_repeating <- T
-  }
+  #other-------
   # metadata_remap <- generate_default_remap(DB)
-  DB$users <- get_redcap_users(DB)
-  DB$codebook <- make_codebook(DB)
-  DB$missing_codes <- missing_codes2(DB)
-  DB$log<-check_redcap_log(DB,last = 2,units = "mins")
-  DB$users$current_user<-DB$users$username==DB$log$username[which(DB$log$details=="Export REDCap version (API)") %>% dplyr::first()]
-  DB$home_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
-  DB$records_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_status_dashboard.php?pid=",DB$PID)
+  DB$redcap$users <- get_redcap_users(DB)
+  DB$redcap$codebook <- make_codebook(DB)
+  DB$redcap$missing_codes <- missing_codes2(DB)
+  DB$redcap$log <- check_redcap_log(DB,last = 2,units = "mins")
+  DB$redcap$users$current_user <- DB$redcap$users$username==DB$redcap$log$username[which(DB$redcap$log$details=="Export REDCap version (API)") %>% dplyr::first()]
+  DB$links$home_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/index.php?pid=",DB$PID)
+  DB$links$redcap_records_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/DataEntry/record_status_dashboard.php?pid=",DB$PID)
   DB$links$redcap_API_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/API/project_api.php?pid=",DB$PID)
-  DB$API_playground_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/API/playground.php?pid=",DB$PID)
+  DB$links$redcap_API_playground_link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$version,"/API/playground.php?pid=",DB$PID)
   DB
 }
 
-get_redcap_data<-function(DB,clean=T,records=NULL){
+get_redcap_data <- function(DB,clean=T,records=NULL){
   DB$last_data_update <- Sys.time()
   raw <- get_raw_redcap(
     DB=DB,
@@ -977,10 +722,10 @@ get_redcap_data<-function(DB,clean=T,records=NULL){
   DB
 }
 
-get_redcap_users<-function(DB){
-  userRole <-get_redcap_info(DB,"userRole") %>% dplyr::select("unique_role_name","role_label")
-  userRoleMapping<- get_redcap_info(DB,"userRoleMapping")
-  user<- get_redcap_info(DB,"user")
+get_redcap_users <- function(DB){
+  userRole  <- get_redcap_info(DB,"userRole") %>% dplyr::select("unique_role_name","role_label")
+  userRoleMapping <-  get_redcap_info(DB,"userRoleMapping")
+  user <-  get_redcap_info(DB,"user")
   merge(merge(userRole,userRoleMapping,by="unique_role_name"),user, by="username")
 }
 
@@ -993,16 +738,16 @@ get_redcap_users<-function(DB){
 #' @export
 check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   if(units=="days"){
-    x<-(Sys.time()-lubridate::days(last)) %>% as.character()
+    x <- (Sys.time()-lubridate::days(last)) %>% as.character()
   }
   if(units=="hours"){
-    x<-(Sys.time()-lubridate::hours(last)) %>% as.character()
+    x <- (Sys.time()-lubridate::hours(last)) %>% as.character()
   }
   if(units=="mins"){
-    x<-(Sys.time()- lubridate::minutes(last)) %>% as.character()
+    x <- (Sys.time()- lubridate::minutes(last)) %>% as.character()
   }
   if(begin_time!=""){
-    x<-begin_time
+    x <- begin_time
   }
   get_redcap_info(DB,"log",additional_args = list(beginTime=x)) %>% clean_redcap_log()
 }
@@ -1030,7 +775,7 @@ get_raw_redcap <- function(DB,clean=T,records=NULL){
 #' @export
 upload_file_to_redcap_fileRepository <- function(DB,file){
   DB <- validate_DB(DB)
-  file<-normalizePath(file)
+  file <- normalizePath(file)
   if(!file.exists(file)) stop("File does not exist! --> ",file)
   response <- httr::POST(
     url = DB$redcap_uri,
@@ -1119,7 +864,7 @@ delete_redcap_file <- function(DB,doc_id){
 # files -----------------
 upload_file_to_redcap <- function(DB,file,record, field,repeat_instance = NULL,event = NULL){
   # DB <- validate_DB(DB)
-  file<-normalizePath(file)
+  file <- normalizePath(file)
   if(!file.exists(file)) stop("File does not exist! --> ",file)
   body <- list(
     "token"=validate_redcap_token(DB),
@@ -1173,25 +918,25 @@ delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, eve
 
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
-    raw <-raw %>% all_character_cols()
+    raw  <- raw %>% all_character_cols()
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
 
     if('redcap_event_name'%in%colnames(raw)){
       raw$id_temp <- 1:nrow(raw)
-      raw<- merge(raw,DB$events[,c("arm_num","event_name","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name",sort = F)
-      add_ons <-add_ons[which(add_ons%in%colnames(raw))]
+      raw <-  merge(raw,DB$redcap$events[,c("arm_num","event_name","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name",sort = F)
+      add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
 
       cols <- c(add_ons, colnames(raw)) %>% unique()
       raw <- raw[order(raw$id_temp),cols%>% sapply(function(c){which(colnames(raw)==c)}) %>% as.integer()]
       raw$id_temp <- NULL
     }
-    add_ons <-add_ons[which(add_ons%in%colnames(raw))]
+    add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
 
     for(instrument_name in DB$redcap$instruments$instrument_name){
       add_ons_x <- add_ons
-      #instrument_name<- DB$redcap$instruments$instrument_name %>% sample(1)
+      #instrument_name <-  DB$redcap$instruments$instrument_name %>% sample(1)
       is_repeating_instrument <- instrument_name%in%DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)]
-      rows <-1:nrow(raw)
+      rows  <- 1:nrow(raw)
       if(!DB$has_event_mappings){
         if("redcap_repeat_instrument"%in%colnames(raw)){
           if(is_repeating_instrument){
@@ -1203,14 +948,14 @@ raw_process_redcap <- function(raw,DB){
         }
       }
       if(DB$has_event_mappings){
-        events_ins <- DB$event_mapping$unique_event_name[which(DB$event_mapping$form==instrument_name)] %>% unique()
+        events_ins <- DB$redcap$event_mapping$unique_event_name[which(DB$redcap$event_mapping$form==instrument_name)] %>% unique()
         rows <- which(raw$redcap_event_name%in%events_ins)
       }
       if(!is_repeating_instrument){
         add_ons_x <- add_ons_x[which(!add_ons_x%in%c("redcap_repeat_instrument","redcap_repeat_instance"))]
       }
       cols <- unique(c(add_ons_x,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(raw))]))
-      DB$data_extract[[instrument_name]]<-raw[rows,cols]
+      DB$data_extract[[instrument_name]] <- raw[rows,cols]
     }
   }
   DB
@@ -1221,16 +966,16 @@ raw_process_redcap <- function(raw,DB){
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-select_redcap_records<-function(DB, records=NULL){
-  DB_selected<-DB
+select_redcap_records <- function(DB, records=NULL){
+  DB_selected <- DB
   if(!is.null(records)){
     if (length(records)==0)stop("Must supply records")
-    DB_selected$data<-list()
-    BAD <-records[which(!records%in%DB$all_records[[DB$redcap$id_col]])]
-    GOOD <-records[which(records%in%DB$all_records[[DB$redcap$id_col]])]
+    DB_selected$data <- list()
+    BAD  <- records[which(!records%in%DB$all_records[[DB$redcap$id_col]])]
+    GOOD  <- records[which(records%in%DB$all_records[[DB$redcap$id_col]])]
     if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
     for(FORM in names(DB$data_extract)){
-      DB_selected[["data"]][[FORM]] <-DB$data_extract[[FORM]][which(DB$data_extract[[FORM]][[DB$redcap$id_col]]%in%GOOD),]
+      DB_selected[["data"]][[FORM]]  <- DB$data_extract[[FORM]][which(DB$data_extract[[FORM]][[DB$redcap$id_col]]%in%GOOD),]
     }
   }
   DB_selected
@@ -1241,27 +986,27 @@ clean_to_raw_redcap <- function(DB){
   for(TABLE in names(DB$data_extract)){
     DB$data_extract[[TABLE]] <- clean_to_raw_form(FORM = DB$data_extract[[TABLE]],DB=DB)
   }
-  DB$clean<-F
+  DB$clean <- F
   DB
 }
 
 raw_to_clean_redcap <- function(DB){
   if(DB$clean)stop("DB is already clean (not raw coded values)")
-  use_missing_codes <- is.data.frame(DB$missing_codes)
+  use_missing_codes <- is.data.frame(DB$redcap$missing_codes)
   for(instrument_name in DB$redcap$instruments$instrument_name){
     for (field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_type%in%c("radio","dropdown"))]){
-      z<-DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
-      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
-        OUT<-NA
+      z <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
+      DB$data_extract[[instrument_name]][[field_name]] <- DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT <- NA
         if(!is.na(C)){
-          coded_redcap<-which(z$code==C)
+          coded_redcap <- which(z$code==C)
           if(length(coded_redcap)>0){
-            OUT<-z$name[coded_redcap]
+            OUT <- z$name[coded_redcap]
           }else{
             if(use_missing_codes){
-              coded_redcap2<-which(DB$missing_codes$code==C)
+              coded_redcap2 <- which(DB$redcap$missing_codes$code==C)
               if(length(coded_redcap2)>0){
-                OUT<-DB$missing_codes$name[coded_redcap2]
+                OUT <- DB$redcap$missing_codes$name[coded_redcap2]
               }else{
                 warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
@@ -1275,25 +1020,25 @@ raw_to_clean_redcap <- function(DB){
 
     }
     for (field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_type=="yesno")]){
-      z<-data.frame(
+      z <- data.frame(
         code=c(0,1),
         name=c("No","Yes")
       )
-      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
-        OUT<-NA
+      DB$data_extract[[instrument_name]][[field_name]] <- DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT <- NA
         if(!is.na(C)){
-          D<-which(z$code==C)
+          D <- which(z$code==C)
           if(length(D)>0){
-            OUT<-z$name[D]
+            OUT <- z$name[D]
           }
           if(length(D)==0){
             if(use_missing_codes){
-              E<-which(DB$missing_codes$code==C)
+              E <- which(DB$redcap$missing_codes$code==C)
               if(length(E)==0){
                 warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
-                OUT<-DB$missing_codes$name[E]
+                OUT <- DB$redcap$missing_codes$name[E]
               }
             }else{
               warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
@@ -1304,25 +1049,25 @@ raw_to_clean_redcap <- function(DB){
       }) %>% unlist() %>% as.character()
     }
     for (field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_type=="checkbox_choice")]){
-      z<-data.frame(
+      z <- data.frame(
         code=c(0,1),
         name=c("Unchecked","Checked")
       )
-      DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
-        OUT<-NA
+      DB$data_extract[[instrument_name]][[field_name]] <- DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
+        OUT <- NA
         if(!is.na(C)){
-          D<-which(z$code==C)
+          D <- which(z$code==C)
           if(length(D)>0){
-            OUT<-z$name[D]
+            OUT <- z$name[D]
           }
           if(length(D)==0){
             if(use_missing_codes){
-              E<-which(DB$missing_codes$code==C)
+              E <- which(DB$redcap$missing_codes$code==C)
               if(length(E)==0){
                 warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
-                OUT<-DB$missing_codes$name[E]
+                OUT <- DB$redcap$missing_codes$name[E]
               }
             }else{
               warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", field_name,", Choice: ",C)
@@ -1334,13 +1079,13 @@ raw_to_clean_redcap <- function(DB){
     }
     if(use_missing_codes){
       for(field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&!DB$redcap$metadata$field_type%in%c("radio","dropdown","yesno","checkbox","checkbox_choice","descriptive"))]){
-        z<-DB$missing_codes
-        DB$data_extract[[instrument_name]][[field_name]]<-DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
-          OUT<-C
+        z <- DB$redcap$missing_codes
+        DB$data_extract[[instrument_name]][[field_name]] <- DB$data_extract[[instrument_name]][[field_name]] %>% sapply(function(C){
+          OUT <- C
           if(!is.na(C)){
-            D<-which(z$code==C)
+            D <- which(z$code==C)
             if(length(D)>0){
-              OUT<-z$name[D]
+              OUT <- z$name[D]
             }
           }
           OUT
@@ -1349,7 +1094,7 @@ raw_to_clean_redcap <- function(DB){
     }
   }
   # if(  use_missing_codes) warning("You have missing codes in your redcap. such as UNK for unknown.")
-  DB$clean<-T
+  DB$clean <- T
   DB
 }
 
@@ -1359,7 +1104,7 @@ raw_to_clean_redcap <- function(DB){
 #' @return DB object that has been filtered to only include the specified records
 #' @export
 clean_to_raw_form <- function(FORM,DB){
-  use_missing_codes <- is.data.frame(DB$missing_codes)
+  use_missing_codes <- is.data.frame(DB$redcap$missing_codes)
   # if(!deparse(substitute(FORM))%in%DB$redcap$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%DB$redcap$metadata$field_name))stop("All column names in your form must match items in your metadata, `DB$redcap$metadata$field_name`")
   instrument <- DB$redcap$metadata$form_name[
@@ -1369,21 +1114,21 @@ clean_to_raw_form <- function(FORM,DB){
     )
   ] %>% unique()
   if(length(instrument)>1)stop("All column names in your form must match only one form in your metadata, `DB$redcap$instruments$instrument_name`")
-  metadata<-DB$redcap$metadata[which(DB$redcap$metadata$form_name==instrument),]
+  metadata <- DB$redcap$metadata[which(DB$redcap$metadata$form_name==instrument),]
   for(COL_NAME in FORM %>% colnames()){
     if(COL_NAME%in%metadata$field_name[which(metadata$field_type%in%c("radio","dropdown","checkbox_choice"))]){
-      z<-metadata$select_choices_or_calculations[which(metadata$field_name==COL_NAME)] %>% split_choices()
-      FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
-        OUT<-NA
+      z <- metadata$select_choices_or_calculations[which(metadata$field_name==COL_NAME)] %>% split_choices()
+      FORM[[COL_NAME]] <- FORM[[COL_NAME]] %>% sapply(function(C){
+        OUT <- NA
         if(!is.na(C)){
-          coded_redcap<-which(z$name==C)
+          coded_redcap <- which(z$name==C)
           if(length(coded_redcap)>0){
-            OUT<-z$code[coded_redcap]
+            OUT <- z$code[coded_redcap]
           }else{
             if(use_missing_codes){
-              coded_redcap2<-which(DB$missing_codes$name==C)
+              coded_redcap2 <- which(DB$redcap$missing_codes$name==C)
               if(length(coded_redcap2)>0){
-                OUT<-DB$missing_codes$code[coded_redcap2]
+                OUT <- DB$redcap$missing_codes$code[coded_redcap2]
               }else{
                 stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C)
               }
@@ -1396,25 +1141,25 @@ clean_to_raw_form <- function(FORM,DB){
       }) %>% unlist() %>% as.character()
     }
     if(COL_NAME%in%metadata$field_name[which(metadata$field_type=="yesno")]){
-      z<-data.frame(
+      z <- data.frame(
         code=c(0,1),
         name=c("No","Yes")
       )
-      FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
-        OUT<-NA
+      FORM[[COL_NAME]] <- FORM[[COL_NAME]] %>% sapply(function(C){
+        OUT <- NA
         if(!is.na(C)){
-          D<-which(z$name==C)
+          D <- which(z$name==C)
           if(length(D)>0){
-            OUT<-z$code[D]
+            OUT <- z$code[D]
           }
           if(length(D)==0){
             if(use_missing_codes){
-              E<-which(DB$missing_codes$name==C)
+              E <- which(DB$redcap$missing_codes$name==C)
               if(length(E)==0){
                 stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
               }
               if(length(E)>0){
-                OUT<-DB$missing_codes$code[E]
+                OUT <- DB$redcap$missing_codes$code[E]
               }
             }else{
               stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C)
@@ -1426,12 +1171,12 @@ clean_to_raw_form <- function(FORM,DB){
     }
     if(use_missing_codes){
       if(COL_NAME%in%metadata$field_name[which(!metadata$field_type%in%c("radio","dropdown","yesno","checkbox_choice"))]){
-        FORM[[COL_NAME]]<-FORM[[COL_NAME]] %>% sapply(function(C){
-          OUT<-C
+        FORM[[COL_NAME]] <- FORM[[COL_NAME]] %>% sapply(function(C){
+          OUT <- C
           if(!is.na(C)){
-            D<-which(DB$missing_codes$name==C)
+            D <- which(DB$redcap$missing_codes$name==C)
             if(length(D)>0){
-              OUT<-DB$missing_codes$code[D]
+              OUT <- DB$redcap$missing_codes$code[D]
             }
           }
           OUT
@@ -1501,7 +1246,7 @@ all_missing_codes <- function(){
 missing_codes2 <- function(DB){
   included <- "missing_data_codes"%in%colnames(DB$redcap$project_info)
   if(included){
-    is_na <-is.na(DB$redcap$project_info$missing_data_codes)
+    is_na  <- is.na(DB$redcap$project_info$missing_data_codes)
     if(!is_na){
       return(DB$redcap$project_info$missing_data_codes %>% split_choices())
     }
@@ -1529,7 +1274,7 @@ merge_non_repeating_DB <- function(DB){
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
   DB$data_extract[[instrument_names[[1]]]] <- NULL
-  instrument_names[[1]]<-NULL
+  instrument_names[[1]] <- NULL
   while (length(instrument_names)>0) {
     dfx <- DB$data_extract[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
@@ -1540,7 +1285,7 @@ merge_non_repeating_DB <- function(DB){
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
     merged <- merge(merged,dfx,by=in_common,all = T)
     DB$data_extract[[instrument_names[[1]]]] <- NULL
-    instrument_names[[1]]<-NULL
+    instrument_names[[1]] <- NULL
   }
   DB$data_extract$merged <- merged
   DB
@@ -1555,11 +1300,11 @@ unmerge_non_repeating_DB <- function(DB){
   instrument_names <- DB$data_extract$merged %>% colnames() %>% sapply(function(COL){DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==COL)]}) %>% unique() %>% as.list()
   merged <- DB$data_extract$merged
   while (length(instrument_names)>0) {
-    instrument_name <-instrument_names[[1]]
-    DB$data_extract[[instrument_name]]<-merged[,unique(c(DB$redcap$id_col,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(merged))]))]
+    instrument_name  <- instrument_names[[1]]
+    DB$data_extract[[instrument_name]] <- merged[,unique(c(DB$redcap$id_col,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(merged))]))]
     instrument_names[[1]] <- NULL
   }
-  DB$data_extract$merged<-NULL
+  DB$data_extract$merged <- NULL
   DB
 }
 
@@ -1573,12 +1318,12 @@ deidentify_DB <- function(DB,identifiers){
   missing_identifiers <- missing(identifiers)
   if(!missing_identifiers){
     identifiers <- identifiers %>% unique()
-    bad_identifiers<-identifiers[which(!identifiers%in%DB$redcap$metadata$field_name)]
+    bad_identifiers <- identifiers[which(!identifiers%in%DB$redcap$metadata$field_name)]
     if(length(bad_identifiers)>0)stop("You have an identifier that is not included in the set of `DB$redcap$metadata$field_name` --> ",bad_identifiers %>% paste0(collapse = ", "))
     if(DB$redcap$id_col%in%identifiers)stop("Your REDCap ID, ",DB$redcap$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
   }
   if(missing_identifiers){
-    identifiers<- DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
+    identifiers <-  DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
     if(length(identifiers)==0)warning("You have no identifiers marked in `DB$redcap$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
   }
   drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data_extract), lapply(DB$data_extract, colnames))
@@ -1605,7 +1350,7 @@ deidentify_DB <- function(DB,identifiers){
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
   metadata <- DB$redcap$metadata
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
-  metadata <-unique(metadata$form_name) %>%
+  metadata  <- unique(metadata$form_name) %>%
     lapply(function(IN){
       metadata[which(metadata$form_name==IN),]
     }) %>% dplyr::bind_rows()
@@ -1658,7 +1403,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
           DB$data_extract[[FORM]]
         }
       }
-      DB$data_extract[[FORM]][[COLUMN]]<-DB$data_extract[[FORM]][[COLUMN]] %>% clean_column_for_table(
+      DB$data_extract[[FORM]][[COLUMN]] <- DB$data_extract[[FORM]][[COLUMN]] %>% clean_column_for_table(
         class = class,
         label = label,
         units = units,
@@ -1679,7 +1424,7 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
 #' @param levels character vector of levels for factor
 #' @return cleaned column
 #' @export
-clean_column_for_table<-function(col,class,label,units,levels){
+clean_column_for_table <- function(col,class,label,units,levels){
   if(!missing(class)){
     if(!is.null(class)){
       if(!is.na(class)){
@@ -1712,14 +1457,14 @@ clean_column_for_table<-function(col,class,label,units,levels){
 #' @param ref_id column name that matches a REDCap variable name that could be an ALT id such as MRN
 #' @return original dataframe with REDCap id_col added as the first column
 #' @export
-add_ID_to_DF<-function(DF,DB,ref_id){
+add_ID_to_DF <- function(DF,DB,ref_id){
   if(!ref_id%in%DB$redcap$metadata$field_name)stop("The ref_id not valid. Must be a REDCap raw colname")
-  form<-DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==ref_id)]
+  form <- DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==ref_id)]
   DF[[ref_id]] %>% sapply(function(ID){
     DB$data_extract[[form]][[DB$redcap$id_col]][which(DB$data_extract[[form]][[ref_id]]==ID)]
   }) %>% as.data.frame()->y
-  colnames(y)<-"record_id"
-  DF<-cbind(y,DF)
+  colnames(y) <- "record_id"
+  DF <- cbind(y,DF)
   DF
 }
 
@@ -1729,49 +1474,49 @@ add_ID_to_DF<-function(DF,DB,ref_id){
 #' @inheritParams select_redcap_records
 #' @return list of data tables
 #' @export
-grab_record_tables<-function(DB, records){
-  OUT <-list()
+grab_record_tables <- function(DB, records){
+  OUT  <- list()
   for(TABLE in names(DB$data_extract)){
     OUT[[TABLE]] <-   DB$data_extract[[TABLE]][which(DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%records),]
   }
   OUT
 }
 
-split_choices<-function(x){
+split_choices <- function(x){
   oops <- x
-  x<-gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
-  x<-x %>% strsplit(" [:|:] ") %>% unlist()
+  x <- gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
+  x <- x %>% strsplit(" [:|:] ") %>% unlist()
   check_length <- length(x)
   # code <- x %>% stringr::str_extract("^[^,]+(?=, )")
   # name <- x %>% stringr::str_extract("(?<=, ).*$")
   result <- x %>% stringr::str_match("([^,]+), (.*)")
-  # x<-data.frame(
+  # x <- data.frame(
   #   code=x %>% strsplit(", ") %>% sapply(`[`, 1),
   #   name=x %>% strsplit(", ")%>% sapply(`[`, -1) %>% sapply(function(y){paste0(y,collapse = ", ")})
   # )
-  x<-data.frame(
+  x <- data.frame(
     code=result[,2],
     name=result[,3]
   )
-  rownames(x)<-NULL
+  rownames(x) <- NULL
   if(nrow(x)!=check_length)stop("split choice error: ",oops)
   x
 }
 
-make_codebook<-function(DB){
-  choices<-which(DB$redcap$metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
+make_codebook <- function(DB){
+  choices <- which(DB$redcap$metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
   if(length(choices)>0){
     for(field in DB$redcap$metadata$field_name[choices]){
-      DB[["choices"]][[field]]<-DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field)] %>% split_choices()
+      DB[["choices"]][[field]] <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field)] %>% split_choices()
     }
   }
   OUT <- NULL
   for (CHOICE in names(DB[["choices"]])){
-    x<-DB[["choices"]][[CHOICE]]
+    x <- DB[["choices"]][[CHOICE]]
     x$field_name <- CHOICE
     OUT <- OUT %>% dplyr::bind_rows(x)
   }
-  OUT<-OUT %>% dplyr::select("field_name","code","name")
+  OUT <- OUT %>% dplyr::select("field_name","code","name")
   rownames(OUT) <- NULL
   OUT
 }
@@ -1797,7 +1542,7 @@ make_codebook<-function(DB){
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T,forms){
+drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T,forms){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -1828,7 +1573,7 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
     dir.create(file.path(root_dir,"REDCap","upload"),showWarnings = F)
   }
 
-  DB_selected<- DB %>% select_redcap_records(records)
+  DB_selected <-  DB %>% select_redcap_records(records)
   if(allow_mod){
     to_save <- names(DB$data_extract)
   }else{
@@ -1855,16 +1600,16 @@ drop_redcap_dir<-function(DB,records=NULL,allow_mod=T,dir_other,only_redcap=F,de
 #' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names
 #' @return messages for confirmation
 #' @export
-read_redcap_dir<-function(DB,allow_all=T){
+read_redcap_dir <- function(DB,allow_all=T){
   DB <- validate_DB(DB)
-  path<-file.path(get_dir(DB),"REDCap","upload")
+  path <- file.path(get_dir(DB),"REDCap","upload")
   if(!file.exists(path))stop("No REDCap files found at path --> ",path)
-  x<-list.files.real(path)
+  x <- list.files.real(path)
   if(!allow_all){
-    x<-x[which(gsub("\\.xlsx|\\.xls","",x)%in%DB$redcap$instruments$instrument_name)]
+    x <- x[which(gsub("\\.xlsx|\\.xls","",x)%in%DB$redcap$instruments$instrument_name)]
   }
-  DB_import<-DB
-  DB_import[["data"]]<-list()
+  DB_import <- DB
+  DB_import[["data"]] <- list()
   for(y in x){#not done yet
     DB_import[["data"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
   }
@@ -1887,7 +1632,7 @@ read_redcap_dir<-function(DB,allow_all=T){
 #' @param batch_size numeric of how big the REDCap batch upload is. Default 500.
 #' @return messages
 #' @export
-upload_form_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
+upload_form_to_redcap <- function(to_be_uploaded,DB,batch_size=500){
   REDCapR::redcap_write(
     ds_to_write = to_be_uploaded %>% all_character_cols(),
     batch_size=batch_size,
@@ -1911,12 +1656,12 @@ upload_form_to_redcap<-function(to_be_uploaded,DB,batch_size=500){
 #' @param ask logical for if you want to preview uploads first
 #' @return messages
 #' @export
-upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
+upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
-  DB<-validate_DB(DB)
+  DB <- validate_DB(DB)
   if(ask){
     if(count_DB_cells(DB)>5000){
-      stop <-utils::menu(choices = c("YES - I want to stop and double check what I'm about to upload","NO - Move forward with larger upload"),title = "This is a large upload. Do you want to stop and double check it first?")
+      stop  <- utils::menu(choices = c("YES - I want to stop and double check what I'm about to upload","NO - Move forward with larger upload"),title = "This is a large upload. Do you want to stop and double check it first?")
       if(stop==1)stop("Double check DB object prior to upload")
     }
   }
@@ -1937,7 +1682,7 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
         }
         print("Raw Data")
         print.data.frame(to_be_uploaded_raw %>% utils::head(n=40))
-        do_it <-utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
+        do_it  <- utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
         upload_form_to_redcap(to_be_uploaded=to_be_uploaded_raw,DB=DB,batch_size=batch_size)
@@ -1960,16 +1705,16 @@ upload_DB_to_redcap<-function(DB,batch_size=500,ask=T){
 #' @export
 find_DB_diff <- function(DB_import,DB,ignore_instruments){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
-  DB_import<-validate_DB(DB_import)
-  DB<-validate_DB(DB)
+  DB_import <- validate_DB(DB_import)
+  DB <- validate_DB(DB)
   if(!missing(ignore_instruments)){
     if(any(!ignore_instruments%in%names(DB_import[["data"]])))stop("ignore_instruments must be included in the set of instrument names, `names(DB_import$data)`")
     for(DROP in ignore_instruments){
-      DB_import$data[[DROP]]<-NULL
+      DB_import$data[[DROP]] <- NULL
     }
   }
   if(DB_import$clean&!DB$clean){
-    DB_import<-clean_to_raw_redcap(DB_import)
+    DB_import <- clean_to_raw_redcap(DB_import)
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(any(!names(DB_import[["data"]])%in%names(DB$data_extract)))stop("All file names and data.table names from your directory a.k.a. `names(DB_import$data)` must match the DB instrument names, `DB$redcap$instruments$instrument_name`")
@@ -1992,7 +1737,7 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
 #' @inheritParams save_DB
 #' @return messages for confirmation
 #' @export
-link_API_token<- function(DB){
+link_API_token <-  function(DB){
   DB$links$redcap_API_link %>% utils::browseURL()
 }
 
@@ -2001,7 +1746,7 @@ link_API_token<- function(DB){
 #' @return messages for confirmation
 #' @export
 link_API_playground <- function(DB){
-  DB$API_playground_link %>% utils::browseURL()
+  DB$links$redcap_API_playground_link %>% utils::browseURL()
 }
 
 #' @title Link view the REDCap project home page
@@ -2017,7 +1762,7 @@ link_REDCap_home <- function(DB){
 #' @return opens browser link
 #' @export
 link_REDCap_project <- function(DB){
-  DB$home_link %>% utils::browseURL()
+  DB$links$home_link %>% utils::browseURL()
 }
 
 #' @title Shows DB in the env
@@ -2061,8 +1806,16 @@ link_REDCap_record <- function(DB,record,page,instance){
 #' @param original_file_names logical for whether or not to use original file names.
 #' @return messages for confirmation
 #' @export
-update_DB<-function(DB,force=F,day_of_log = 10,labelled = T,get_files = F,original_file_names=F){
-  IDs<-NULL
+update_DB <- function(
+    DB,
+    force = F,
+    day_of_log = 10,
+    labelled = T,
+    get_files = F,
+    original_file_names = F
+) {
+
+  IDs <- NULL
   DB <- validate_DB(DB)
   if(!is.null(DB$internals$data_extract_labelled)){
     if(DB$internals$data_extract_labelled!=labelled){
@@ -2075,50 +1828,50 @@ update_DB<-function(DB,force=F,day_of_log = 10,labelled = T,get_files = F,origin
   DB <- test_redcap(DB)
   if(!force){
     if(is.null(DB$internals$last_metadata_update)||is.null(DB$internals$last_data_update)){
-      force<-T
+      force <- T
     }else{
-      time<-c(DB$internals$last_metadata_update,DB$internals$last_data_update)
-      time<-time %>% min() %>% as.character()
-      ilog<-check_redcap_log(DB,begin_time = time)
+      time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
+      time <- time %>% min() %>% as.character()
+      ilog <- check_redcap_log(DB,begin_time = time)
 
-      ilog3<-ilog[which(is.na(ilog$record_id)),]
-      ilog3$timestamp<-NULL
-      ilog3<-ilog3 %>% unique()
-      ilog3<-ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |custom record dashboard|User regenerate own API token|Create report",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
+      ilog3 <- ilog[which(is.na(ilog$record_id)),]
+      ilog3$timestamp <- NULL
+      ilog3 <- ilog3 %>% unique()
+      ilog3 <- ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |custom record dashboard|User regenerate own API token|Create report",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
       if(nrow(ilog3)>0){
-        force<-T
+        force <- T
         message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
       }else{
-        ilog2<-ilog[which(!is.na(ilog$record_id)),]
-        ilog2$timestamp<-NULL
-        ilog2<-ilog2 %>% unique()
+        ilog2 <- ilog[which(!is.na(ilog$record_id)),]
+        ilog2$timestamp <- NULL
+        ilog2 <- ilog2 %>% unique()
         if(any(ilog2$action_type%in%c("Create","Delete"))){
-          force<-T
+          force <- T
         }else{
-          IDs<-ilog2$record_id %>% unique()
-          if(length(IDs)==0){IDs<-NULL}
+          IDs <- ilog2$record_id %>% unique()
+          if(length(IDs)==0){IDs <- NULL}
         }
         # if(Sys.time()>=(DB$internals$last_metadata_update+lubridate::days(2))){
-        #   force<-T
+        #   force <- T
         # }#not needed anymore because of log check?
       }
     }
   }
   if(force){
-    DB<-DB %>% get_redcap_metadata()
-    DB<-DB %>% get_redcap_data(labelled = labelled)
-    DB$log<-DB %>% check_redcap_log(last = day_of_log,units = "days") %>% unique()
+    DB <- DB %>% get_redcap_metadata()
+    DB <- DB %>% get_redcap_data(labelled = labelled)
+    DB$redcap$log <- DB %>% check_redcap_log(last = day_of_log,units = "days") %>% unique()
     message("Full update!")
     DB %>% save_DB()
   }else{
     if(!is.null(IDs)){
-      time<-c(DB$internals$last_metadata_update,DB$internals$last_data_update)
-      time<-time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
-      DB2<-DB %>% get_redcap_data(labelled = labelled,records = IDs)
-      DB$internals$last_metadata_update<-DB$internals$last_data_update<-DB2$last_data_update
-      DB$log<-DB$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
+      time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
+      time <- time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
+      DB2 <- DB %>% get_redcap_data(labelled = labelled,records = IDs)
+      DB$internals$last_metadata_update <- DB$internals$last_data_update <- DB2$last_data_update
+      DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
       for(TABLE  in names(DB$data_extract)){
-        DB$data_extract[[TABLE]]<-DB$data_extract[[TABLE]][which(!DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data_extract[[TABLE]][which(DB2$data_extract[[TABLE]][[DB2$id_col]]%in%IDs),])
+        DB$data_extract[[TABLE]] <- DB$data_extract[[TABLE]][which(!DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data_extract[[TABLE]][which(DB2$data_extract[[TABLE]][[DB2$id_col]]%in%IDs),])
       }
       message("updated: ",paste0(IDs,collapse = ", "))
       DB %>% save_DB()
@@ -2157,7 +1910,7 @@ rmarkdown_DB <- function (DB,dir_other){
 generate_default_remap <- function(DB,merge_non_repeating_name='merged'){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
-    metadata_remap<-  DB$redcap$metadata
+    metadata_remap <-   DB$redcap$metadata
     metadata_remap$field_name_remap <- metadata_remap$field_name %>% replace_between_tails()
     metadata_remap$form_name_remap <- metadata_remap$form_name
     non_reps <- DB$instruments$instrument_name[which(!DB$instruments$repeating)]
@@ -2165,9 +1918,9 @@ generate_default_remap <- function(DB,merge_non_repeating_name='merged'){
       metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- merge_non_repeating_name
     }
     if(DB$has_event_mappings){
-      # DB$events->x
-      events <- DB$events
-      event_mapping <- DB$event_mapping
+      # DB$redcap$events->x
+      events <- DB$redcap$events
+      event_mapping <- DB$redcap$event_mapping
       event_mapping <- merge(event_mapping, events[,c("event_name","unique_event_name")], by="unique_event_name")
       event_mapping$unique_event_name_remap <- tolower(gsub(" ","_",event_mapping$event_name))
       metadata_remap$unique_event_name_remap <-  metadata_remap$form_name%>% sapply(function(form_name){
@@ -2179,11 +1932,11 @@ generate_default_remap <- function(DB,merge_non_repeating_name='merged'){
     metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
   }
 }
-transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merged",metadata_remap,event_mapping_remap){
-  DB <-validate_DB(DB)
+transform_DB <- function(DB,merge_non_repeating=T,merge_non_repeating_name = "merged",metadata_remap,event_mapping_remap){
+  DB  <- validate_DB(DB)
   transform <- list()
   if(missing(metadata_remap)){
-    path<-DB$dir_path %>% file.path("input","metadata_remap.xlsx")
+    path <- DB$dir_path %>% file.path("input","metadata_remap.xlsx")
     if(!file.exists(path)){
       warning(paste0("No remap file at the following path: ",path), immediate. = T)
       path <- DB$dir_path %>% file.path("input","metadata_remap_default.xlsx")
@@ -2193,7 +1946,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     remappings <- transform$metadata_remap$field_name[which(transform$metadata_remap$field_name!=transform$metadata_remap$field_name_remap)]
     field_name <- remappings %>% sample(1)
     for(field_name in remappings){
-      field_name_remap<-transform$metadata_remap$field_name_remap[which(transform$metadata_remap$field_name==field_name)]
+      field_name_remap <- transform$metadata_remap$field_name_remap[which(transform$metadata_remap$field_name==field_name)]
       scc1 <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name_remap)]
       scc2 <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)]
       mes <- paste0("unequal choices: ", field_name_remap," and ",field_name)
@@ -2212,7 +1965,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
 
   }
   if(missing(event_mapping_remap)){
-    path<-DB$dir_path %>% file.path("input","event_mapping_remap.xlsx")
+    path <- DB$dir_path %>% file.path("input","event_mapping_remap.xlsx")
     if(!file.exists(path)){
       warning(paste0("No remap file at the following path: ",path), immediate. = T)
       path <- DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx")
@@ -2223,17 +1976,17 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     transform$event_mapping_final$unique_event_name <- transform$event_mapping_final$unique_event_name_remap
     transform$event_mapping_final$unique_event_name_remap <- NULL
     form <- transform$event_mapping_final$form %>% sample(1)
-    transform$event_mapping_final$form <-transform$event_mapping_final$form %>% sapply(function(form){
+    transform$event_mapping_final$form  <- transform$event_mapping_final$form %>% sapply(function(form){
       x <-  transform$metadata_remap$form_name_remap[which(transform$metadata_remap$form_name==form)] %>% unique()
       if(length(x)>1)stop("your remap cannot have forms that map to more than one form... --> ",field_name)
       x
     })
     transform$event_mapping_final <- unique(transform$event_mapping_final)
-    if(is_something(DB$arms,1)){
+    if(is_something(DB$redcap$arms,1)){
       test_df <- transform$event_mapping_final
-      for(arm in DB$arms$arm_num){
+      for(arm in DB$redcap$arms$arm_num){
         if(nrow(test_df)>0){
-          check_these <-transform$event_mapping_final[which(transform$event_mapping_final$arm_num==arm),c("form","event_name","unique_event_name")]
+          check_these  <- transform$event_mapping_final[which(transform$event_mapping_final$arm_num==arm),c("form","event_name","unique_event_name")]
           for(i in 1:nrow(check_these)){
             test_df <- test_df[which(!(test_df$form==check_these$form[i]&test_df$event_name==check_these$event_name[i]&test_df$unique_event_name==check_these$unique_event_name[i])),]
           }
@@ -2306,7 +2059,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
   DB$data_extract[[instrument_names[[1]]]] <- NULL
-  instrument_names[[1]]<-NULL
+  instrument_names[[1]] <- NULL
   while (length(instrument_names)>0) {
     dfx <- DB$data_extract[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
@@ -2317,7 +2070,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
     merged <- merge(merged,dfx,by=in_common,all = T)
     DB$data_extract[[instrument_names[[1]]]] <- NULL
-    instrument_names[[1]]<-NULL
+    instrument_names[[1]] <- NULL
   }
   DB$data_extract$merged <- merged
   DB
@@ -2333,24 +2086,24 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   }
   #arms----------------
   transform$arms_n <- 0
-  if(is.data.frame(DB$arms)){
-    transform$arms_n <- DB$arms %>% nrow()
+  if(is.data.frame(DB$redcap$arms)){
+    transform$arms_n <- DB$redcap$arms %>% nrow()
     id_pairs <- DB$instruments$instrument_name %>%  lapply(function(IN){DB$data_extract[[IN]][,c(DB$redcap$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
-    DB$arms$arm_records_n <- DB$arms$arm_num %>% sapply(function(arm){
+    DB$redcap$arms$arm_records_n <- DB$redcap$arms$arm_num %>% sapply(function(arm){
       which(id_pairs$arm_num==arm)%>% length()
     })
   }
   #events belong to arms many to 1 ----------------
-  # transform$events_n <- DB$events %>% nrow()
+  # transform$events_n <- DB$redcap$events %>% nrow()
   transform$events_n <- 0
-  if(is.data.frame(DB$events)){
-    transform$events_n <- DB$events %>% nrow()
-    transform$event_names_n <- DB$events$event_name %>% unique() %>% length()
-    # 1:nrow(DB$event_mapping) %>% lapply(function(i){
-    #   (DB$data_extract[[DB$event_mapping$form[i]]][['redcap_event_name']]==DB$event_mapping$unique_event_name[i]) %>% which() %>% length()
+  if(is.data.frame(DB$redcap$events)){
+    transform$events_n <- DB$redcap$events %>% nrow()
+    transform$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
+    # 1:nrow(DB$redcap$event_mapping) %>% lapply(function(i){
+    #   (DB$data_extract[[DB$redcap$event_mapping$form[i]]][['redcap_event_name']]==DB$redcap$event_mapping$unique_event_name[i]) %>% which() %>% length()
     # })
     # for(event in ){
-    #   transform[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$arms$arm_num==arm)]
+    #   transform[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
     # }
   }
 
@@ -2377,14 +2130,14 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
 
   #metadata/codebook =============
   metadata <- DB$redcap$metadata
-  codebook <- DB$codebook %>% dplyr::select("field_name", "code", "name")
+  codebook <- DB$redcap$codebook %>% dplyr::select("field_name", "code", "name")
 
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
     }) %>% dplyr::bind_rows()
 
-  codebook<-codebook %>% merge(
+  codebook <- codebook %>% merge(
     metadata %>% dplyr::select(
       "form_name","field_name","field_label","field_type","field_type_R","text_validation_type_or_show_slider_number"),by="field_name",sort=F)
   codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
@@ -2406,12 +2159,12 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   }) %>% unlist()
 
   codebook$field_name_raw <- codebook$field_name
-  codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")]<-codebook$field_name[which(codebook$field_type=="checkbox_choice")] %>%
+  codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name[which(codebook$field_type=="checkbox_choice")] %>%
     strsplit("___") %>%
     sapply(function(X){X[[1]]})
 
   codebook$field_label_raw <- codebook$field_label
-  codebook$field_label_raw[which(codebook$field_type=="checkbox_choice")]<-codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] %>%
+  codebook$field_label_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] %>%
     sapply(function(X){
       metadata$field_label[which(metadata$field_name==X)] %>% unique()
     })
@@ -2424,7 +2177,7 @@ transform_DB<-function(DB,merge_non_repeating=T,merge_non_repeating_name = "merg
   }) %>% unlist()
   codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
-  DB$codebook <- codebook
+  DB$redcap$codebook <- codebook
   return(DB)
 }
 
@@ -2488,11 +2241,11 @@ extract_instrument_from_merged <- function(DB,instrument_name){
   merged <- DB$data_extract$merged
   if(nrow(merged)>0){
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
-    add_ons <-add_ons[which(add_ons%in%colnames(merged))]
+    add_ons  <- add_ons[which(add_ons%in%colnames(merged))]
     if(!instrument_name%in%DB$instruments$instrument_name)stop("instrument_name must be included in set of DB$instruments$instrument_name")
-    #instrument_name<- DB$instruments$instrument_name %>% sample(1)
+    #instrument_name <-  DB$instruments$instrument_name %>% sample(1)
     is_repeating_instrument <- instrument_name%in%DB$instruments$instrument_name[which(DB$instruments$repeating)]
-    rows <-1:nrow(merged)
+    rows  <- 1:nrow(merged)
     if(is_repeating_instrument){
       # rows <- which(merged$redcap_repeat_instrument==instrument_name)
     }
@@ -2511,7 +2264,7 @@ extract_instrument_from_merged <- function(DB,instrument_name){
     #   }
     # }
     # if(DB$has_event_mappings){
-    #   events_ins <- DB$event_mapping$unique_event_name[which(DB$event_mapping$form==instrument_name)] %>% unique()
+    #   events_ins <- DB$redcap$event_mapping$unique_event_name[which(DB$redcap$event_mapping$form==instrument_name)] %>% unique()
     #   rows <- which(merged$redcap_event_name%in%events_ins)
     # }
     # if(!is_repeating_instrument){
@@ -2543,19 +2296,19 @@ NULL
 
 
 
-write_xl<-function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
+write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
-  COL<-which(colnames(DF)==DB$redcap$id_col)
+  COL <- which(colnames(DF)==DB$redcap$id_col)
   DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
   if(nrow(DF)>0&&length(COL)>0&&with_links){
-    DF$redcap_link<-paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$redcap$id_col]])
+    DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$version,"/DataEntry/record_home.php?pid=",DB$PID,"&id=",DF[[DB$redcap$id_col]])
     if("arm_num"%in%colnames(DF)){
       DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
     }
     class(DF$redcap_link) <- "hyperlink"
     openxlsx::writeData(wb, sheet = 1, x = DF$redcap_link,startRow = 2,startCol = COL)
-    DF$redcap_link<-NULL
+    DF$redcap_link <- NULL
   }
   openxlsx::writeData(wb, sheet = 1, x = DF)
   openxlsx::saveWorkbook(
@@ -2564,7 +2317,7 @@ write_xl<-function(DF,DB,path,str_trunc_length=32000,with_links = T){# add insta
   message("Saved at -> ","'",path,"'")
 }
 
-list.files.real<-function(path){
+list.files.real <- function(path){
   grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
 }
 
