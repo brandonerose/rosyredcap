@@ -1,6 +1,7 @@
 # setup-----
 
 cache <- NULL
+
 .onLoad <- function(libname, pkgname){
   x <- hoardr::hoard()
   x$cache_path_set(path=.packageName,type="user_cache_dir")
@@ -201,8 +202,6 @@ view_redcap_token <- function(DB){
   validate_redcap_token(DB,silent = F,return = T)
 }
 
-
-
 # DB ---------
 
 #' @title blank DB object
@@ -217,6 +216,7 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
       last_data_update=NULL,
       last_data_transformation = NULL,
       data_extract_labelled = NULL,
+      data_extract_merged = NULL,
       data_extract_clean = NULL
     ),
     redcap = list(
@@ -700,19 +700,19 @@ get_redcap_metadata <- function(DB){
   DB
 }
 
-get_redcap_data <- function(DB,clean=T,records=NULL){
+get_redcap_data <- function(DB,labelled=T,records=NULL){
   DB$internals$last_data_update <- Sys.time()
   raw <- get_raw_redcap(
-    DB=DB,
-    clean=F,
-    records=records
+    DB = DB,
+    labelled = F,
+    records = records
   )
   DB <- raw_process_redcap(raw = raw,DB = DB)
   if(is.null(records)){
     DB$all_records <- all_records(DB)
   }
   DB$internals$data_extract_labelled <- F
-  if(clean){
+  if(labelled){
     DB <- DB %>% raw_to_clean_redcap()
   }
   DB
@@ -750,19 +750,20 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
 
 #' @title Check the REDCap log
 #' @inheritParams save_DB
-#' @param clean T/F for clean vs raw labels
+#' @param labelled T/F for clean vs raw labels
 #' @param records optional records
 #' @return data.frame of raw_redcap
 #' @export
 get_raw_redcap <- function(DB,labelled=T,records=NULL){
-  REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% all_character_cols()
+  if(missing(records)) records <- NULL
+  raw <- REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% all_character_cols()
+  colnames(raw)
+  all_raw_structure_cols <- c("redcap_event","redcap_repeat_instrument","redcap_repeat_instance")
+  DB$redcap$raw_structure_cols <- all_raw_structure_cols[which(all_raw_structure_cols%in%colnames(raw))]
+  return(raw)
 }
 
-
-
-
 # file repo -----------------
-
 
 #' @title Uploads a file to REDCap
 #' @inheritParams save_DB
@@ -917,7 +918,7 @@ raw_process_redcap <- function(raw,DB){
     raw  <- raw %>% all_character_cols()
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
 
-    if('redcap_event_name'%in%colnames(raw)){
+    if(DB$redcap$is_longitudinal){
       raw$id_temp <- 1:nrow(raw)
       raw <-  merge(raw,DB$redcap$events[,c("arm_num","event_name","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name",sort = F)
       add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
@@ -927,13 +928,14 @@ raw_process_redcap <- function(raw,DB){
       raw$id_temp <- NULL
     }
     add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
+    if(any(!DB$redcap$raw_structure_cols %in% colnames(raw)))stop("raw is missing one of the following... and that's weird: ", DB$redcap$raw_structure_cols %>% paste0(collapse = ", "))
 
     for(instrument_name in DB$redcap$instruments$instrument_name){
       add_ons_x <- add_ons
       #instrument_name <-  DB$redcap$instruments$instrument_name %>% sample(1)
       is_repeating_instrument <- instrument_name%in%DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)]
       rows  <- 1:nrow(raw)
-      if(!DB$has_event_mappings){
+      if(!DB$redcap$is_longitudinal){
         if("redcap_repeat_instrument"%in%colnames(raw)){
           if(is_repeating_instrument){
             rows <- which(raw$redcap_repeat_instrument==instrument_name)
@@ -943,7 +945,7 @@ raw_process_redcap <- function(raw,DB){
           }
         }
       }
-      if(DB$has_event_mappings){
+      if(DB$redcap$is_longitudinal){
         events_ins <- DB$redcap$event_mapping$unique_event_name[which(DB$redcap$event_mapping$form==instrument_name)] %>% unique()
         rows <- which(raw$redcap_event_name%in%events_ins)
       }
@@ -1517,11 +1519,6 @@ make_codebook <- function(DB){
   OUT
 }
 
-
-
-# summarize ---------------
-
-
 # to and from dir -----------
 
 #' @title Shows DB in the env
@@ -1612,11 +1609,7 @@ read_redcap_dir <- function(DB,allow_all=T){
   DB_import
 }
 
-
-
-
 # upload -----
-
 
 #' @title Upload to REDCap
 #' @description
@@ -1725,8 +1718,6 @@ find_DB_diff <- function(DB_import,DB,ignore_instruments){
   DB_import
 }
 
-
-
 # link --------
 
 #' @title Link to get a new API token for your project (if you access)
@@ -1788,8 +1779,6 @@ link_REDCap_record <- function(DB,record,page,instance){
   }
   link %>% utils::browseURL()
 }
-
-
 
 # upload --------
 
@@ -1898,10 +1887,7 @@ rmarkdown_DB <- function (DB,dir_other){
   )
 }
 
-
-
-# transfrom --------
-
+# transform --------
 
 generate_default_remap <- function(DB,merge_non_repeating_name='merged'){
   DB <- validate_DB(DB)
@@ -1913,7 +1899,7 @@ generate_default_remap <- function(DB,merge_non_repeating_name='merged'){
     if(length(non_reps)>0){
       metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- merge_non_repeating_name
     }
-    if(DB$has_event_mappings){
+    if(DB$redcap$is_longitudinal){
       # DB$redcap$events->x
       events <- DB$redcap$events
       event_mapping <- DB$redcap$event_mapping
@@ -2177,30 +2163,6 @@ transform_DB <- function(DB,merge_non_repeating=T,merge_non_repeating_name = "me
   return(DB)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(
@@ -2232,7 +2194,6 @@ find_in_DB <- function(DB,text, exact = F){
   return(out)
 }
 
-
 extract_instrument_from_merged <- function(DB,instrument_name){
   merged <- DB$data_extract$merged
   if(nrow(merged)>0){
@@ -2249,7 +2210,7 @@ extract_instrument_from_merged <- function(DB,instrument_name){
       rows <- which(!is.na(merged[[paste0(instrument_name,"_complete")]]))
     }
     #
-    # if(!DB$has_event_mappings){
+    # if(!DB$redcap$is_longitudinal){
     #   if("redcap_repeat_instrument"%in%colnames(merged)){
     #     if(is_repeating_instrument){
     #       rows <- which(merged$redcap_repeat_instrument==instrument_name)
@@ -2259,7 +2220,7 @@ extract_instrument_from_merged <- function(DB,instrument_name){
     #     }
     #   }
     # }
-    # if(DB$has_event_mappings){
+    # if(DB$redcap$is_longitudinal){
     #   events_ins <- DB$redcap$event_mapping$unique_event_name[which(DB$redcap$event_mapping$form==instrument_name)] %>% unique()
     #   rows <- which(merged$redcap_event_name%in%events_ins)
     # }
@@ -2270,8 +2231,6 @@ extract_instrument_from_merged <- function(DB,instrument_name){
     return(merged[rows,cols])
   }
 }
-
-
 
 # utils ----------
 
@@ -2289,8 +2248,6 @@ extract_instrument_from_merged <- function(DB,instrument_name){
 #' @param rhs A function call using the magrittr semantics.
 #' @return The result of calling `rhs(lhs)`.
 NULL
-
-
 
 write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
