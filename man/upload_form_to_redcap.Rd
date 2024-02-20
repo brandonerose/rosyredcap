@@ -7,7 +7,7 @@
 upload_form_to_redcap(to_be_uploaded, DB, batch_size = 500)
 }
 \arguments{
-\item{to_be_uploaded}{data.frame in raw coded form. If you worked with clean data pass your data to `clean_to_raw_form(FORM,DB)` first.}
+\item{to_be_uploaded}{data.frame in raw coded form. If you worked with clean data pass your data to `labelled_to_raw_form(FORM,DB)` first.}
 
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 

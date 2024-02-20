@@ -4,12 +4,12 @@
 \alias{get_raw_redcap}
 \title{Check the REDCap log}
 \usage{
-get_raw_redcap(DB, clean = T, records = NULL)
+get_raw_redcap(DB, labelled = T, records = NULL)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
-\item{clean}{T/F for clean vs raw labels}
+\item{labelled}{T/F for clean vs raw labels}
 
 \item{records}{optional records}
 }
