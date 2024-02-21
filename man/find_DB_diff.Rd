@@ -4,11 +4,9 @@
 \alias{find_DB_diff}
 \title{Find the DB_import and DB differences}
 \usage{
-find_DB_diff(DB_import, DB, ignore_instruments)
+find_DB_diff(DB2, DB, ignore_instruments)
 }
 \arguments{
-\item{DB_import}{obtained from your directory 'REDCap/upload' folder using, `DB_import <- read_redcap_dir(DB)`}
-
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{ignore_instruments}{character vector of instruments to be ignored if you know they are unchanged.}

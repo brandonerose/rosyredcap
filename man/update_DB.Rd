@@ -10,7 +10,8 @@ update_DB(
   day_of_log = 10,
   labelled = T,
   get_files = F,
-  original_file_names = F
+  original_file_names = F,
+  drop_dir = T
 )
 }
 \arguments{

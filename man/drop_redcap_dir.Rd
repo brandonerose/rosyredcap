@@ -9,7 +9,9 @@ drop_redcap_dir(
   records = NULL,
   allow_mod = T,
   dir_other,
-  only_redcap = F,
+  smart = T,
+  include_metadata = T,
+  include_other = F,
   deidentify = F,
   append_name,
   str_trunc_length = 32000,
@@ -27,7 +29,11 @@ drop_redcap_dir(
 
 \item{dir_other}{optional character string of another file path where the files should be saved}
 
-\item{only_redcap}{logical for whether to only include redcap and not metadata}
+\item{smart}{logical for whether to only save when data is new}
+
+\item{include_metadata}{logical for whether to only include redcap and not metadata}
+
+\item{include_other}{logical for whether to only include redcap and not metadata}
 
 \item{deidentify}{logical for deidentification}
 
@@ -37,7 +43,7 @@ drop_redcap_dir(
 
 \item{with_links}{optional logical for including links in excel sheets}
 
-\item{annotated_codebook}{optional logical for adding annoations of n and percent to codebook file}
+\item{annotated_codebook}{optional logical for adding annotations of n and percent to codebook file}
 
 \item{forms}{optional character vector for only selected forms}
 }

@@ -4,12 +4,14 @@
 \alias{read_redcap_dir}
 \title{Reads DB from the dropped REDCap files in dir/REDCap/upload}
 \usage{
-read_redcap_dir(DB, allow_all = T)
+read_redcap_dir(DB, allow_all = T, allow_nonredcap_vars = F)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{allow_all}{logical TF for allowing DB$data_extract names that are not also instrument names}
+
+\item{allow_nonredcap_vars}{logical TF for allowing non-redcap variable names}
 }
 \value{
 messages for confirmation
