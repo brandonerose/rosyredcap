@@ -4,12 +4,14 @@
 \alias{show_DB}
 \title{Shows DB in the env}
 \usage{
-show_DB(DB, also_metadata = T, transform = F)
+show_DB(DB, also_metadata = T, transform = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{also_metadata}{logical for including metadata}
+
+\item{transform}{show the data_transform section instead of data_extract}
 }
 \value{
 DB tables

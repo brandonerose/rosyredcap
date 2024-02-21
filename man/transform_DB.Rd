@@ -2,7 +2,7 @@
 % Please edit documentation in R/00_all_functions.R
 \name{transform_DB}
 \alias{transform_DB}
-\title{Tranform DB}
+\title{Transform DB}
 \usage{
 transform_DB(DB)
 }
@@ -13,5 +13,5 @@ transform_DB(DB)
 DB object that has DB$data_transform, can be based on a remap file from input folder or default
 }
 \description{
-Tranform DB
+Transform DB
 }

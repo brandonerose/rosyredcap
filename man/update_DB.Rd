@@ -26,6 +26,8 @@ update_DB(
 \item{get_files}{logical for whether or not to get files from redcap.}
 
 \item{original_file_names}{logical for whether or not to use original file names.}
+
+\item{drop_dir}{logical for whether or not save files to directory.}
 }
 \value{
 messages for confirmation

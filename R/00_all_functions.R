@@ -436,8 +436,9 @@ save_DB <- function(DB){
 #' `for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
 #' This code is not allowed on CRAN to avoid name conflicts
 #' @return DB tables
+#' @param transform show the data_transform section instead of data_extract
 #' @export
-show_DB <- function(DB,also_metadata=T,transform = F){
+show_DB <- function(DB,also_metadata=T,transform = T){
   DB <- validate_DB(DB)
   data_list <- list()
   data_choice <- "data_extract"
@@ -1074,10 +1075,10 @@ labelled_to_raw_form <- function(FORM,DB){
               if(length(coded_redcap2)>0){
                 OUT <- DB$redcap$missing_codes$code[coded_redcap2]
               }else{
-                stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C)
+                stop("Mismatch in choices compared to REDCap (above)! Column: ", COL_NAME,", Choice: ",C)
               }
             }else{
-              stop("Mismatch in choices compared to REDCap (above)!, Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
+              stop("Mismatch in choices compared to REDCap (above)! Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
             }
           }
         }
@@ -1128,10 +1129,10 @@ raw_to_labelled_form <- function(FORM,DB){
                 if(length(coded_redcap2)>0){
                   OUT <- DB$redcap$missing_codes$name[coded_redcap2]
                 }else{
-                  warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
+                  warning("Mismatch in choices compared to REDCap (above)! Column: ", COL_NAME,", Choice: ",C,". Also not a missing code.")
                 }
               }else{
-                warning("Mismatch in choices compared to REDCap (above)! Table: ",instrument_name,", Column: ", COL_NAME,", Choice: ",C)
+                warning("Mismatch in choices compared to REDCap (above)! Column: ", COL_NAME,", Choice: ",C)
               }
             }
           }
@@ -1374,7 +1375,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_ymd")] <- "date"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "datetime_dmy")] <- "datetime"
   DB$redcap$metadata <- metadata
-  DB <- annotate_codebook(DB)
   here_is_units_df <- NULL
   if(!missing(units_df)){
     if(!is.data.frame(units_df))stop("units_df must be a dataframe")
@@ -1747,6 +1747,7 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
 #' Because this is the only function that can mess up your data, use it at your own risk.
 #' Remember all changes are saved in the redcap log if there's an issue.
 #' @inheritParams upload_form_to_redcap
+#' @param DB2 The comparison DB object
 #' @param ignore_instruments character vector of instruments to be ignored if you know they are unchanged.
 #' @return DB_import but only the differences
 #' @export
@@ -1846,6 +1847,7 @@ link_REDCap_record <- function(DB,record,page,instance){
 #' @param force logical for force a fresh update
 #' @param day_of_log numbers of days to be checked in the log
 #' @param labelled logical for whether or not to return raw or labelled REDCap. Default is TRUE.
+#' @param drop_dir logical for whether or not save files to directory.
 #' @param get_files logical for whether or not to get files from redcap.
 #' @param original_file_names logical for whether or not to use original file names.
 #' @return messages for confirmation
@@ -2101,12 +2103,15 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
       DB$remap$event_mapping_remap <- event_mapping_remap
     }
     if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
-    DB$remap$instruments_remap <- instruments_remap
     DB$remap$metadata_remap <- metadata_remap
   }
   remap_process(DB)
 }
 
+#' @title Generate custom remap files from input
+#' @inheritParams save_DB
+#' @return DB object that has DB$remap populated from input folder
+#' @export
 generate_custom_remap_from_dir <- function(DB){
   DB <- validate_DB(DB)
   input_folder <- DB$dir_path %>% file.path("input")
@@ -2122,7 +2127,7 @@ generate_custom_remap_from_dir <- function(DB){
   return(DB)
 }
 
-#' @title Tranform DB
+#' @title Transform DB
 #' @inheritParams save_DB
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
 #' @export

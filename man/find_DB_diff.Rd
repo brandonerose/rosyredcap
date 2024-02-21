@@ -7,6 +7,8 @@
 find_DB_diff(DB2, DB, ignore_instruments)
 }
 \arguments{
+\item{DB2}{The comparison DB object}
+
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{ignore_instruments}{character vector of instruments to be ignored if you know they are unchanged.}
