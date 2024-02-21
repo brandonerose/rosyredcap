@@ -1660,12 +1660,18 @@ read_redcap_dir <- function(DB,allow_all=T,allow_nonredcap_vars=F){
   if(!allow_all){
     x <- x[which(gsub("\\.xlsx|\\.xls","",x)%in%DB$redcap$instruments$instrument_name)]
   }
-  DB_import <- DB
-  DB_import[["data_extract"]] <- list()
+  if(DB$data_upload %>% is_something())stop("Already files in DB$data_upload, clear that first")
+  DB[["data_upload"]] <- list()
   for(y in x){#not done yet
-    DB_import[["data_extract"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
+
+    the_file <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
+    if(!allow_nonredcap_vars){
+      x<-colnames(the_file)[which(!colnames(the_file)%in%c(DB$redcap$raw_structure_cols,DB$redcap$metadata$field_name))]
+      if(length(x)>0)stop("forbidden col name: ",x %>% paste0(collapse = ", "))
+    }
+    DB[["data_upload"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
   }
-  DB_import
+  DB
 }
 
 # upload -----
@@ -2168,38 +2174,137 @@ transform_DB <- function(DB){
 
 summarize_DB <- function(DB){
   #project --------
+  summary <- list()
+  was_remapped <-DB$remap %>% is_something()
+  pull_from <- "redcap"
+  df_names1 <- c("metadata","instruments","event_mapping","events")
+  if(was_remapped){
+    pull_from <- "remap"
+    df_names2 <- paste0(df_names1,"_new")
+  }
+
+  for(i in 1:length(df_names1)){
+    summary[[df_names1[[i]]]] <- DB[[pull_from]][[df_names2[[i]]]]
+  }
+  DB$redcap$project_info
+
+  metadata <- DB$redcap$metadata
+  instruments <- DB$redcap$instruments
+  arms <- DB$redcap$arms
+  users <- DB$redcap$instruments
+  events <- DB$redcap$events
+  event_mapping <- DB$redcap$event_mapping
+
+  list(
+    short_name=NULL,
+    token_name=NULL,
+    dir_path=NULL,
+    internals = list(
+      last_metadata_check=NULL,
+      last_metadata_update=NULL,
+      last_metadata_dir_save=NULL,
+      last_data_check=NULL,
+      last_data_update=NULL,
+      last_data_dir_save = NULL,
+      last_data_transformation = NULL,
+      last_directory_save=NULL,
+      data_extract_labelled = NULL,
+      data_extract_merged = NULL,
+      merge_form_name = "merged",
+      data_extract_clean = NULL
+    ),
+    redcap = list(
+      project_id=NULL,
+      project_title= NULL,
+      id_col=NULL,
+      version=NULL,
+      project_info=NULL,
+      metadata=NULL,
+      instruments=NULL,
+      arms=NULL,
+      events=NULL,
+      event_mapping = NULL,
+      missing_codes=NULL,
+      log=NULL,
+      users=NULL,
+      current_user=NULL,
+      codebook=NULL,
+      choices=NULL,
+      raw_structure_cols = NULL,
+      is_longitudinal = NULL,
+      has_arms = NULL,
+      has_multiple_arms = NULL,
+      has_arms_that_matter = NULL,
+      has_repeating_instruments_or_events = NULL,
+      has_repeating_instruments = NULL,
+      has_repeating_events = NULL
+    ),
+    auto_jobs = NULL,
+    remap = list(
+      metadata_remap=NULL,
+      metadata_new=NULL,
+      instruments_remap=NULL,
+      instruments_new=NULL,
+      arms_map=NULL,
+      arms_new=NULL,
+      events_remap=NULL,
+      events_new=NULL,
+      event_mapping_remap=NULL,
+      event_mapping_new=NULL
+    ),
+    data_extract = NULL,
+    data_transform = NULL,
+    data_upload = NULL,
+    all_records = NULL,
+    links = list(
+      redcap_base = NULL,
+      redcap_uri = NULL,
+      redcap_home = NULL,
+      redcap_records = NULL,
+      redcap_API = NULL,
+      redcap_API_playground = NULL,
+      github = "https://github.com/brandonerose/rosyredcap",
+      thecodingdocs = "https://www.thecodingdocs.com/"
+    )
+  )
+
+
+  if(was_remapped){
+
+  }
+
   #records belong to arms 1 to 1 ----------
-  transform$records_n <- 0
+  summary$records_n <- 0
   if(!is.null(DB$all_records)){
-    transform$records_n <- DB$all_records %>% length()
+    summary$records_n <- DB$all_records %>% length()
   }
   #arms----------------
-  transform$arms_n <- 0
+  summary$arms_n <- 0
   if(is.data.frame(DB$redcap$arms)){
-    transform$arms_n <- DB$redcap$arms %>% nrow()
+    summary$arms_n <- DB$redcap$arms %>% nrow()
     id_pairs <- DB$redcap$instruments$instrument_name %>%  lapply(function(IN){DB$data_extract[[IN]][,c(DB$redcap$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
     DB$redcap$arms$arm_records_n <- DB$redcap$arms$arm_num %>% sapply(function(arm){
       which(id_pairs$arm_num==arm)%>% length()
     })
   }
   #events belong to arms many to 1 ----------------
-  # transform$events_n <- DB$redcap$events %>% nrow()
-  transform$events_n <- 0
+  # summary$events_n <- DB$redcap$events %>% nrow()
+  summary$events_n <- 0
   if(is.data.frame(DB$redcap$events)){
-    transform$events_n <- DB$redcap$events %>% nrow()
-    transform$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
+    summary$events_n <- DB$redcap$events %>% nrow()
+    summary$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
     # 1:nrow(DB$redcap$event_mapping) %>% lapply(function(i){
     #   (DB$data_extract[[DB$redcap$event_mapping$form[i]]][['redcap_event_name']]==DB$redcap$event_mapping$unique_event_name[i]) %>% which() %>% length()
     # })
     # for(event in ){
-    #   transform[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
+    #   summary[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
     # }
   }
 
   #instruments/forms belong to events many to 1 (if no events/arms) ----------------
-  transform$instruments_n <- 0
+  summary$instruments_n <- 0
   if(is.data.frame(DB$redcap$instruments)){ # can add expected later
-    transform$instruments_n <- DB$redcap$instruments %>% nrow()
+    summary$instruments_n <- DB$redcap$instruments %>% nrow()
     DB$redcap$instruments$incomplete <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
       (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
     })
@@ -2212,9 +2317,9 @@ summarize_DB <- function(DB){
   }
 
   #fields belong to instruments/forms 1 to 1 ----------------
-  transform$metadata_n <- 0
+  summary$metadata_n <- 0
 
-  transform$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
+  summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
   # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
 
   #metadata/codebook =============
