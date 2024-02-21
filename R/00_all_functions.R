@@ -240,6 +240,7 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
       last_directory_save=NULL,
       data_extract_labelled = NULL,
       data_extract_merged = NULL,
+      merge_form_name = "merged",
       data_extract_clean = NULL
     ),
     redcap = list(
@@ -1263,6 +1264,22 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
     keep_instruments <- all_instrument_names[which(!all_instrument_names%in% instrument_names)]
     data_choice <- "data_transform"
   }
+
+  DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_from_extact(DB,instrument_names)
+  if(data_choice=="data_extract") {
+    for(instrument_name in instrument_names){
+      DB[["data_extract"]][[instrument_name]] <- NULL
+    }
+    DB$internals$data_extract_merged <- T
+
+  }else{
+    for(keep in keep_instruments){
+      DB[["data_transform"]][[keep]] <- DB[["data_extract"]][[keep]]
+    }
+  }
+  DB
+}
+merge_from_extact <- function(DB,instrument_names){
   instrument_names <- instrument_names %>% as.list()
   if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
   merged <- DB[["data_extract"]][[instrument_names[[1]]]]
@@ -1271,7 +1288,6 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
   merged$event_name <- NULL
   merged$redcap_repeat_instrument <- NULL
   merged$redcap_repeat_instance <- NULL
-  if(data_choice=="data_extract") DB[["data_extract"]][[instrument_names[[1]]]] <- NULL
   instrument_names[[1]] <- NULL
   while (length(instrument_names)>0) {
     dfx <- DB[["data_extract"]][[instrument_names[[1]]]]
@@ -1282,18 +1298,9 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
     dfx$redcap_repeat_instance <- NULL
     (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
     merged <- merge(merged,dfx,by=in_common,all = T)
-    if(data_choice=="data_extract") DB[["data_extract"]][[instrument_names[[1]]]] <- NULL
     instrument_names[[1]] <- NULL
   }
-  DB[[data_choice]]$merged <- merged
-  if(data_choice=="data_extract"){
-    DB$internals$data_extract_merged <- T
-  }else{
-    for(keep in keep_instruments){
-      DB[["data_transform"]][[keep]] <- DB[["data_extract"]][[keep]]
-    }
-  }
-  DB
+  merged
 }
 
 #' @title Unmerge non-repeating, not ready for multi-event projects
@@ -1301,15 +1308,15 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
 #' @return DB object that has merged all non repeating forms
 #' @export
 unmerge_non_repeating_DB <- function(DB){
-  if(!"merged" %in% names(DB$data_extract))stop("No DB$data_extract named as 'merged'!")
-  instrument_names <- DB$data_extract$merged %>% colnames() %>% sapply(function(COL){DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==COL)]}) %>% unique() %>% as.list()
-  merged <- DB$data_extract$merged
+  if(!DB$internals$data_extract_merged)stop("No DB$data_extract named as 'merged'!")
+  instrument_names <- DB$data_extract[[DB$internals$merge_form_name]] %>% colnames() %>% sapply(function(COL){DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==COL)]}) %>% unique() %>% as.list()
+  merged <- DB$data_extract[[DB$internals$merge_form_name]]
   while (length(instrument_names)>0) {
     instrument_name  <- instrument_names[[1]]
     DB$data_extract[[instrument_name]] <- merged[,unique(c(DB$redcap$id_col,DB$redcap$metadata$field_name[which(DB$redcap$metadata$form_name==instrument_name&DB$redcap$metadata$field_name%in%colnames(merged))]))]
     instrument_names[[1]] <- NULL
   }
-  DB$data_extract$merged <- NULL
+  DB$data_extract[[DB$internals$merge_form_name]] <- NULL
   DB$internals$data_extract_merged <- F
   DB
 }
@@ -1468,7 +1475,7 @@ add_ID_to_DF <- function(DF,DB,ref_id){
   form <- DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==ref_id)]
   if(DB$internals$data_extract_merged){
     if(form %in% DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)]){
-      form <- "merged"
+      form <- DB$internals$merge_form_name
     }
   }
   id_col <- DF[[ref_id]] %>% sapply(function(ID){
@@ -1600,7 +1607,7 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
     if(!is.null(DB$internals$last_metadata_dir_save)) due_for_save_metadata <- DB$internals$last_metadata_update > DB$internals$last_metadata_dir_save
     if(!is.null(DB$internals$last_data_dir_save)) due_for_save_data <- DB$internals$last_data_update > DB$internals$last_data_dir_save
   }
-  if(due_for_save_data){
+  if(due_for_save_metadata){
     if(include_metadata){
       DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
       for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
@@ -1623,8 +1630,17 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
   #   DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
   # }
   if(DB$data_transform %>% is_something()){
-    for(x in names(DB$data_transform)){
-      DB_selected[["data_transform"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+    save_it <- T
+    if(!is.null(DB$internals$last_data_transformation)){
+      if(smart){
+        save_it <- DB$internals$last_data_transformation < DB$internals$last_data_update
+      }
+    }
+    if(save_it){
+      DB$internals$last_data_transformation <- DB$internals$last_data_update
+      for(x in names(DB$data_transform)){
+        DB_selected[["data_transform"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      }
     }
   }
   return(DB)
@@ -1907,6 +1923,7 @@ update_DB <- function(
   if(force){
     DB <- DB %>% get_redcap_metadata()
     DB <- DB %>% get_redcap_data(labelled = labelled)
+    forms <- DB$redcap$instruments$instrument_name
     DB$redcap$log <- DB %>% check_redcap_log(last = day_of_log,units = "days") %>% unique()
     message("Full update!")
     was_updated <- T
@@ -1919,7 +1936,14 @@ update_DB <- function(
       DB2 <-DB2 %>% find_DB_diff(DB)
       DB$internals$last_data_update <- DB2$internals$last_data_update
       DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
-      for(TABLE  in names(DB$data_extract)){
+      forms <- names(DB2$data_extract)[
+        which(
+          names(DB2$data_extract) %>%
+            sapply(function(form){
+              nrow(DB2$data_extract[[form]])>0
+            })
+        )]
+      for(TABLE in forms){
         DB$data_extract[[TABLE]] <- DB$data_extract[[TABLE]][which(!DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%IDs),] %>% dplyr::bind_rows(DB2$data_extract[[TABLE]][which(DB2$data_extract[[TABLE]][[DB$redcap$id_col]]%in%IDs),])
       }
       message("updated: ",paste0(IDs,collapse = ", "))
@@ -1936,7 +1960,7 @@ update_DB <- function(
       DB <- merge_non_repeating_DB(DB)
     }
     if(drop_dir){
-      DB <- drop_redcap_dir(DB)
+      DB <- drop_redcap_dir(DB,forms = forms)
     }
   }
   if(!is.null(DB$dir_path))  save_DB(DB)
@@ -1962,48 +1986,23 @@ rmarkdown_DB <- function (DB,dir_other){
 
 # transform --------
 
-generate_default_remap <- function(DB,merge_non_repeating_name='merged',save_file=!is.null(DB$dir_path)){
+remap_process <- function(DB){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
-    metadata_remap <-   DB$redcap$metadata
-    metadata_remap$field_name_remap <- metadata_remap$field_name
-    metadata_remap$form_name_remap <- metadata_remap$form_name
+    metadata_remap <-   DB$remap$metadata_remap
     instruments_remap <- DB$redcap$instruments
-    non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)]
-    ins_new_cols <- c("instrument_name_remap","repeating")
-    if(DB$redcap$is_longitudinal){
-      non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating&!DB$redcap$instruments$repeating_via_events)]
-      ins_new_cols <- c("instrument_name_remap","repeating","repeating_via_events")
-    }
-    if(length(non_reps)>0){
-      metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- merge_non_repeating_name
-    }
     instruments_remap$instrument_name_remap <- instruments_remap$instrument_name %>% sapply(function(instrument_name){
       x<-metadata_remap$form_name_remap[which(metadata_remap$form_name==instrument_name)] %>% unique()
       if(length(x)>1)stop("instrument_names cannot match multiple instrument_name_remaps: ",instrument_name)
       return(x)
     })
-    instruments_new <- instruments_remap[,ins_new_cols] %>% unique()
-    instruments_new$former_instrument_names <- instruments_new$instrument_name_remap %>% sapply(function(instrument_name_remap){
-      instruments_remap$instrument_name[which(instruments_remap$instrument_name_remap==instrument_name_remap)] %>% unique() %>% paste0(collapse = " | ")
-    })
-    colnames(instruments_new)[1] <- "instrument_name"
-
-    # metadata_new <- metadata_remap[,c("field_name_remap","field_type","select_choices_or_calculations")] %>% unique()
-
-
     if(DB$redcap$is_longitudinal){
       if(DB$redcap$has_arms_that_matter){
         #can add remapping of arms but not smart if they matter
       }else{
         # DB$redcap$events->x
+        event_mapping_remap <- DB$remap$event_mapping_remap
         events_remap <- DB$redcap$events
-        event_mapping_remap <- DB$redcap$event_mapping
-        event_mapping_remap <- merge(event_mapping_remap, events_remap[,c("event_name","unique_event_name")], by="unique_event_name")
-        event_mapping_remap$unique_event_name_remap <- tolower(gsub(" ","_",event_mapping_remap$event_name))
-        # metadata_remap$unique_event_name_remap <-  metadata_remap$form_name%>% sapply(function(form_name){
-        #   event_mapping_remap$unique_event_name_remap[which(event_mapping_remap$form==form_name)] %>% unique() %>% paste0(collapse = " | ")
-        # }) %>% unlist()
         events_remap$unique_event_name_remap <- events_remap$unique_event_name %>% sapply(function(unique_event_name){
           x<-event_mapping_remap$unique_event_name_remap[which(event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()
           if(length(x)>1)stop("unique_event_names cannot match multiple unique_event_name_remaps: ",unique_event_name)
@@ -2025,172 +2024,144 @@ generate_default_remap <- function(DB,merge_non_repeating_name='merged',save_fil
         event_mapping_new$former_unique_event_names <- event_mapping_new$unique_event_name %>% sapply(function(unique_event_name){
           event_mapping_remap$unique_event_name[which(event_mapping_remap$unique_event_name_remap==unique_event_name)] %>% unique() %>% paste0(collapse = " | ")
         })
+        x<- event_mapping_new[which(event_mapping_new$form%in%instruments_remap$instrument_name_remap),]
+        instruments_remap$repeating_via_events[
+          which(
+            instruments_remap$instrument_name_remap %>% sapply(function(instrument_name_remap){
+              # instrument_name <- DB$redcap$instruments$instrument_name %>% sample(1)
+              if(DB$internals$merge_form_name==instrument_name_remap){
+                F
+              }else{
+                anyDuplicated(event_mapping_new$form[which(event_mapping_new$form==instrument_name_remap)])>0
+              }
+            })
+          )
+        ] <- T
       }
-      if(save_file) events_new %>% rio::export(file = DB$dir_path %>% file.path("input","events_new_default.xlsx"))
-      if(save_file) event_mapping_new %>% rio::export(file = DB$dir_path %>% file.path("input","event_mapping_new_default.xlsx"))
-      if(save_file) events_remap %>% rio::export(file = DB$dir_path %>% file.path("input","events_remap_default.xlsx"))
-      if(save_file) event_mapping_remap %>% rio::export(file = DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx"))
+      non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)]
+      ins_new_cols <- c("instrument_name_remap","repeating")
+      if(DB$redcap$is_longitudinal){
+        non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating&!DB$redcap$instruments$repeating_via_events)]
+        ins_new_cols <- c("instrument_name_remap","repeating","repeating_via_events")
+      }
+      if(length(non_reps)>0){
+        metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- DB$internals$merge_form_name
+      }
+      instruments_new <- instruments_remap[,ins_new_cols] %>% unique()
+      instruments_new$former_instrument_names <- instruments_new$instrument_name_remap %>% sapply(function(instrument_name_remap){
+        instruments_remap$instrument_name[which(instruments_remap$instrument_name_remap==instrument_name_remap)] %>% unique() %>% paste0(collapse = " | ")
+      })
+      colnames(instruments_new)[1] <- "instrument_name"
       DB$remap$events_new <- events_new
       DB$remap$event_mapping_new <- event_mapping_new
-      DB$remap$events_remap <- events_remap
-      DB$remap$event_mapping_remap <- event_mapping_remap
     }
-    if(save_file) instruments_new %>% rio::export(file = DB$dir_path %>% file.path("input","instruments_new_default.xlsx"))
-    if(save_file) instruments_remap %>% rio::export(file = DB$dir_path %>% file.path("input","instruments_remap_default.xlsx"))
-    if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
+    metadata_new <- metadata_remap
+    metadata_new$field_name <- metadata_new$field_name_remap
+    metadata_new$field_name_remap <- NULL
+    metadata_new$form_name <- metadata_new$form_name_remap
+    metadata_new$form_name_remap <- NULL
+    metadata_new <- metadata_new[,colnames(metadata_new)%in%c(
+      "field_name",
+      "form_name",
+      "field_type",
+      "select_choices_or_calculations"
+    )] %>% unique()
+    if(metadata_new$field_name %>% anyDuplicated() %>% magrittr::is_greater_than(0))stop("metadata_new has duplicate field names")
+
+    DB$remap$metadata_new <- metadata_new
     DB$remap$instruments_new <- instruments_new
     DB$remap$instruments_remap <- instruments_remap
-    DB$remap$metadata_remap <- metadata_remap
     # if(save_file) metadata_new %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_new_default.xlsx"))
   }
-  DB
+  return( DB)
 }
-transform_DB <- function(DB,merge_non_repeating=T,merge_non_repeating_name = "merged",metadata_remap,event_mapping_remap){
+
+generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
+  DB <- validate_DB(DB)
+  if(is.data.frame(DB$redcap$metadata)){
+    metadata_remap <-   DB$redcap$metadata
+    metadata_remap$field_name_remap <- metadata_remap$field_name
+    metadata_remap$form_name_remap <- metadata_remap$form_name
+
+    if(DB$redcap$is_longitudinal){
+      if(DB$redcap$has_arms_that_matter){
+        #can add remapping of arms but not smart if they matter
+      }else{
+        # DB$redcap$events->x
+        event_mapping_remap <- DB$redcap$event_mapping
+        event_mapping_remap <- merge(event_mapping_remap, DB$redcap$events[,c("event_name","unique_event_name")], by="unique_event_name")
+        event_mapping_remap$unique_event_name_remap <- tolower(gsub(" ","_",event_mapping_remap$event_name))
+        event_mapping_remap$form_remap <-  event_mapping_remap$form %>% sapply(function(instrument_name){
+          x<-metadata_remap$form_name_remap[which(metadata_remap$form_name==instrument_name)] %>% unique()
+          if(length(x)>1)stop("instrument_names cannot match multiple instrument_name_remaps: ",instrument_name)
+          return(x)
+        })
+      }
+      if(save_file) event_mapping_remap %>% rio::export(file = DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx"))
+      DB$remap$event_mapping_remap <- event_mapping_remap
+    }
+    if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
+    DB$remap$instruments_remap <- instruments_remap
+    DB$remap$metadata_remap <- metadata_remap
+  }
+  remap_process(DB)
+}
+
+generate_custom_remap_from_dir <- function(DB){
+  DB <- validate_DB(DB)
+  input_folder <- DB$dir_path %>% file.path("input")
+  input_folder %>% file.path(c("metadata_remap.xlsx","event_mapping_remap.xlsx"))
+  input_folder %>% list.files(full.names = T)
+  for(file in c("metadata_remap","event_mapping_remap")){
+    path <- input_folder %>% file.path(paste0(file,".xlsx"))
+    if(file.exists(path)){
+      DB$remap[[file]] <- rio::import(file = path)
+    }
+  }
+  DB <- remap_process(DB)
+  return(DB)
+}
+
+#' @title Tranform DB
+#' @inheritParams save_DB
+#' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
+#' @export
+transform_DB <- function(DB){
   DB  <- validate_DB(DB)
   transform <- list()
-  if(missing(metadata_remap)){
-    path <- DB$dir_path %>% file.path("input","metadata_remap.xlsx")
-    if(!file.exists(path)){
-      warning(paste0("No remap file at the following path: ",path), immediate. = T)
-      path <- DB$dir_path %>% file.path("input","metadata_remap_default.xlsx")
-    }
-    transform$metadata_remap <- rio::import(path)
-    # check it
-    remappings <- transform$metadata_remap$field_name[which(transform$metadata_remap$field_name!=transform$metadata_remap$field_name_remap)]
-    field_name <- remappings %>% sample(1)
-    for(field_name in remappings){
-      field_name_remap <- transform$metadata_remap$field_name_remap[which(transform$metadata_remap$field_name==field_name)]
-      scc1 <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name_remap)]
-      scc2 <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)]
-      mes <- paste0("unequal choices: ", field_name_remap," and ",field_name)
-      if(!is.na(scc1)&is.na(scc2))stop(mes)
-      if(is.na(scc1)&!is.na(scc2))stop(mes)
-      if(!is.na(scc1)&!is.na(scc2)){
-        if(scc1!=scc2)stop(mes)
-      }
-    }
-    transform$metadata_final <- DB$redcap$metadata[which(DB$redcap$metadata$field_name%in%transform$metadata_remap$field_name_remap),]
-    transform$metadata_final$form_name <- transform$metadata_final$field_name %>% sapply(function(field_name){
-      x <-  transform$metadata_remap$form_name_remap[which(transform$metadata_remap$field_name_remap==field_name)] %>% unique()
-      if(length(x)>1)stop("your remap cannot have variables that map to more than one form... --> ",field_name)
-      x
-    })
-
-  }
-  if(missing(event_mapping_remap)){
-    path <- DB$dir_path %>% file.path("input","event_mapping_remap.xlsx")
-    if(!file.exists(path)){
-      warning(paste0("No remap file at the following path: ",path), immediate. = T)
-      path <- DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx")
-    }
-    if(file.exists(path)){transform$event_mapping_remap <- rio::import(path)}
-    #check
-    transform$event_mapping_final <- transform$event_mapping_remap[,c("arm_num","form","event_name","unique_event_name_remap","unique_event_name")]
-    transform$event_mapping_final$unique_event_name <- transform$event_mapping_final$unique_event_name_remap
-    transform$event_mapping_final$unique_event_name_remap <- NULL
-    form <- transform$event_mapping_final$form %>% sample(1)
-    transform$event_mapping_final$form  <- transform$event_mapping_final$form %>% sapply(function(form){
-      x <-  transform$metadata_remap$form_name_remap[which(transform$metadata_remap$form_name==form)] %>% unique()
-      if(length(x)>1)stop("your remap cannot have forms that map to more than one form... --> ",field_name)
-      x
-    })
-    transform$event_mapping_final <- unique(transform$event_mapping_final)
-    if(is_something(DB$redcap$arms,1)){
-      test_df <- transform$event_mapping_final
-      for(arm in DB$redcap$arms$arm_num){
-        if(nrow(test_df)>0){
-          check_these  <- transform$event_mapping_final[which(transform$event_mapping_final$arm_num==arm),c("form","event_name","unique_event_name")]
-          for(i in 1:nrow(check_these)){
-            test_df <- test_df[which(!(test_df$form==check_these$form[i]&test_df$event_name==check_these$event_name[i]&test_df$unique_event_name==check_these$unique_event_name[i])),]
+  if(DB$remap %>% is_something()){
+    instrument_names <- DB$remap$instruments_new$instrument_name
+    instrument_name <- instrument_names %>%  sample (1)
+    for (instrument_name in instrument_names) {
+      if(instrument_name == DB$internals$merge_form_name){
+        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+        DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
+      }else{
+        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+        old_instrument <- old_instruments %>%  sample (1)
+        final_out <- NULL
+        for(old_instrument in old_instruments){
+          keep <- DB$data_extract[[old_instrument]]
+          colnames(keep) <- colnames(keep) %>% sapply(function(col){
+            out <- col
+            x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
+            if(length(x)>0)out <- x
+            out
+          })
+          if("redcap_event_name"%in%colnames(keep)){
+            keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+            # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
           }
+          final_out <- final_out %>% dplyr::bind_rows(keep)
         }
-      }
-      if(nrow(test_df)==0){
-        transform$event_mapping_final$arm_num <- NULL
-        transform$event_mapping_final <-   transform$event_mapping_final %>% unique()
+        DB$data_transform[[instrument_name]] <- final_out
       }
     }
-    events <- unique(transform$event_mapping_final$unique_event_name)
-    transform$events_final <- data.frame(
-      unique_event_name = events,
-      forms = events %>% sapply(function(event){
-        transform$event_mapping_final$form[which(transform$event_mapping_final$unique_event_name==event)] %>% unique() %>% paste0(collapse = " | ")
-      })
-    )
   }
+  return(DB)
+}
 
-  transform$instruments <- data.frame(
-    instrument_name =  transform$metadata_remap$form_name_remap %>% unique(),
-    instrument_label = NA,
-    repeating = NA
-  )
-  transform$instruments$instrument_label <-  transform$instruments$instrument_name %>% sapply(function(instrument_name){
-    row <- which(DB$redcap$instruments$instrument_name==instrument_name)
-    if(length(row)==0)return(instrument_name)
-    return(DB$redcap$instruments$instrument_label[row])
-  })
-  if("unique_event_name_remap"%in%colnames(transform$metadata_remap)){
-    transform$instruments$repeating[
-      which(
-        transform$instruments$instrument_name %>% sapply(function(instrument_name){
-          # instrument_name <- DB$redcap$instruments$instrument_name %>% sample(1)
-          events <- transform$metadata_remap$unique_event_name_remap[which(transform$metadata_remap$form_name_remap== instrument_name)] %>% unique() %>% strsplit(" [:|:] ") %>% unlist() %>% unique()
-          length(events)>1
-        })
-      )
-    ] <- T
-
-    transform$instruments$repeating[
-      which(
-        transform$instruments$instrument_name %>% sapply(function(instrument_name){
-          # instrument_name <- DB$redcap$instruments$instrument_name %>% sample(1)
-          anyDuplicated(transform$event_mapping_remap$arm_num[which(transform$event_mapping_remap$unique_event_name_remap==instrument_name)])>0
-        })
-      )
-    ] <- T
-
-  }else{
-    transform$instruments$repeating <-  transform$instruments$instrument_name %>% sapply(function(instrument_name){
-      old_forms <- transform$metadata_remap$form_name[which(transform$metadata_remap$form_name_remap==instrument_name)] %>% unique()
-      were_repeating <- old_forms %>% sapply(function(instrument_name){DB$redcap$instruments$repeating[which(DB$redcap$instruments$instrument_name==instrument_name)]})
-      # if(any(were_repeating)){
-      #
-      # }
-      if(length(row)==0)return(instrument_name)
-      return(DB$redcap$instruments$instrument_label[row])
-    })
-  }
-
-  # merge-------
-
-  instrument_names <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)] %>% as.list()
-  if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
-  merged <- DB$data_extract[[instrument_names[[1]]]]
-  merged$redcap_event_name <- NULL
-  # merged$arm_num <- NULL
-  merged$event_name <- NULL
-  merged$redcap_repeat_instrument <- NULL
-  merged$redcap_repeat_instance <- NULL
-  DB$data_extract[[instrument_names[[1]]]] <- NULL
-  instrument_names[[1]] <- NULL
-  while (length(instrument_names)>0) {
-    dfx <- DB$data_extract[[instrument_names[[1]]]]
-    dfx$redcap_event_name <- NULL
-    # dfx$arm_num <- NULL
-    dfx$event_name <- NULL
-    dfx$redcap_repeat_instrument <- NULL
-    dfx$redcap_repeat_instance <- NULL
-    (in_common <- colnames(merged)[which(colnames(merged)%in%colnames(dfx))])
-    merged <- merge(merged,dfx,by=in_common,all = T)
-    DB$data_extract[[instrument_names[[1]]]] <- NULL
-    instrument_names[[1]] <- NULL
-  }
-  DB$data_extract$merged <- merged
-  DB
-
-
-
-
+summarize_DB <- function(DB){
   #project --------
   #records belong to arms 1 to 1 ----------
   transform$records_n <- 0
@@ -2258,11 +2229,8 @@ transform_DB <- function(DB,merge_non_repeating=T,merge_non_repeating_name = "me
     field_name <- codebook$field_name[i]
 
     if(!form_name %in% names(DB$data_extract)){
-      if("merged" %in% names(DB$data_extract)){
-        if(field_name%in%colnames(DB$data_extract$merged))return("merged")
-      }
-      if("patient" %in% names(DB$data_extract)){
-        if(field_name%in%colnames(DB$data_extract$patient))return("patient")
+      if(DB$internals$merge_form_name %in% names(DB$data_extract)){
+        if(field_name%in%colnames(DB$data_extract$merged))return(DB$internals$merge_form_name)
       }
       for(other in names(DB$data_extract)[which(!names(DB$data_extract)%in%DB$redcap$instruments$instrument_name)]){
         if(field_name%in%colnames(DB$data_extract[[other]]))return(other)
@@ -2326,7 +2294,7 @@ find_in_DB <- function(DB,text, exact = F){
 }
 
 extract_instrument_from_merged <- function(DB,instrument_name){
-  merged <- DB$data_extract$merged
+  merged <- DB$data_extract[[DB$internals$merge_form_name]]
   if(nrow(merged)>0){
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
     add_ons  <- add_ons[which(add_ons%in%colnames(merged))]
