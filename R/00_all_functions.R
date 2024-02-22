@@ -1847,7 +1847,23 @@ link_REDCap_record <- function(DB,record,page,instance){
 }
 
 # upload --------
-
+ignore_redcap_log <- function(collapse = T){
+  ignores <- c(
+    'export',
+    'download ',
+    'edit report',
+    'Switch DAG',
+    'Copy report',
+    'Multi-Language',
+    'File Repository ',
+    'custom record dashboard',
+    'User regenerate own API token',
+    'Create report',
+    ' external module'
+  )
+  if(collapse)return(paste0(ignores,collapse = "|"))
+  return(ignores)
+}
 #' @title Shows DB in the env
 #' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update
@@ -1895,7 +1911,7 @@ update_DB <- function(
       ilog3 <- ilog[which(is.na(ilog$record_id)),]
       ilog3$timestamp <- NULL
       ilog3 <- ilog3 %>% unique()
-      ilog3 <- ilog3[grep("export|download |edit report|Switch DAG|Copy report|Multi-Language|File Repository |custom record dashboard|User regenerate own API token|Create report",ilog3$details,ignore.case = T,invert = T) %>% unique(),]
+      ilog3 <- ilog3[grep(ignore_redcap_log(),ilog3$details,ignore.case = T,invert = T) %>% unique(),]
       if(nrow(ilog3)>0){
         force <- T
         message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
