@@ -99,7 +99,7 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
     old <-  DB$data_extract[[TABLE]]
     ref_cols <- DB$redcap$raw_structure_cols
     ref_cols <- ref_cols[which(ref_cols%in%c(colnames(old),colnames(new)))]
-    DB2[["data_extract"]][[TABLE]] <- find_df_diff(new= new , old =  old, ref_cols = ref_cols)
+    DB2[["data_extract"]][[TABLE]] <- find_df_diff(new= new , old =  old, ref_cols = ref_cols, message_pass = paste0(TABLE,collapse = ": "))
   }
   DB2
 }

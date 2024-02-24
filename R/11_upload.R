@@ -20,7 +20,6 @@ ignore_redcap_log <- function(collapse = T){
 #' @param force logical for force a fresh update
 #' @param day_of_log numbers of days to be checked in the log
 #' @param labelled logical for whether or not to return raw or labelled REDCap. Default is TRUE.
-#' @param drop_dir logical for whether or not save files to directory.
 #' @param get_files logical for whether or not to get files from redcap.
 #' @param original_file_names logical for whether or not to use original file names.
 #' @return messages for confirmation
@@ -31,8 +30,7 @@ update_DB <- function(
     day_of_log = 10,
     labelled = T,
     get_files = F,
-    original_file_names = F,
-    drop_dir = T
+    original_file_names = F
 ) {
   IDs <- NULL
   will_update <- T
@@ -132,9 +130,6 @@ update_DB <- function(
   if(was_updated){
     if(was_merged){
       DB <- merge_non_repeating_DB(DB)
-    }
-    if(drop_dir){
-      DB <- drop_redcap_dir(DB,forms = forms)
     }
   }
   if(!is.null(DB$dir_path))  save_DB(DB)

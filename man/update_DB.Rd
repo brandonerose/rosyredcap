@@ -10,8 +10,7 @@ update_DB(
   day_of_log = 10,
   labelled = T,
   get_files = F,
-  original_file_names = F,
-  drop_dir = T
+  original_file_names = F
 )
 }
 \arguments{
@@ -26,8 +25,6 @@ update_DB(
 \item{get_files}{logical for whether or not to get files from redcap.}
 
 \item{original_file_names}{logical for whether or not to use original file names.}
-
-\item{drop_dir}{logical for whether or not save files to directory.}
 }
 \value{
 messages for confirmation

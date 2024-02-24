@@ -228,7 +228,10 @@ get_redcap_data <- function(DB,labelled=T,records=NULL){
     records = records
   )
   all_raw_structure_cols <- c(DB$redcap$id_col,"redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
-  DB$redcap$raw_structure_cols <- all_raw_structure_cols[which(all_raw_structure_cols%in%colnames(raw))]
+  DB$redcap$raw_structure_cols <- all_raw_structure_cols[which(all_raw_structure_cols%in%colnames(raw))] %>% unique()
+  if("redcap_event_name" %in% DB$redcap$raw_structure_cols){
+    DB$redcap$raw_structure_cols <- DB$redcap$raw_structure_cols %>% append(c("arm_num","event_name")) %>% unique()
+  }
   DB <- raw_process_redcap(raw = raw,DB = DB)
   if(is.null(records)){
     DB$all_records <- all_records(DB)

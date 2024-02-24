@@ -82,7 +82,7 @@ validate_web_link <- function(link) {
 #' @param ref_cols character vector of reference columns. They are always included in the return data.frame and their combination should always lead to a unique key for each row.
 #' @return messages and data.frame of only changes and reference cols
 #' @export
-find_df_diff <- function (new, old,ref_cols=NULL){
+find_df_diff <- function (new, old,ref_cols=NULL,message_pass=""){
   if (!all(colnames(new) %in% colnames(old))) {
     stop("All new df columns must be included in old df")
   }
@@ -104,21 +104,22 @@ find_df_diff <- function (new, old,ref_cols=NULL){
   }
   new_keys <- integer(0)
   if(any(!new$key %in% old$key)){
-    warning("You have at least one new key compared to old df therefore all columns will be included by default",immediate. = T)
+    # warning("You have at least one new key compared to old df therefore all columns will be included by default",immediate. = T)
     new_keys <- which(!new$key %in% old$key)
   }
   indices <- data.frame(
     row = integer(0),
     col = integer(0)
   )
-  if(length(new_keys)>0){
+  for(new_key in new_keys){
     indices <- indices %>% dplyr::bind_rows(
       data.frame(
-        row = new_keys,
+        row = new_key,
         col = which(!colnames(new)%in%c(ref_cols,"key"))
       )
     )
   }
+
   for (KEY in new$key[which(new$key%in%old$key)]){
     row <- which(new$key == KEY)
     row_old <- which(old$key == KEY)
@@ -138,10 +139,10 @@ find_df_diff <- function (new, old,ref_cols=NULL){
     rows <- indices$row %>% unique() %>% sort()
     cols <- which(colnames(new)%in%ref_cols) %>% append(indices$col %>% unique() %>% sort())
     OUT <- new[rows,cols]
-    message(nrow(OUT), " rows have updates")
+    message(message_pass,": ",nrow(OUT), " rows have updates")
   }else{
     OUT <- NULL
-    message("No changes!")
+    message(message_pass,"No changes!")
   }
   OUT
 }
@@ -251,9 +252,7 @@ is_something <- function(thing,row=0){
     }else{
       if(length(thing)>0){
         if(is.list(thing)){
-          if(any(unlist(lapply(thing,function(x){length(x)>0})))){
-            out <- T
-          }
+          out <- T
         }else{
           if(!is.na(thing)){
             out <- T
