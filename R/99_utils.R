@@ -139,7 +139,7 @@ find_df_diff <- function (new, old,ref_cols=NULL,message_pass=""){
     rows <- indices$row %>% unique() %>% sort()
     cols <- which(colnames(new)%in%ref_cols) %>% append(indices$col %>% unique() %>% sort())
     OUT <- new[rows,cols]
-    message(message_pass,": ",nrow(OUT), " rows have updates")
+    message(message_pass,nrow(OUT), " rows have updates")
   }else{
     OUT <- NULL
     message(message_pass,"No changes!")
