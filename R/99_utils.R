@@ -251,7 +251,9 @@ is_something <- function(thing,row=0){
     }else{
       if(length(thing)>0){
         if(is.list(thing)){
-          out <- T
+          if(any(unlist(lapply(thing,function(x){length(x)>0})))){
+            out <- T
+          }
         }else{
           if(!is.na(thing)){
             out <- T
