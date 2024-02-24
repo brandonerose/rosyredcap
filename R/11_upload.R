@@ -53,9 +53,10 @@ update_DB <- function(
     if(is.null(DB$internals$last_metadata_update)||is.null(DB$internals$last_data_update)){
       force <- T
     }else{
-      time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
-      time <- time %>% min() %>% as.character()
-      ilog <- check_redcap_log(DB,begin_time = time)
+      ilog <- check_redcap_log(
+        DB,
+        begin_time =  as.character(DB$internals$last_data_update - lubridate::minutes(1))
+        )
       ilog3 <- ilog[which(is.na(ilog$record_id)),]
       ilog3$timestamp <- NULL
       ilog3 <- ilog3 %>% unique()
