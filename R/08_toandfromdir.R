@@ -1,4 +1,3 @@
-
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @param records character vector of records you want dropped to your directory
@@ -49,7 +48,6 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
     redcap_other_dir %>% dir.create(showWarnings = F)
     redcap_upload_dir %>% dir.create(showWarnings = F)
   }
-
   DB_selected <-  DB %>% select_redcap_records(records)
   if(allow_mod){
     to_save <- names(DB$data_extract)
@@ -103,7 +101,6 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
   }
   return(DB)
 }
-
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
 #' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names
@@ -121,7 +118,6 @@ read_redcap_dir <- function(DB,allow_all=T,allow_nonredcap_vars=F){
   if(DB$data_upload %>% is_something())stop("Already files in DB$data_upload, clear that first")
   DB[["data_upload"]] <- list()
   for(y in x){#not done yet
-
     the_file <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
     if(!allow_nonredcap_vars){
       x<-colnames(the_file)[which(!colnames(the_file)%in%c(DB$redcap$raw_structure_cols,DB$redcap$metadata$field_name))]
@@ -131,4 +127,3 @@ read_redcap_dir <- function(DB,allow_all=T,allow_nonredcap_vars=F){
   }
   DB
 }
-

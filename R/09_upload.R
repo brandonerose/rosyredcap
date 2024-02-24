@@ -1,4 +1,3 @@
-
 #' @title Upload to REDCap
 #' @description
 #' This will only overwrite and new data. It will not directly delete and data.
@@ -20,7 +19,6 @@ upload_form_to_redcap <- function(to_be_uploaded,DB,batch_size=500){
     overwrite_with_blanks=TRUE
   )
 }
-
 #' @title Upload from your directory to REDCap
 #' @description
 #' This function is meant to be run after `DB_import <- read_redcap_dir(DB)`.
@@ -67,7 +65,6 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
     }
   }
 }
-
 #' @title Find the DB_import and DB differences
 #' @description
 #' This function is meant to be run after `DB_import <- read_redcap_dir(DB)`.
@@ -106,4 +103,3 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   }
   DB2
 }
-

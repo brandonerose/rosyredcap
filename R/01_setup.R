@@ -1,21 +1,16 @@
-
 cache <- NULL
-
 .onLoad <- function(libname, pkgname){
   x <- hoardr::hoard()
   x$cache_path_set(path=.packageName,type="user_cache_dir")
   x$mkdir()
   cache <<-x
 }
-
 cache_path <- function(){
   cache$cache_path_get() %>% normalizePath()
 }
-
 cache_exists <-  function(){
   cache_path() %>% file.exists()
 }
-
 #' @title Clear your cached projects
 #' @return message confirmation
 #' @export
@@ -23,7 +18,6 @@ cache_clear <-  function(){
   cache$delete_all()
   message("Cache cleared!")
 }
-
 cache_projects_exists <-  function(){
   if(cache_exists()){
     cache_path() %>% file.path("projects.rds") %>% file.exists()
@@ -32,7 +26,6 @@ cache_projects_exists <-  function(){
     FALSE
   }
 }
-
 #' @title Get your REDCap projects used by rosyredcap
 #' @description
 #' Everytime a setup or update is performed rosyredcap stores the most basic information
@@ -51,7 +44,6 @@ get_projects <- function(){
     )
   }
 }
-
 blank_project_cols <- function(){
   c(
     "short_name",
@@ -66,13 +58,11 @@ blank_project_cols <- function(){
     "redcap_API_playground_link"
   )
 }
-
 blank_projects <- function(){
   x <- matrix(data = character(0),ncol = length(blank_project_cols())) %>% as.data.frame()
   colnames(x) <- blank_project_cols()
   x
 }
-
 add_project <- function(DB){
   projects <- get_projects()
   projects <- projects[which(projects$short_name!=DB$short_name),]
@@ -94,7 +84,6 @@ add_project <- function(DB){
   projects <- projects %>% dplyr::bind_rows(OUT)
   saveRDS(projects, file = cache$cache_path_get() %>% normalizePath() %>% file.path("projects.rds"))
 }
-
 validate_dir <- function(dir_path,silent=T){
   #param check
   dir_path <- clean_dir_path(dir_path)
@@ -110,12 +99,10 @@ validate_dir <- function(dir_path,silent=T){
   if( ! silent) message("Directory is Valid!")
   dir_path
 }
-
 clean_dir_path <- function(dir_path){
   if ( ! is.character(dir_path)) stop("dir must be a character string")
   dir_path %>% trimws(whitespace = "[\\h\\v]") %>% normalizePath( winslash = "/",mustWork = F)
 }
-
 set_dir <- function(dir_path){
   dir_path <- clean_dir_path(dir_path)
   if( ! file.exists(dir_path)){
@@ -133,7 +120,6 @@ set_dir <- function(dir_path){
   }
   validate_dir(dir_path,silent=F)
 }
-
 #' @title get your directory
 #' @inheritParams save_DB
 #' @export
@@ -148,4 +134,3 @@ get_dir <- function(DB){
   validate_dir(dir_path,silent=T)
   dir_path
 }
-

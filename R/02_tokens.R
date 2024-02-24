@@ -1,10 +1,8 @@
-
 has_redcap_token <- function(DB,silent=T){
   DB <- validate_DB(DB)
   DB$token_name %>% validate_env_name()
   DB$token_name %>% Sys.getenv() %>% is_redcap_token()
 }
-
 is_redcap_token <- function(token){
   pattern <- "^([0-9A-Fa-f]{32})(?:\\n)?$"
   token2 <-  sub(pattern,"\\1", token, perl = TRUE) %>% trimws(whitespace = "[\\h\\v]")
@@ -27,7 +25,6 @@ is_redcap_token <- function(token){
   }
   return(T)
 }
-
 validate_redcap_token <- function(DB,silent=T,return=T){
   while (!has_redcap_token(DB)) {
     set_redcap_token(DB)
@@ -40,7 +37,6 @@ validate_redcap_token <- function(DB,silent=T,return=T){
     return(Sys.getenv(DB$token_name))
   }
 }
-
 #' @title Sets a valid token for this session
 #' @inheritParams save_DB
 #' @return messages for confirmation
@@ -57,7 +53,6 @@ set_redcap_token <- function(DB){
   message("Token was set for this session only using `Sys.getenv('",DB$token_name,"')` <- 'TheSecretTokenYouJustEntered'")
   message("For higher safety run `edit_r_environ()` from the `usethis` package and add `",DB$token_name,"='YoUrNevErShaReToKeN'` to that file...(then restart R under session tab after saving file)... The way to tell it worked is to run the code, `Sys.getenv('",DB$token_name,"')` or `Sys.getenv(DB$token_name)` or `has_redcap_token(DB)`, and see if it returns your token!...'")
 }
-
 #' @title View the REDCap API token currently stored in the session
 #' @inheritParams save_DB
 #' @return REDCap API token currently stored in the session
@@ -66,4 +61,3 @@ view_redcap_token <- function(DB){
   DB  <- validate_DB(DB)
   validate_redcap_token(DB,silent = F,return = T)
 }
-

@@ -1,4 +1,3 @@
-
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
     if(is.null(DB$internals$data_extract_merged)){
@@ -11,20 +10,16 @@ raw_process_redcap <- function(raw,DB){
     }
     raw  <- raw %>% all_character_cols()
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
-
     if(DB$redcap$is_longitudinal){
       raw$id_temp <- 1:nrow(raw)
       raw <-  merge(raw,DB$redcap$events[,c("arm_num","event_name","unique_event_name")],by.x="redcap_event_name",by.y="unique_event_name",sort = F)
       add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
-
       cols <- c(add_ons, colnames(raw)) %>% unique()
       raw <- raw[order(raw$id_temp),cols%>% sapply(function(c){which(colnames(raw)==c)}) %>% as.integer()]
       raw$id_temp <- NULL
     }
     add_ons  <- add_ons[which(add_ons%in%colnames(raw))]
     if(any(!DB$redcap$raw_structure_cols %in% colnames(raw)))stop("raw is missing one of the following... and that's weird: ", DB$redcap$raw_structure_cols %>% paste0(collapse = ", "))
-
-
     for(instrument_name in DB$redcap$instruments$instrument_name){
       add_ons_x <- add_ons
       #instrument_name <-  DB$redcap$instruments$instrument_name %>% sample(1)
@@ -56,7 +51,6 @@ raw_process_redcap <- function(raw,DB){
   }
   DB
 }
-
 #' @title Select REDCap records from DB
 #' @inheritParams save_DB
 #' @param records character vector of the IDs you want to filter the DB by
@@ -79,7 +73,6 @@ select_redcap_records <- function(DB, records=NULL){
   }
   DB_selected
 }
-
 filter_metadata_from_form <- function(FORM,DB){
   # if(!deparse(substitute(FORM))%in%DB$redcap$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
   if(any(!colnames(FORM)%in%c(DB$redcap$metadata$field_name,DB$redcap$raw_structure_cols,"arm_num","event_name")))stop("All column names in your form must match items in your metadata, `DB$redcap$metadata$field_name`")
@@ -96,8 +89,6 @@ filter_metadata_from_form <- function(FORM,DB){
   metadata$has_choices <- !is.na(metadata$select_choices_or_calculations)
   return(metadata)
 }
-
-
 #' @title Clean to Raw REDCap forms
 #' @inheritParams save_DB
 #' @param FORM data.frame of labelled REDCap to be converted to raw REDCap (for uploads)
@@ -149,8 +140,6 @@ labelled_to_raw_form <- function(FORM,DB){
   }
   FORM
 }
-
-
 #' @title Raw to Labelled REDCap forms
 #' @inheritParams save_DB
 #' @param FORM data.frame of raw REDCap to be converted to labelled REDCap
@@ -205,7 +194,6 @@ raw_to_labelled_form <- function(FORM,DB){
   }
   FORM
 }
-
 labelled_to_raw_DB <- function(DB){
   DB <- validate_DB(DB)
   if(!DB$internals$data_extract_labelled)stop("DB is already raw/coded (not labelled values)")
@@ -215,7 +203,6 @@ labelled_to_raw_DB <- function(DB){
   DB$internals$data_extract_labelled <- F
   DB
 }
-
 raw_to_labelled_DB <- function(DB){
   DB <- validate_DB(DB)
   if(DB$internals$data_extract_labelled)stop("DB is already labelled (not raw coded values)")
@@ -225,7 +212,6 @@ raw_to_labelled_DB <- function(DB){
   DB$internals$data_extract_labelled <- T
   DB
 }
-
 clean_redcap_log <- function(log){
   log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
   log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
@@ -236,7 +222,6 @@ clean_redcap_log <- function(log){
   }
   log
 }
-
 all_missing_codes <- function(){
   data.frame(
     code = c(
@@ -281,7 +266,6 @@ all_missing_codes <- function(){
     )
   )
 }
-
 missing_codes2 <- function(DB){
   included <- "missing_data_codes"%in%colnames(DB$redcap$project_info)
   if(included){
@@ -297,7 +281,6 @@ missing_codes2 <- function(DB){
     return(NA)
   }
 }
-
 #' @title Merge non-repeating, not ready for multi-event projects
 #' @inheritParams save_DB
 #' @return DB object that has merged all non repeating forms
@@ -313,14 +296,12 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
     keep_instruments <- all_instrument_names[which(!all_instrument_names%in% instrument_names)]
     data_choice <- "data_transform"
   }
-
   DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_from_extact(DB,instrument_names)
   if(data_choice=="data_extract") {
     for(instrument_name in instrument_names){
       DB[["data_extract"]][[instrument_name]] <- NULL
     }
     DB$internals$data_extract_merged <- T
-
   }else{
     for(keep in keep_instruments){
       DB[["data_transform"]][[keep]] <- DB[["data_extract"]][[keep]]
@@ -351,7 +332,6 @@ merge_from_extact <- function(DB,instrument_names){
   }
   merged
 }
-
 #' @title Unmerge non-repeating, not ready for multi-event projects
 #' @inheritParams save_DB
 #' @return DB object that has merged all non repeating forms
@@ -369,7 +349,6 @@ unmerge_non_repeating_DB <- function(DB){
   DB$internals$data_extract_merged <- F
   DB
 }
-
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB
 #' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.
@@ -399,7 +378,6 @@ deidentify_DB <- function(DB,identifiers){
   }
   DB
 }
-
 #' @title clean DB columns for plotting using the metadata
 #' @description
 #'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
@@ -459,7 +437,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
             }
           }
           if(class == "integer"){
-
           }
           DB$data_extract[[FORM]]
         }
@@ -474,7 +451,6 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
   }
   return(DB)
 }
-
 #' @title clean column for plotting; manual addition of clean_DB
 #' @description
 #'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
@@ -509,7 +485,6 @@ clean_column_for_table <- function(col,class,label,units,levels){
   }
   col
 }
-
 #' @title add REDCap ID to any dataframe using a ref_id
 #' @description
 #'  add REDCap ID to any dataframe using a ref_id
@@ -533,7 +508,6 @@ add_ID_to_DF <- function(DF,DB,ref_id){
   DF <- cbind(id_col,DF)
   DF
 }
-
 #' @title grab data table for an individual(s)
 #' @description
 #' grab data table for an individual(s)
@@ -547,7 +521,6 @@ grab_record_tables <- function(DB, records){
   }
   OUT
 }
-
 split_choices <- function(x){
   oops <- x
   x <- gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
@@ -568,7 +541,6 @@ split_choices <- function(x){
   if(nrow(x)!=check_length)stop("split choice error: ",oops)
   x
 }
-
 make_codebook <- function(DB){
   choices <- which(DB$redcap$metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
   if(length(choices)>0){
@@ -586,4 +558,3 @@ make_codebook <- function(DB){
   rownames(OUT) <- NULL
   OUT
 }
-

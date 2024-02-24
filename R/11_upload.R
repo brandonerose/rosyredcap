@@ -58,7 +58,6 @@ update_DB <- function(
       time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
       time <- time %>% min() %>% as.character()
       ilog <- check_redcap_log(DB,begin_time = time)
-
       ilog3 <- ilog[which(is.na(ilog$record_id)),]
       ilog3$timestamp <- NULL
       ilog3 <- ilog3 %>% unique()
@@ -141,9 +140,7 @@ update_DB <- function(
   if(!is.null(DB$dir_path))  save_DB(DB)
   DB
 }
-
 rmarkdown_DB <- function (DB,dir_other){
-
   if(missing(dir_other)){
     dir <- get_dir(DB) %>% file.path("output")
   }else{
@@ -158,4 +155,3 @@ rmarkdown_DB <- function (DB,dir_other){
     quiet = F
   )
 }
-

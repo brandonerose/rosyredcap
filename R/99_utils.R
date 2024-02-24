@@ -1,4 +1,3 @@
-
 #' Pipe operator
 #'
 #' See \code{magrittr::\link[magrittr:pipe]{\%>\%}} for details.
@@ -13,7 +12,6 @@
 #' @param rhs A function call using the magrittr semantics.
 #' @return The result of calling `rhs(lhs)`.
 NULL
-
 write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
   wb <- openxlsx::createWorkbook()
   openxlsx::addWorksheet(wb, "sheet")
@@ -39,11 +37,9 @@ write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add ins
     file = path, overwrite = TRUE)
   message("Saved at -> ","'",path,"'")
 }
-
 list.files.real <- function(path){
   grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
 }
-
 validate_env_name <- function(env_name) {
   # Check if the name is empty
   if(is.null(env_name)) stop("env_name is NULL")
@@ -60,10 +56,8 @@ validate_env_name <- function(env_name) {
   }
   return(env_name)
 }
-
 validate_web_link <- function(link) {
   if(is.null(link)) stop("link is NULL")
-
   # Check if the link starts with "https://" or "http://"
   if (!grepl("^https?://", link)) {
     stop("Invalid web link. It must start with 'http://' or 'https://'.")
@@ -78,7 +72,6 @@ validate_web_link <- function(link) {
   link <- paste0(link, "/")
   return(link)
 }
-
 #' @title find the difference between two data.frames
 #' @description
 #' This function will compare two data.frames: new and old.
@@ -141,7 +134,6 @@ find_df_diff <- function (new, old,ref_cols=NULL){
       }
     }
   }
-
   if(nrow(indices)>0){
     rows <- indices$row %>% unique() %>% sort()
     cols <- which(colnames(new)%in%ref_cols) %>% append(indices$col %>% unique() %>% sort())
@@ -153,15 +145,12 @@ find_df_diff <- function (new, old,ref_cols=NULL){
   }
   OUT
 }
-
 count_DB_cells <- function(DB){
   DB$data_extract %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
 }
-
 all_character_cols <- function(df){
   as.data.frame(lapply(df,as.character))
 }
-
 addSlashIfNeeded <- function(input_string) {
   if (!endsWith(input_string, "/")) {
     output_string <- gsub("$", "/", input_string)
@@ -170,7 +159,6 @@ addSlashIfNeeded <- function(input_string) {
   }
   return(output_string)
 }
-
 remove_html_tags <- function(text_vector) {
   # Regular expression to match HTML tags
   html_pattern <- "<[^>]+>"
@@ -178,11 +166,9 @@ remove_html_tags <- function(text_vector) {
   cleaned_vector <- gsub(html_pattern, "", text_vector)
   return(cleaned_vector)
 }
-
 drop_nas <- function(x) {
   x[!sapply(x, is.na)]
 }
-
 full.file.info <- function(path,showWarnings = T) {
   if(showWarnings){
     if(! file.exists(path))warning("path does not exist: ",path,immediate. = T)
@@ -198,7 +184,6 @@ full.file.info <- function(path,showWarnings = T) {
   rownames(file_info) <- NULL
   return(file_info)
 }
-
 sync_dir <- function(from,to,top_level=T){
   if(top_level){
     if(!file.exists(from))stop("from path '",from, "' doesn't exist")
@@ -256,7 +241,6 @@ sync_dir <- function(from,to,top_level=T){
   }
   if(top_level){message("Up to date!")}
 }
-
 is_something <- function(thing,row=0){
   out <- F
   if(!is.null(thing)){

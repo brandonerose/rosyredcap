@@ -1,4 +1,3 @@
-
 #' @title blank DB object
 #' @return blank_DB list for reference
 blank_DB <-  function(){ # can sort this better in version 3.0.0
@@ -75,7 +74,6 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
     )
   )
 }
-
 validate_DB <- function(DB,silent = T){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
@@ -117,7 +115,6 @@ validate_DB <- function(DB,silent = T){
   DB
 }
 #add year check
-
 #' @title Setup for DB including token
 #' @param short_name character name as a shortcut
 #' @param dir_path character file path of the directory
@@ -169,7 +166,6 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
   }
   DB
 }
-
 #' @title Reads DB from the directory
 #' @inheritParams setup_DB
 #' @param blank logical for blank load or last save
@@ -189,7 +185,6 @@ load_DB <- function(dir_path,blank=F){
   }
   DB
 }
-
 #' @title Saves DB in the directory
 #' @param DB object generated using `load_DB()` or `setup_DB()`
 #' @return Message
@@ -203,7 +198,6 @@ save_DB <- function(DB){
   # save_xls_wrapper(DB)
   message("Saved!")
 }
-
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @param also_metadata logical for including metadata
@@ -234,7 +228,6 @@ show_DB <- function(DB,also_metadata=T,transform = T){
   }
   data_list %>% list2env(envir = .GlobalEnv)
 }
-
 #' @title Deletes DB object from directory (solves occasional problems)
 #' @inheritParams save_DB
 #' @inheritParams setup_DB
@@ -259,7 +252,6 @@ delete_DB <- function(DB,dir_path){
     warning("The DB object you wanted to is not there. Did you delete already? ",delete_this)
   }
 }
-
 all_records <- function(DB){
   records <- NULL
   cols <- DB$redcap$id_col
@@ -282,4 +274,3 @@ all_records <- function(DB){
   if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
   records
 }
-

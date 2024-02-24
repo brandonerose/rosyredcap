@@ -1,4 +1,3 @@
-
 remap_process <- function(DB){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
@@ -80,7 +79,6 @@ remap_process <- function(DB){
       "select_choices_or_calculations"
     )] %>% unique()
     if(metadata_new$field_name %>% anyDuplicated() %>% magrittr::is_greater_than(0))stop("metadata_new has duplicate field names")
-
     DB$remap$metadata_new <- metadata_new
     DB$remap$instruments_new <- instruments_new
     DB$remap$instruments_remap <- instruments_remap
@@ -88,14 +86,12 @@ remap_process <- function(DB){
   }
   return( DB)
 }
-
 generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
     metadata_remap <-   DB$redcap$metadata
     metadata_remap$field_name_remap <- metadata_remap$field_name
     metadata_remap$form_name_remap <- metadata_remap$form_name
-
     if(DB$redcap$is_longitudinal){
       if(DB$redcap$has_arms_that_matter){
         #can add remapping of arms but not smart if they matter
@@ -118,7 +114,6 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
   }
   remap_process(DB)
 }
-
 #' @title Generate custom remap files from input
 #' @inheritParams save_DB
 #' @return DB object that has DB$remap populated from input folder
@@ -137,7 +132,6 @@ generate_custom_remap_from_dir <- function(DB){
   DB <- remap_process(DB)
   return(DB)
 }
-
 #' @title Transform DB
 #' @inheritParams save_DB
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
@@ -176,7 +170,6 @@ transform_DB <- function(DB){
   }
   return(DB)
 }
-
 summarize_DB <- function(DB){
   #project --------
   summary <- list()
@@ -187,19 +180,16 @@ summarize_DB <- function(DB){
     pull_from <- "remap"
     df_names2 <- paste0(df_names1,"_new")
   }
-
   for(i in 1:length(df_names1)){
     summary[[df_names1[[i]]]] <- DB[[pull_from]][[df_names2[[i]]]]
   }
   DB$redcap$project_info
-
   metadata <- DB$redcap$metadata
   instruments <- DB$redcap$instruments
   arms <- DB$redcap$arms
   users <- DB$redcap$instruments
   events <- DB$redcap$events
   event_mapping <- DB$redcap$event_mapping
-
   list(
     short_name=NULL,
     token_name=NULL,
@@ -272,12 +262,8 @@ summarize_DB <- function(DB){
       thecodingdocs = "https://www.thecodingdocs.com/"
     )
   )
-
-
   if(was_remapped){
-
   }
-
   #records belong to arms 1 to 1 ----------
   summary$records_n <- 0
   if(!is.null(DB$all_records)){
@@ -305,7 +291,6 @@ summarize_DB <- function(DB){
     #   summary[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
     # }
   }
-
   #instruments/forms belong to events many to 1 (if no events/arms) ----------------
   summary$instruments_n <- 0
   if(is.data.frame(DB$redcap$instruments)){ # can add expected later
@@ -320,29 +305,23 @@ summarize_DB <- function(DB){
       (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Complete") %>% which() %>% length()
     })
   }
-
   #fields belong to instruments/forms 1 to 1 ----------------
   summary$metadata_n <- 0
-
   summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
   # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
-
   #metadata/codebook =============
   metadata <- DB$redcap$metadata
   codebook <- DB$redcap$codebook %>% dplyr::select("field_name", "code", "name")
-
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
     }) %>% dplyr::bind_rows()
-
   codebook <- codebook %>% merge(
     metadata %>% dplyr::select(
       "form_name","field_name","field_label","field_type","field_type_R","text_validation_type_or_show_slider_number"),by="field_name",sort=F)
   codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
     form_name <- codebook$form_name[i]
     field_name <- codebook$field_name[i]
-
     if(!form_name %in% names(DB$data_extract)){
       if(DB$internals$merge_form_name %in% names(DB$data_extract)){
         if(field_name%in%colnames(DB$data_extract$merged))return(DB$internals$merge_form_name)
@@ -353,18 +332,15 @@ summarize_DB <- function(DB){
     }
     return(form_name)
   }) %>% unlist()
-
   codebook$field_name_raw <- codebook$field_name
   codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name[which(codebook$field_type=="checkbox_choice")] %>%
     strsplit("___") %>%
     sapply(function(X){X[[1]]})
-
   codebook$field_label_raw <- codebook$field_label
   codebook$field_label_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] %>%
     sapply(function(X){
       metadata$field_label[which(metadata$field_name==X)] %>% unique()
     })
-
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
     sum(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
@@ -376,7 +352,6 @@ summarize_DB <- function(DB){
   DB$redcap$codebook <- codebook
   return(DB)
 }
-
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(
@@ -407,7 +382,6 @@ find_in_DB <- function(DB,text, exact = F){
   }
   return(out)
 }
-
 extract_instrument_from_merged <- function(DB,instrument_name){
   merged <- DB$data_extract[[DB$internals$merge_form_name]]
   if(nrow(merged)>0){
@@ -445,4 +419,3 @@ extract_instrument_from_merged <- function(DB,instrument_name){
     return(merged[rows,cols])
   }
 }
-

@@ -1,4 +1,3 @@
-
 #' @title Link to get a new API token for your project (if you access)
 #' @inheritParams save_DB
 #' @return messages for confirmation
@@ -6,7 +5,6 @@
 link_API_token <-  function(DB){
   DB$links$redcap_API %>% utils::browseURL()
 }
-
 #' @title Link view the API playground for your project (if you access)
 #' @inheritParams save_DB
 #' @return messages for confirmation
@@ -14,7 +12,6 @@ link_API_token <-  function(DB){
 link_API_playground <- function(DB){
   DB$links$redcap_API_playground %>% utils::browseURL()
 }
-
 #' @title Link view the REDCap project home page
 #' @inheritParams save_DB
 #' @return opens browser link
@@ -22,7 +19,6 @@ link_API_playground <- function(DB){
 link_REDCap_home <- function(DB){
   DB$links$redcap_base_link %>% utils::browseURL()
 }
-
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @return opens browser link
@@ -30,7 +26,6 @@ link_REDCap_home <- function(DB){
 link_REDCap_project <- function(DB){
   DB$links$redcap_home %>% utils::browseURL()
 }
-
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @param record REDCap record id or study id etc, any column names that match `DB$redcap$id_col`
@@ -58,4 +53,3 @@ link_REDCap_record <- function(DB,record,page,instance){
   }
   link %>% utils::browseURL()
 }
-

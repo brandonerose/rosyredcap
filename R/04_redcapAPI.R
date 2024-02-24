@@ -1,4 +1,3 @@
-
 redcap_api_base <- function(url,token,content,additional_args=NULL){
   body  <- list(
     "token"= token,
@@ -15,7 +14,6 @@ redcap_api_base <- function(url,token,content,additional_args=NULL){
     encode = "form"
   )
 }
-
 process_response <- function(response,error_action){
   content <- httr::content(response)
   if(httr::http_error(response)){
@@ -33,7 +31,6 @@ process_response <- function(response,error_action){
   }
   return(all_character_cols(content))
 }
-
 test_redcap <- function(DB){
   ERROR  <- T
   while(ERROR){
@@ -50,13 +47,11 @@ test_redcap <- function(DB){
   DB$redcap$version <- version %>% httr::content(as="text") %>% as.character()
   DB
 }
-
 get_redcap_info <- function(DB,content,error_action=NULL,additional_args=NULL){
   allowed_content <- c("project","arm","event","metadata","instrument","repeatingFormsEvents","user","userRole","userRoleMapping","log","formEventMapping")
   if(!content%in%allowed_content)stop("Must use the following content... ",paste0(allowed_content,collapse = ", "))
   redcap_api_base(url=DB$links$redcap_uri,token = validate_redcap_token(DB),content = content,additional_args=additional_args) %>% process_response(error_action)
 }
-
 #' @title Drop redcap files to directory
 #' @inheritParams save_DB
 #' @param original_file_names logical for using original uploaded filenames vs system defined
@@ -106,7 +101,6 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
   }
   message("Checked for files!")
 }
-
 get_redcap_metadata <- function(DB){
   DB$internals$last_metadata_update <- Sys.time()
   # info ----------
@@ -115,7 +109,6 @@ get_redcap_metadata <- function(DB){
   DB$redcap$project_id <- DB$redcap$project_info$project_id
   DB$redcap$is_longitudinal <- DB$redcap$project_info$is_longitudinal == "1"
   DB$redcap$missing_codes <- missing_codes2(DB)
-
   #instruments --------
   DB$redcap$instruments <- get_redcap_info(DB,"instrument","warn")
   DB$redcap$instruments$repeating <- F
@@ -145,7 +138,6 @@ get_redcap_metadata <- function(DB){
   DB$redcap$metadata$section_header <- DB$redcap$metadata$section_header %>% remove_html_tags()
   DB$redcap$metadata$field_label <- DB$redcap$metadata$field_label %>% remove_html_tags()
   DB$redcap$id_col <- DB$redcap$metadata[1,1] %>% as.character() #RISKY?
-
   DB$redcap$metadata <- DB$redcap$metadata %>%
     dplyr::bind_rows(
       data.frame(
@@ -173,7 +165,6 @@ get_redcap_metadata <- function(DB){
   if(any(DB$redcap$metadata$field_type=="yesno")){
     DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_type=="yesno")] <- c("0, No | 1, Yes")
   }
-
   #other-------
   # is longitudinal ------
   if(DB$redcap$is_longitudinal){
@@ -229,7 +220,6 @@ check_match <- function(vec_list) {
   sorted_vecs <- lapply(vec_list, sort)
   all(sapply(sorted_vecs[-1], function(x) identical(sorted_vecs[[1]], x)))
 }
-
 get_redcap_data <- function(DB,labelled=T,records=NULL){
   DB$internals$last_data_update <- Sys.time()
   raw <- get_raw_redcap(
@@ -249,14 +239,12 @@ get_redcap_data <- function(DB,labelled=T,records=NULL){
   }
   DB
 }
-
 get_redcap_users <- function(DB){
   userRole  <- get_redcap_info(DB,"userRole") %>% dplyr::select("unique_role_name","role_label")
   userRoleMapping <-  get_redcap_info(DB,"userRoleMapping")
   user <-  get_redcap_info(DB,"user")
   merge(merge(userRole,userRoleMapping,by="unique_role_name"),user, by="username")
 }
-
 #' @title Check the REDCap log
 #' @inheritParams save_DB
 #' @param last numeric paired with units. Default is 24.
@@ -279,7 +267,6 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   }
   get_redcap_info(DB,"log",additional_args = list(beginTime=x)) %>% clean_redcap_log()
 }
-
 #' @title Check the REDCap log
 #' @inheritParams save_DB
 #' @param labelled T/F for clean vs raw labels
@@ -291,4 +278,3 @@ get_raw_redcap <- function(DB,labelled=T,records=NULL){
   raw <- REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% all_character_cols()
   return(raw)
 }
-

@@ -25,7 +25,6 @@ upload_file_to_redcap <- function(DB,file,record, field,repeat_instance = NULL,e
   if(httr::http_error(response))stop("File upload failed")
   message("File uploaded! --> ",file)
 }
-
 delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, event = NULL){
   # DB <- validate_DB(DB)
   body <- list(
@@ -49,4 +48,3 @@ delete_file_from_redcap <- function(DB,record, field,repeat_instance = NULL, eve
   if(httr::http_error(response))stop("File Delete failed")
   message("File Deleted!")
 }
-

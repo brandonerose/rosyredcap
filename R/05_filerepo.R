@@ -1,4 +1,3 @@
-
 #' @title Uploads a file to REDCap
 #' @inheritParams save_DB
 #' @param file file location on your PC
@@ -22,7 +21,6 @@ upload_file_to_redcap_fileRepository <- function(DB,file){
   if(httr::http_error(response))stop("File upload failed")
   message("File Uploaded! --> ",file)
 }
-
 #' @title Checks REDCap for current files
 #' @inheritParams save_DB
 #' @return data.frame of files
@@ -45,7 +43,6 @@ check_redcap_files <- function(DB){
   message("Files checked!")
   httr::content(response)
 }
-
 #' @title Uploads a folder name to REDCap
 #' @inheritParams save_DB
 #' @param name folder name
@@ -70,7 +67,6 @@ add_redcap_folder <- function(DB,name){
   message("Folder added!")
   httr::content(response)
 }
-
 #' @title Uploads a folder name to REDCap
 #' @inheritParams save_DB
 #' @param doc_id from the file list `check_redcap_files(DB)`
@@ -91,4 +87,3 @@ delete_redcap_file <- function(DB,doc_id){
   if(httr::http_error(response))stop("File delete failed")
   message("File deleted!")
 }
-
