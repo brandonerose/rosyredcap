@@ -73,19 +73,29 @@ select_redcap_records <- function(DB, records=NULL){
   }
   DB_selected
 }
-filter_metadata_from_form <- function(FORM,DB){
-  # if(!deparse(substitute(FORM))%in%DB$redcap$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
-  if(any(!colnames(FORM)%in%c(DB$redcap$metadata$field_name,DB$redcap$raw_structure_cols,"arm_num","event_name")))stop("All column names in your form must match items in your metadata, `DB$redcap$metadata$field_name`")
+field_names_to_instruments <- function(DB,field_names){
   instruments <- DB$redcap$metadata$form_name[
     which(
-      DB$redcap$metadata$field_name%in%colnames(FORM)&
-        !DB$redcap$metadata$field_name%in%c(DB$redcap$id_col,"redcap_repeat_instance","redcap_repeat_instrument")
+      DB$redcap$metadata$field_name%in%field_names&
+        !DB$redcap$metadata$field_name%in%DB$redcap$raw_structure_cols
     )
   ] %>% unique()
+  return(instruments)
+
+}
+field_names_metadata <- function(DB,field_names){
+  # if(!deparse(substitute(FORM))%in%DB$redcap$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
+  if(any(!field_names%in%c(DB$redcap$metadata$field_name,DB$redcap$raw_structure_cols,"arm_num","event_name")))stop("All column names in your form must match items in your metadata, `DB$redcap$metadata$field_name`")
+  # metadata <- DB$redcap$metadata[which(DB$redcap$metadata$form_name%in%instruments),]
+  metadata <- DB$redcap$metadata[which(DB$redcap$metadata$field_name%in%field_names),]
+  # metadata <- metadata[which(metadata$field_name%in%field_names),]
+  return(metadata)
+}
+filter_metadata_from_form <- function(FORM,DB){
+  instruments <- DB %>% field_names_to_instruments(field_names = colnames(FORM))
   if(any(instruments%in%DB$redcap$instruments$repeating))stop("All column names in your form must match only one form in your metadata, `DB$redcap$instruments$instrument_name`, unless they are all non-repeating")
-  metadata <- DB$redcap$metadata[which(DB$redcap$metadata$form_name%in%instruments),]
+  metadata <- DB %>% field_names_metadata(field_names = colnames(FORM))
   metadata <- metadata[which(metadata$field_type!="descriptive"),]
-  metadata <- metadata[which(metadata$field_name%in%colnames(FORM)),]
   metadata$has_choices <- !is.na(metadata$select_choices_or_calculations)
   return(metadata)
 }

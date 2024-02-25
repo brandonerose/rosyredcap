@@ -146,8 +146,8 @@ find_df_diff <- function (new, old,ref_cols=NULL,message_pass=""){
   }
   OUT
 }
-count_DB_cells <- function(DB){
-  DB$data_extract %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
+count_DB_upload_cells <- function(DB){
+  DB$data_upload %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
 }
 all_character_cols <- function(df){
   as.data.frame(lapply(df,as.character))

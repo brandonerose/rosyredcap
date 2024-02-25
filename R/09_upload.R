@@ -35,7 +35,7 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB <- validate_DB(DB)
   if(ask){
-    if(count_DB_cells(DB)>5000){
+    if(count_DB_upload_cells(DB)>5000){
       stop  <- utils::menu(choices = c("YES - I want to stop and double check what I'm about to upload","NO - Move forward with larger upload"),title = "This is a large upload. Do you want to stop and double check it first?")
       if(stop==1)stop("Double check DB object prior to upload")
     }
