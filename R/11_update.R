@@ -105,7 +105,7 @@ update_DB <- function(
       time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
       time <- time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
       DB2 <- DB %>% get_redcap_data(labelled = labelled,records = IDs)
-      DB2$all_records <-  all_records(DB2)
+      DB2$summary$all_records <-  summary$all_records(DB2)
       DB2 <-DB2 %>% find_DB_diff(DB)
       DB$internals$last_data_update <- DB2$internals$last_data_update
       DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()

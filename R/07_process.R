@@ -61,8 +61,8 @@ select_redcap_records <- function(DB, records=NULL,data_choice="data_extract"){#
   if(!is.null(records)){
     if (length(records)==0)stop("Must supply records")
     selected <- list()
-    BAD  <- records[which(!records%in%DB$all_records[[DB$redcap$id_col]])]
-    GOOD  <- records[which(records%in%DB$all_records[[DB$redcap$id_col]])]
+    BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+    GOOD  <- records[which(records%in%DB$summary$all_records[[DB$redcap$id_col]])]
     if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
     for(FORM in names(DB[[data_choice]])){
       selected[[FORM]]  <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
@@ -397,6 +397,7 @@ annotate_metadata <- function(metadata){
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_mdy")] <- "date"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_ymd")] <- "date"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "datetime_dmy")] <- "datetime"
+  metadata$in_original_redcap <- metadata$field_name %in% DB$redcap$metadata$field_name
   return(metadata)
 }
 #' @title clean DB columns for plotting using the metadata

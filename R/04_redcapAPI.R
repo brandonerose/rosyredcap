@@ -234,7 +234,7 @@ get_redcap_data <- function(DB,labelled=T,records=NULL){
   }
   DB <- raw_process_redcap(raw = raw,DB = DB)
   if(is.null(records)){
-    DB$all_records <- all_records(DB)
+    DB$summary$all_records <- all_records(DB)
   }
   DB$internals$data_extract_labelled <- F
   if(labelled){

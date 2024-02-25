@@ -61,7 +61,7 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
     data_extract = NULL,
     data_transform = NULL,
     data_upload = NULL,
-    all_records = NULL,
+    summary = NULL,
     links = list(
       redcap_base = NULL,
       redcap_uri = NULL,

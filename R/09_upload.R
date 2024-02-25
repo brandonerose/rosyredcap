@@ -81,7 +81,7 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB <- validate_DB(DB)
   DB2 <- validate_DB(DB2)
-  DB <- select_redcap_records(DB, records = DB2$all_records[[DB$redcap$id_col]])
+  DB <- select_redcap_records(DB, records = DB2$summary$all_records[[DB$redcap$id_col]])
   if(!missing(ignore_instruments)){
     if(any(!ignore_instruments%in%names(DB2[["data_extract"]])))stop("ignore_instruments must be included in the set of instrument names, `names(DB2$data_extract)`")
     for(DROP in ignore_instruments){

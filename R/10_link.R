@@ -36,9 +36,9 @@ link_REDCap_project <- function(DB){
 link_REDCap_record <- function(DB,record,page,instance){
   link <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id)
   if(!missing(record)){
-    if(!record%in%DB$all_records[[DB$redcap$id_col]])stop(record," is not one of the records inside DB")
-    if("arm_num"%in%colnames(DB$all_records)){
-      link <- link %>% paste0("&arm=", DB$all_records$arm_num[which(DB$all_records$participant_id==record)])
+    if(!record%in%DB$summary$all_records[[DB$redcap$id_col]])stop(record," is not one of the records inside DB")
+    if("arm_num"%in%colnames(DB$summary$all_records)){
+      link <- link %>% paste0("&arm=", DB$summary$all_records$arm_num[which(DB$summary$all_records$participant_id==record)])
     }
     link <- link %>% paste0("&id=",record)
   }

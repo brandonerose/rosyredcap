@@ -4,7 +4,7 @@
 \alias{select_redcap_records}
 \title{Select REDCap records from DB}
 \usage{
-select_redcap_records(DB, records = NULL)
+select_redcap_records(DB, records = NULL, data_choice = "data_extract")
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}

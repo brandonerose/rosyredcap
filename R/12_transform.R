@@ -72,28 +72,37 @@ remap_process <- function(DB){
     metadata_new$field_name_remap <- NULL
     metadata_new$form_name <- metadata_new$form_name_remap
     metadata_new$form_name_remap <- NULL
-    metadata_new <- metadata_new[,colnames(metadata_new)%in%c(
+    keep_cols <- c(
       "field_name",
       "form_name",
       "field_type",
-      "select_choices_or_calculations"
-    )] %>% unique()
+      "select_choices_or_calculations" # could handle choice remaps if labelled
+    )
+    drop_cols <- colnames(metadata_new)[which(!colnames(metadata_new)%in%keep_cols)]
+    metadata_new <- metadata_new[,keep_cols] %>% unique()
     if(metadata_new$field_name %>% anyDuplicated() %>% magrittr::is_greater_than(0))stop("metadata_new has duplicate field names")
-    DB$remap$metadata_new <- metadata_new
+
+    for (col in drop_cols){
+      metadata_new[[col]] <- metadata_new$field_name %>% sapply(function(field_name){
+        metadata_remap[[col]][which(metadata_remap$field_name==field_name)[1]]
+      })
+    }
+    DB$remap$metadata_new <- metadata_new %>% annotate_metadata()
     DB$remap$instruments_new <- instruments_new
     DB$remap$instruments_remap <- instruments_remap
     # if(save_file) metadata_new %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_new_default.xlsx"))
   }
   return(DB)
 }
-generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
+generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path),merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
     metadata_remap <-   DB$redcap$metadata
     metadata_remap$field_name_remap <- metadata_remap$field_name
     metadata_remap$form_name_remap <- metadata_remap$form_name
-    metadata_remap$form_name_remap[which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)])] <- DB$internals$merge_form_name
-
+    if(merge_non_repeating){
+      metadata_remap$form_name_remap[which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)])] <- DB$internals$merge_form_name
+    }
     if(DB$redcap$is_longitudinal){
       if(DB$redcap$has_arms_that_matter){
         #can add remapping of arms but not smart if they matter
@@ -142,34 +151,33 @@ generate_custom_remap_from_dir <- function(DB){
 transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL){
   DB  <- validate_DB(DB)
   selected <- DB %>% select_redcap_records(records = records,data_choice = "data_extract")
-  if(DB$remap %>% is_something()){
-    instrument_names <- DB$remap$instruments_new$instrument_name
-    for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
-      if(instrument_name == DB$internals$merge_form_name){
-        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-        DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
-      }else{
-        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-        final_out <- NULL
-        for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
-          keep <- selected[[old_instrument]]
-          colnames(keep) <- colnames(keep) %>% sapply(function(col){
-            out <- col
-            x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
-            if(length(x)>0)out <- x
-            out
-          })
-          if("redcap_event_name"%in%colnames(keep)){
-            keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
-            # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
-          }
-          final_out <- final_out %>% dplyr::bind_rows(keep)
+  if(!DB$remap %>% is_something()){
+    DB <- generate_default_remap(DB)
+  }
+  instrument_names <- DB$remap$instruments_new$instrument_name
+  for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
+    if(instrument_name == DB$internals$merge_form_name){
+      old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+      DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
+    }else{
+      old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+      final_out <- NULL
+      for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
+        keep <- selected[[old_instrument]]
+        colnames(keep) <- colnames(keep) %>% sapply(function(col){
+          out <- col
+          x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
+          if(length(x)>0)out <- x
+          out
+        })
+        if("redcap_event_name"%in%colnames(keep)){
+          keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+          # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
         }
-        DB$data_transform[[instrument_name]] <- final_out
+        final_out <- final_out %>% dplyr::bind_rows(keep)
       }
+      DB$data_transform[[instrument_name]] <- final_out
     }
-  }else{
-
   }
   if(merge_non_rep_to_reps){
 
@@ -256,7 +264,7 @@ summarize_DB <- function(DB){
     data_extract = NULL,
     data_transform = NULL,
     data_upload = NULL,
-    all_records = NULL,
+    summary = NULL,
     links = list(
       redcap_base = NULL,
       redcap_uri = NULL,
@@ -272,8 +280,8 @@ summarize_DB <- function(DB){
   }
   #records belong to arms 1 to 1 ----------
   summary$records_n <- 0
-  if(!is.null(DB$all_records)){
-    summary$records_n <- DB$all_records %>% length()
+  if(!is.null(DB$summary$all_records)){
+    summary$records_n <- DB$summary$all_records %>% length()
   }
   #arms----------------
   summary$arms_n <- 0
