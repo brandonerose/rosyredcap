@@ -50,23 +50,23 @@ remap_process <- function(DB){
           )
         ] <- T
       }
-      non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)]
-      ins_new_cols <- c("instrument_name_remap","repeating")
-      if(DB$redcap$is_longitudinal){
-        non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating&!DB$redcap$instruments$repeating_via_events)]
-        ins_new_cols <- c("instrument_name_remap","repeating","repeating_via_events")
-      }
-      if(length(non_reps)>0){
-        metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- DB$internals$merge_form_name
-      }
-      instruments_new <- instruments_remap[,ins_new_cols] %>% unique()
-      instruments_new$former_instrument_names <- instruments_new$instrument_name_remap %>% sapply(function(instrument_name_remap){
-        instruments_remap$instrument_name[which(instruments_remap$instrument_name_remap==instrument_name_remap)] %>% unique() %>% paste0(collapse = " | ")
-      })
-      colnames(instruments_new)[1] <- "instrument_name"
       DB$remap$events_new <- events_new
       DB$remap$event_mapping_new <- event_mapping_new
     }
+    non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)]
+    ins_new_cols <- c("instrument_name_remap","repeating")
+    if(DB$redcap$is_longitudinal){
+      non_reps <- DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating&!DB$redcap$instruments$repeating_via_events)]
+      ins_new_cols <- c("instrument_name_remap","repeating","repeating_via_events")
+    }
+    if(length(non_reps)>0){
+      metadata_remap$form_name_remap[which( metadata_remap$form_name%in%non_reps)] <- DB$internals$merge_form_name
+    }
+    instruments_new <- instruments_remap[,ins_new_cols] %>% unique()
+    instruments_new$former_instrument_names <- instruments_new$instrument_name_remap %>% sapply(function(instrument_name_remap){
+      instruments_remap$instrument_name[which(instruments_remap$instrument_name_remap==instrument_name_remap)] %>% unique() %>% paste0(collapse = " | ")
+    })
+    colnames(instruments_new)[1] <- "instrument_name"
     metadata_new <- metadata_remap
     metadata_new$field_name <- metadata_new$field_name_remap
     metadata_new$field_name_remap <- NULL
@@ -84,7 +84,7 @@ remap_process <- function(DB){
     DB$remap$instruments_remap <- instruments_remap
     # if(save_file) metadata_new %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_new_default.xlsx"))
   }
-  return( DB)
+  return(DB)
 }
 generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
   DB <- validate_DB(DB)
@@ -112,7 +112,8 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
     if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
     DB$remap$metadata_remap <- metadata_remap
   }
-  remap_process(DB)
+  DB <- remap_process(DB)
+  return(DB)
 }
 #' @title Generate custom remap files from input
 #' @inheritParams save_DB
@@ -121,8 +122,8 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
 generate_custom_remap_from_dir <- function(DB){
   DB <- validate_DB(DB)
   input_folder <- DB$dir_path %>% file.path("input")
-  input_folder %>% file.path(c("metadata_remap.xlsx","event_mapping_remap.xlsx"))
-  input_folder %>% list.files(full.names = T)
+  # input_folder %>% file.path(c("metadata_remap.xlsx","event_mapping_remap.xlsx"))
+  # input_folder %>% list.files(full.names = T)
   for(file in c("metadata_remap","event_mapping_remap")){
     path <- input_folder %>% file.path(paste0(file,".xlsx"))
     if(file.exists(path)){
@@ -141,16 +142,14 @@ transform_DB <- function(DB){
   transform <- list()
   if(DB$remap %>% is_something()){
     instrument_names <- DB$remap$instruments_new$instrument_name
-    instrument_name <- instrument_names %>%  sample (1)
-    for (instrument_name in instrument_names) {
+    for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
       if(instrument_name == DB$internals$merge_form_name){
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
         DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
       }else{
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-        old_instrument <- old_instruments %>%  sample (1)
         final_out <- NULL
-        for(old_instrument in old_instruments){
+        for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
           keep <- DB$data_extract[[old_instrument]]
           colnames(keep) <- colnames(keep) %>% sapply(function(col){
             out <- col
