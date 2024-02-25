@@ -139,9 +139,9 @@ generate_custom_remap_from_dir <- function(DB){
 #' @inheritParams save_DB
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
 #' @export
-transform_DB <- function(DB){
+transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL){
   DB  <- validate_DB(DB)
-  transform <- list()
+  selected <- DB %>% select_redcap_records(records = records,data_choice = "data_extract")
   if(DB$remap %>% is_something()){
     instrument_names <- DB$remap$instruments_new$instrument_name
     for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
@@ -152,7 +152,7 @@ transform_DB <- function(DB){
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
         final_out <- NULL
         for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
-          keep <- DB$data_extract[[old_instrument]]
+          keep <- selected[[old_instrument]]
           colnames(keep) <- colnames(keep) %>% sapply(function(col){
             out <- col
             x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
@@ -168,6 +168,11 @@ transform_DB <- function(DB){
         DB$data_transform[[instrument_name]] <- final_out
       }
     }
+  }else{
+
+  }
+  if(merge_non_rep_to_reps){
+
   }
   return(DB)
 }

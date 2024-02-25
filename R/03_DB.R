@@ -165,7 +165,7 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,m
     }
   }
   if(! missing(merge_form_name)){
-     DB$internals$merge_form_name<- merge_form_name
+    DB$internals$merge_form_name<- merge_form_name
   }
   DB
 }
