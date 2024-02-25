@@ -4,7 +4,7 @@
 \alias{transform_DB}
 \title{Transform DB}
 \usage{
-transform_DB(DB, merge_non_rep_to_reps = F, records = NULL)
+transform_DB(DB, merge_non_rep_to_reps = F, records = NULL, force = F)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}

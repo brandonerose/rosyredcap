@@ -148,49 +148,58 @@ generate_custom_remap_from_dir <- function(DB){
 #' @inheritParams save_DB
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
 #' @export
-transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL){
+transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F){
   DB  <- validate_DB(DB)
-  selected <- DB %>% select_redcap_records(records = records,data_choice = "data_extract")
-  if(!DB$remap %>% is_something()){
-    DB <- generate_default_remap(DB)
+  will_update <- force
+  if(is.null(DB$internals$last_data_transformation)) will_update <- T
+  if(!is.null(DB$internals$last_data_transformation)){
+    if(DB$internals$last_data_transformation<DB$internals$last_data_update) will_update <- T
   }
-  instrument_names <- DB$remap$instruments_new$instrument_name
-  for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
-    if(instrument_name == DB$internals$merge_form_name){
-      old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-      DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
-    }else{
-      old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-      final_out <- NULL
-      for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
-        keep <- selected[[old_instrument]]
-        colnames(keep) <- colnames(keep) %>% sapply(function(col){
-          out <- col
-          x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
-          if(length(x)>0)out <- x
-          out
-        })
-        if("redcap_event_name"%in%colnames(keep)){
-          keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
-          # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+  if(will_update){
+    selected <- DB %>% select_redcap_records(records = records,data_choice = "data_extract")
+    if(!DB$remap %>% is_something()){
+      DB <- generate_default_remap(DB)
+    }
+    instrument_names <- DB$remap$instruments_new$instrument_name
+    for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
+      if(instrument_name == DB$internals$merge_form_name){
+        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+        DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
+      }else{
+        old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
+        final_out <- NULL
+        for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
+          keep <- selected[[old_instrument]]
+          colnames(keep) <- colnames(keep) %>% sapply(function(col){
+            out <- col
+            x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
+            if(length(x)>0)out <- x
+            out
+          })
+          if("redcap_event_name"%in%colnames(keep)){
+            keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+            # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+          }
+          final_out <- final_out %>% dplyr::bind_rows(keep)
         }
-        final_out <- final_out %>% dplyr::bind_rows(keep)
+        DB$data_transform[[instrument_name]] <- final_out
       }
-      DB$data_transform[[instrument_name]] <- final_out
     }
-  }
-  if(merge_non_rep_to_reps){
-    if(DB$redcap$is_longitudinal){
-      repeating_rows <- which(DB$remap$instruments_new$repeating|DB$remap$instruments_new$repeating_via_events)
-    }else{
-      repeating_rows <- which(DB$remap$instruments_new$repeating)
+    if(merge_non_rep_to_reps){
+      if(DB$redcap$is_longitudinal){
+        repeating_rows <- which(DB$remap$instruments_new$repeating|DB$remap$instruments_new$repeating_via_events)
+      }else{
+        repeating_rows <- which(DB$remap$instruments_new$repeating)
+      }
+      merged <- DB$data_transform[[DB$internals$merge_form_name]]
+      for(instrument_name in DB$remap$instruments_new$instrument_name[repeating_rows]){
+        original_rep <- DB$data_transform[[instrument_name]]
+        shared_cols <- DB$redcap$raw_structure_cols[which((DB$redcap$raw_structure_cols %in% colnames(merged))&(DB$redcap$raw_structure_cols %in% colnames(original_rep)))]
+        DB$data_transform[[instrument_name]] <- merged %>% merge(original_rep,by = shared_cols)
+      }
     }
-    merged <- DB$data_transform[[DB$internals$merge_form_name]]
-    for(instrument_name in DB$remap$instruments_new$instrument_name[repeating_rows]){
-      original_rep <- DB$data_transform[[instrument_name]]
-      shared_cols <- DB$redcap$raw_structure_cols[which((DB$redcap$raw_structure_cols %in% colnames(merged))&(DB$redcap$raw_structure_cols %in% colnames(original_rep)))]
-      DB$data_transform[[instrument_name]] <- merged %>% merge(original_rep,by = shared_cols)
-    }
+    DB$internals$last_data_transformation <- DB$internals$last_data_update
+    save_DB(DB)
   }
   return(DB)
 }
