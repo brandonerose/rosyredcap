@@ -207,7 +207,7 @@ get_redcap_metadata <- function(DB){
     DB$redcap$events <- NA
   }
   DB$redcap$users <- get_redcap_users(DB)
-  DB$redcap$codebook <- make_codebook(DB)
+  DB$redcap$codebook <- metadata_to_codebook(DB$redcap$metadata)
   DB$redcap$log <- check_redcap_log(DB,last = 2,units = "mins")
   DB$redcap$users$current_user <- DB$redcap$users$username==DB$redcap$log$username[which(DB$redcap$log$details=="Export REDCap version (API)") %>% dplyr::first()]
   DB$links$redcap_home <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/index.php?pid=",DB$redcap$project_id)

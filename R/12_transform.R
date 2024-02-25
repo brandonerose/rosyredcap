@@ -204,78 +204,7 @@ summarize_DB <- function(DB){
   users <- DB$redcap$instruments
   events <- DB$redcap$events
   event_mapping <- DB$redcap$event_mapping
-  list(
-    short_name=NULL,
-    token_name=NULL,
-    dir_path=NULL,
-    internals = list(
-      last_metadata_check=NULL,
-      last_metadata_update=NULL,
-      last_metadata_dir_save=NULL,
-      last_data_check=NULL,
-      last_data_update=NULL,
-      last_data_dir_save = NULL,
-      last_data_transformation = NULL,
-      last_directory_save=NULL,
-      data_extract_labelled = NULL,
-      data_extract_merged = NULL,
-      merge_form_name = "merged",
-      data_extract_clean = NULL
-    ),
-    redcap = list(
-      project_id=NULL,
-      project_title= NULL,
-      id_col=NULL,
-      version=NULL,
-      project_info=NULL,
-      metadata=NULL,
-      instruments=NULL,
-      arms=NULL,
-      events=NULL,
-      event_mapping = NULL,
-      missing_codes=NULL,
-      log=NULL,
-      users=NULL,
-      current_user=NULL,
-      codebook=NULL,
-      choices=NULL,
-      raw_structure_cols = NULL,
-      is_longitudinal = NULL,
-      has_arms = NULL,
-      has_multiple_arms = NULL,
-      has_arms_that_matter = NULL,
-      has_repeating_instruments_or_events = NULL,
-      has_repeating_instruments = NULL,
-      has_repeating_events = NULL
-    ),
-    auto_jobs = NULL,
-    remap = list(
-      metadata_remap=NULL,
-      metadata_new=NULL,
-      instruments_remap=NULL,
-      instruments_new=NULL,
-      arms_map=NULL,
-      arms_new=NULL,
-      events_remap=NULL,
-      events_new=NULL,
-      event_mapping_remap=NULL,
-      event_mapping_new=NULL
-    ),
-    data_extract = NULL,
-    data_transform = NULL,
-    data_upload = NULL,
-    summary = NULL,
-    links = list(
-      redcap_base = NULL,
-      redcap_uri = NULL,
-      redcap_home = NULL,
-      redcap_records = NULL,
-      redcap_API = NULL,
-      redcap_API_playground = NULL,
-      github = "https://github.com/brandonerose/rosyredcap",
-      thecodingdocs = "https://www.thecodingdocs.com/"
-    )
-  )
+
   if(was_remapped){
   }
   #records belong to arms 1 to 1 ----------
@@ -324,8 +253,12 @@ summarize_DB <- function(DB){
   summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
   # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
   #metadata/codebook =============
+
+  return(DB)
+}
+annotated_codebook <- function(metadata){
   metadata <- DB$redcap$metadata
-  codebook <- DB$redcap$codebook %>% dplyr::select("field_name", "code", "name")
+  codebook <- DB$redcap$codebook
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
@@ -364,8 +297,9 @@ summarize_DB <- function(DB){
   codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
   DB$redcap$codebook <- codebook
-  return(DB)
+  return(codebook)
 }
+
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(

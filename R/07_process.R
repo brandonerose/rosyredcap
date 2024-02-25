@@ -553,20 +553,21 @@ split_choices <- function(x){
   if(nrow(x)!=check_length)stop("split choice error: ",oops)
   x
 }
-make_codebook <- function(DB){
-  choices <- which(DB$redcap$metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
+metadata_to_codebook <- function(metadata){
+  rows_with_choices <- which(metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
+  codebook <- NULL
   if(length(choices)>0){
-    for(field in DB$redcap$metadata$field_name[choices]){
-      DB[["choices"]][[field]] <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field)] %>% split_choices()
+    for(field_name in metadata$field_name[rows_with_choices]){
+      choices <- metadata$select_choices_or_calculations[which(metadata$field_name==field_name)] %>% split_choices()
+      codebook <- codebook %>% dplyr::bind_rows(
+        data.frame(
+          field_name = field_name,
+          code = choices$code,
+          name =choices$name
+        )
+      )
     }
   }
-  OUT <- NULL
-  for (CHOICE in names(DB[["choices"]])){
-    x <- DB[["choices"]][[CHOICE]]
-    x$field_name <- CHOICE
-    OUT <- OUT %>% dplyr::bind_rows(x)
-  }
-  OUT <- OUT %>% dplyr::select("field_name","code","name")
-  rownames(OUT) <- NULL
-  OUT
+  rownames(codebook) <- NULL
+  return(codebook)
 }
