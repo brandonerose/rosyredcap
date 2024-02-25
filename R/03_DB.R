@@ -123,7 +123,7 @@ validate_DB <- function(DB,silent = T){
 #' @param force logical for force blank load vs last save
 #' @return DB
 #' @export
-setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
+setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,merge_form_name){
   #param check
   missing_dir_path <- missing(dir_path)
   if(missing_dir_path){
@@ -163,6 +163,9 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F){
     if(! missing(redcap_base_link)){
       if(DB$links$redcap_base_link != redcap_base_link)stop("The `redcap_base_link`, ",redcap_base_link,", you provided does not match the one the was loaded ",DB$links$redcap_base_link)
     }
+  }
+  if(! missing(merge_form_name)){
+     DB$internals$merge_form_name<- merge_form_name
   }
   DB
 }

@@ -4,7 +4,14 @@
 \alias{setup_DB}
 \title{Setup for DB including token}
 \usage{
-setup_DB(short_name, dir_path, token_name, redcap_base_link, force = F)
+setup_DB(
+  short_name,
+  dir_path,
+  token_name,
+  redcap_base_link,
+  force = F,
+  merge_form_name
+)
 }
 \arguments{
 \item{short_name}{character name as a shortcut}

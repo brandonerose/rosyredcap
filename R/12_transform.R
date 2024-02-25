@@ -92,6 +92,8 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path)){
     metadata_remap <-   DB$redcap$metadata
     metadata_remap$field_name_remap <- metadata_remap$field_name
     metadata_remap$form_name_remap <- metadata_remap$form_name
+    metadata_remap$form_name_remap[which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!DB$redcap$instruments$repeating)])] <- DB$internals$merge_form_name
+
     if(DB$redcap$is_longitudinal){
       if(DB$redcap$has_arms_that_matter){
         #can add remapping of arms but not smart if they matter
