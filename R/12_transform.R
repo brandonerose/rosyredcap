@@ -180,7 +180,17 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL){
     }
   }
   if(merge_non_rep_to_reps){
-
+    if(DB$redcap$is_longitudinal){
+      repeating_rows <- which(DB$remap$instruments_new$repeating|DB$remap$instruments_new$repeating_via_events)
+    }else{
+      repeating_rows <- which(DB$remap$instruments_new$repeating)
+    }
+    merged <- DB$data_transform[[DB$internals$merge_form_name]]
+    for(instrument_name in DB$remap$instruments_new$instrument_name[repeating_rows]){
+      original_rep <- DB$data_transform[[instrument_name]]
+      shared_cols <- DB$redcap$raw_structure_cols[which((DB$redcap$raw_structure_cols %in% colnames(merged))&(DB$redcap$raw_structure_cols %in% colnames(original_rep)))]
+      DB$data_transform[[instrument_name]] <- merged %>% merge(original_rep,by = shared_cols)
+    }
   }
   return(DB)
 }
