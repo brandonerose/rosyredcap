@@ -42,9 +42,9 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
     }
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
-  if(is.null(DB$data_extract))stop("`DB$data_extract` is empty")
-  for(TABLE in names(DB$data_extract)){
-    to_be_uploaded_raw <- DB$data_extract[[TABLE]]
+  if(!is_something(DB$data_upload))stop("`DB$data_extract` is empty")
+  for(TABLE in names(DB$data_upload)){
+    to_be_uploaded_raw <- DB$data_upload[[TABLE]]
     if(nrow(to_be_uploaded_raw)>0){
       if(DB$internals$data_extract_labelled){
         to_be_uploaded_clean <- to_be_uploaded_raw
@@ -82,7 +82,7 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB <- validate_DB(DB)
   DB2 <- validate_DB(DB2)
-  DB <- filter_DB(DB, records = DB2$summary$all_records[[DB$redcap$id_col]])
+  DB$data_extract <- filter_DB(DB, records = DB2$summary$all_records[[DB$redcap$id_col]])
   if(!missing(ignore_instruments)){
     if(any(!ignore_instruments%in%names(DB2[["data_extract"]])))stop("ignore_instruments must be included in the set of instrument names, `names(DB2$data_extract)`")
     for(DROP in ignore_instruments){
@@ -104,3 +104,20 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   }
   DB2
 }
+find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
+  warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
+  DB <- validate_DB(DB)
+  upload_list <- DB[[compare]]
+  old_list <- DB[[to]]
+  if(any(!names(upload_list)%in%names(old_list)))stop("All file names and data.table names from your directory a.k.a. `names(DB2$data_extract)` must match the DB instrument names, `DB$redcap$instruments$instrument_name`")
+  if(is.null(upload_list))stop("`DB2$data_extract` is empty")
+  for(TABLE in names(upload_list)){#TABLE <- names(upload_list) %>% sample(1)
+    new <-  upload_list[[TABLE]]
+    old <-  old_list[[TABLE]]
+    ref_cols <- DB$redcap$raw_structure_cols
+    ref_cols <- ref_cols[which(ref_cols%in%c(colnames(old),colnames(new)))]
+    upload_list[[TABLE]] <- rosyutils::find_df_diff(new= new , old =  old, ref_cols = ref_cols, message_pass = paste0(TABLE,": "))
+  }
+  return(upload_list)
+}
+

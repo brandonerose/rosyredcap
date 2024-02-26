@@ -105,7 +105,7 @@ update_DB <- function(
       time <- c(DB$internals$last_metadata_update,DB$internals$last_data_update)
       time <- time %>% min() %>% magrittr::subtract(lubridate::minutes(3)) %>% as.character()
       DB2 <- DB %>% get_redcap_data(labelled = labelled,records = IDs)
-      DB2$summary$all_records <-  summary$all_records(DB2)
+      DB2$summary$all_records <-  all_records(DB2)
       DB2 <-DB2 %>% find_DB_diff(DB)
       DB$internals$last_data_update <- DB2$internals$last_data_update
       DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
@@ -135,4 +135,16 @@ update_DB <- function(
   }
   if(!is.null(DB$dir_path))  save_DB(DB)
   DB
+}
+
+run_quality_checks <- function(DB){
+  DB <- validate_DB(DB)
+  if(is_something(DB$quality_checks)){
+    for (qual_check in names(DB$quality_checks)){
+      the_function <- DB$quality_checks[[qual_check]]
+      if(is.function(the_function)){
+        the_function(DB)
+      }
+    }
+  }
 }
