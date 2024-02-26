@@ -400,24 +400,22 @@ grab_record_tables <- function(DB, records){
 }
 #' @export
 filter_field_names_from_DB <- function(DB,field_names){
-  selected <- list()
-  form_names <- DB %>% field_names_to_instruments(field_names)
-  OUT<- DB$redcap$instruments$repeating[which(DB$redcap$instruments$instrument_name%in%form_names)]
-  if(!(all(OUT)|all(!OUT)))stop("cant have repating and not repeating")
-  non_reps <- all(!OUT)
-  if(!non_reps){
-    if(length(form_names)>1)stop("cant use this for mulitple repeating instruments")
-  }
-  merged <- NULL
-  for(form_name in form_names){
-    FORM <- DB$data_extract[[form_name]]
-    cols_vars <- colnames(FORM)[which(colnames(FORM)%in%field_names)]
-    if(length(cols_vars)>0){
-      selected[[form_name]] <- FORM[,colnames(FORM)[which(colnames(FORM)%in%c(DB$redcap$raw_structure_cols,cols_vars))]]
-    }
-  }
-  if(non_reps) selected <- selected %>% merge_multiple(form_names)
-  return(selected)
+  # selected <- list()
+  # form_names <- DB %>% field_names_to_instruments(field_names)
+  # form_names_rep <- form_names[which(OUT)]
+  # form_names_non_reps <-  form_names[which(!OUT)]
+  # if(length(form_names_rep)>1)stop("cant more than one repating for this function")
+  # if(length(form_names_non_reps)>1){
+  #   merged <- list()
+  #   for(form_name in form_names_non_reps){
+  #     FORM <- DB$data_extract[[form_name]]
+  #     cols_vars <- colnames(FORM)[which(colnames(FORM)%in%field_names)]
+  #     if(length(cols_vars)>0){
+  #       merged[[form_name]] <- FORM[,colnames(FORM)[which(colnames(FORM)%in%c(DB$redcap$raw_structure_cols,cols_vars))]]
+  #     }
+  #   }
+  #   merged <- merged %>% merge_multiple(form_names)
+  # }
 }
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB
