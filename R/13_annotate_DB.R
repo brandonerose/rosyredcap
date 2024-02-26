@@ -17,7 +17,7 @@ annotate_metadata <- function(metadata){
 metadata_to_codebook <- function(metadata){
   rows_with_choices <- which(metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
   codebook <- NULL
-  if(length(choices)>0){
+  if(length(rows_with_choices)>0){
     for(field_name in metadata$field_name[rows_with_choices]){
       choices <- metadata$select_choices_or_calculations[which(metadata$field_name==field_name)] %>% split_choices()
       codebook <- codebook %>% dplyr::bind_rows(
