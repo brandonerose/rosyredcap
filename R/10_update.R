@@ -136,18 +136,3 @@ update_DB <- function(
   if(!is.null(DB$dir_path))  save_DB(DB)
   DB
 }
-rmarkdown_DB <- function (DB,dir_other){
-  if(missing(dir_other)){
-    dir <- get_dir(DB) %>% file.path("output")
-  }else{
-    dir  <- dir_other
-  }
-  filename <- paste0(DB$short_name,"_full_summary_",gsub("-","_",Sys.Date()),".pdf")
-  rmarkdown::render(
-    input = system.file("rmarkdown","pdf.Rmd",package = pkg_name),
-    output_format = "pdf_document",
-    output_file = dir %>% file.path(filename),
-    output_dir = dir,
-    quiet = F
-  )
-}

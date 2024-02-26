@@ -216,10 +216,6 @@ get_redcap_metadata <- function(DB){
   DB$links$redcap_API_playground <- paste0(DB$links$redcap_base_link,"redcap_v",DB$redcap$version,"/API/playground.php?pid=",DB$redcap$project_id)
   DB
 }
-check_match <- function(vec_list) {
-  sorted_vecs <- lapply(vec_list, sort)
-  all(sapply(sorted_vecs[-1], function(x) identical(sorted_vecs[[1]], x)))
-}
 get_redcap_data <- function(DB,labelled=T,records=NULL){
   DB$internals$last_data_update <- Sys.time()
   raw <- get_raw_redcap(

@@ -9,12 +9,12 @@
 #' @param include_other logical for whether to only include redcap and not metadata
 #' @param append_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
-#' @param annotated_codebook optional logical for adding annotations of n and percent to codebook file
+#' @param annotate_codebook optional logical for adding annotations of n and percent to codebook file
 #' @param with_links optional logical for including links in excel sheets
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotated_codebook=T,forms){
+drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotate_codebook=T,forms){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -82,7 +82,7 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
       DB_selected[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
     }
   }
-  # if(annotated_codebook){
+  # if(annotate_codebook){
   #   DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
   # }
   if(DB$data_transform %>% is_something()){

@@ -4,7 +4,7 @@
 \alias{show_DB}
 \title{Shows DB in the env}
 \usage{
-show_DB(DB, also_metadata = T, transform = T)
+show_DB(DB, data_choice, also_metadata = T, only_dfs = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}

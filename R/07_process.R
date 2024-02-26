@@ -303,7 +303,7 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
     keep_instruments <- all_instrument_names[which(!all_instrument_names%in% instrument_names)]
     data_choice <- "data_transform"
   }
-  DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_from_extact(DB,instrument_names)
+  DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_from_extact(DB$data_extract,instrument_names)
   if(data_choice=="data_extract") {
     for(instrument_name in instrument_names){
       DB[["data_extract"]][[instrument_name]] <- NULL
@@ -316,10 +316,10 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
   }
   DB
 }
-merge_from_extact <- function(DB,instrument_names){
+merge_multiple <- function(named_data_list,instrument_names){
   instrument_names <- instrument_names %>% as.list()
   if (length(instrument_names)==1) warning('No need to merge you only have one form that is non-repeating')
-  merged <- DB[["data_extract"]][[instrument_names[[1]]]]
+  merged <- named_data_list[[instrument_names[[1]]]]
   merged$redcap_event_name <- NULL
   # merged$arm_num <- NULL
   merged$event_name <- NULL
@@ -327,7 +327,7 @@ merge_from_extact <- function(DB,instrument_names){
   merged$redcap_repeat_instance <- NULL
   instrument_names[[1]] <- NULL
   while (length(instrument_names)>0) {
-    dfx <- DB[["data_extract"]][[instrument_names[[1]]]]
+    dfx <- named_data_list[[instrument_names[[1]]]]
     dfx$redcap_event_name <- NULL
     # dfx$arm_num <- NULL
     dfx$event_name <- NULL
@@ -355,147 +355,6 @@ unmerge_non_repeating_DB <- function(DB){
   DB$data_extract[[DB$internals$merge_form_name]] <- NULL
   DB$internals$data_extract_merged <- F
   DB
-}
-#' @title Deidentify the REDCap DB according to REDCap or your choices
-#' @inheritParams save_DB
-#' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.
-#' @return DB object that has deidentified forms
-#' @export
-deidentify_DB <- function(DB,identifiers){
-  DB <- validate_DB(DB)
-  missing_identifiers <- missing(identifiers)
-  if(!missing_identifiers){
-    identifiers <- identifiers %>% unique()
-    bad_identifiers <- identifiers[which(!identifiers%in%DB$redcap$metadata$field_name)]
-    if(length(bad_identifiers)>0)stop("You have an identifier that is not included in the set of `DB$redcap$metadata$field_name` --> ",bad_identifiers %>% paste0(collapse = ", "))
-    if(DB$redcap$id_col%in%identifiers)stop("Your REDCap ID, ",DB$redcap$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
-  }
-  if(missing_identifiers){
-    identifiers <-  DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
-    if(length(identifiers)==0)warning("You have no identifiers marked in `DB$redcap$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
-  }
-  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data_extract), lapply(DB$data_extract, colnames))
-  drop_list <- drop_list[sapply(drop_list, length) > 0]
-  if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
-  for (FORM in names(drop_list)) {
-    for(DROP in drop_list[[FORM]]){
-      DB$data_extract[[FORM]][[DROP]] <- NULL
-      message("Dropped ",DROP," from ", FORM)
-    }
-  }
-  DB
-}
-annotate_metadata <- function(metadata){
-  metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
-  metadata  <- unique(metadata$form_name) %>%
-    lapply(function(IN){
-      metadata[which(metadata$form_name==IN),]
-    }) %>% dplyr::bind_rows()
-  metadata$field_type_R <- NA
-  metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
-  metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
-  metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_mdy")] <- "date"
-  metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_ymd")] <- "date"
-  metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "datetime_dmy")] <- "datetime"
-  metadata$in_original_redcap <- metadata$field_name %in% DB$redcap$metadata$field_name
-  return(metadata)
-}
-#' @title clean DB columns for plotting using the metadata
-#' @description
-#'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
-#' @inheritParams save_DB
-#' @param drop_blanks logical for dropping n=0 choices
-#' @param drop_unknowns logical for dropping missing codes
-#' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
-#' @return DB object cleaned for table or plots
-#' @export
-clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
-  here_is_units_df <- NULL
-  if(!missing(units_df)){
-    if(!is.data.frame(units_df))stop("units_df must be a dataframe")
-    if(nrow(units_df)>0){
-      here_is_units_df <- units_df
-    }
-  }
-  for (data_choice in c("data_extract","data_transform")) {
-    for(FORM in names(DB[[data_choice]])){
-      for(COLUMN in colnames(DB[[data_choice]][[FORM]])){
-        if(COLUMN %in% metadata$field_name){
-          units <- NULL
-          if(!is.null(here_is_units_df)){
-            if(COLUMN%in%units_df$field_name){
-              units <- units_df$units[which(units_df$field_name==COLUMN)]
-              if(length(units)>1)stop("only provide one unit per field name")
-            }
-          }
-          class <- metadata$field_type_R[which(metadata$field_name==COLUMN)][[1]]
-          label <- ifelse(is.na(metadata$field_label[which(metadata$field_name==COLUMN)]),COLUMN,metadata$field_label[which(metadata$field_name==COLUMN)])[[1]]
-          levels <- NULL
-          if(!is.na(class)){
-            if(class == "factor"){
-              levels <- (metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices())[[2]]
-              if(any(duplicated(levels))){
-                DUPS <- levels %>% duplicated() %>% which()
-                warning("You have a variable (",COLUMN,") with dupplicate names (",levels[DUPS] %>% paste0(collapse = ", "),"). This is not great but for this proccess they will be merged and treated as identical responses.")
-                levels <- levels %>% unique()
-              }
-              if(drop_blanks){
-                levels <- levels[which(levels%in%unique(DB[[data_choice]][[FORM]][[COLUMN]]))]
-              }
-              if(!drop_unknowns){
-                levels <- levels %>% append(unique(DB[[data_choice]][[FORM]][[COLUMN]])) %>% unique() %>% drop_nas()
-              }
-            }
-            if(class == "integer"){
-            }
-            DB[[data_choice]][[FORM]]
-          }
-        }
-        DB[[data_choice]][[FORM]][[COLUMN]] <- DB[[data_choice]][[FORM]][[COLUMN]] %>% clean_column_for_table(
-          class = class,
-          label = label,
-          units = units,
-          levels = levels
-        )
-      }
-    }
-  }
-
-  return(DB)
-}
-#' @title clean column for plotting; manual addition of clean_DB
-#' @description
-#'  Turns choices into factors and integers to integer for table processing such as with table1 and plots
-#' @param col the column vector
-#' @param class character for column type: integer, factor, numeric
-#' @param label character for label
-#' @param units character for units
-#' @param levels character vector of levels for factor
-#' @return cleaned column
-#' @export
-clean_column_for_table <- function(col,class,label,units,levels){
-  if(!missing(class)){
-    if(!is.null(class)){
-      if(!is.na(class)){
-        if(class=="integer"){
-          col <-   col %>% as.integer()
-        }
-        if(class=="factor"){
-          col <-   col %>% factor(levels = levels,ordered = T)
-        }
-        if(class=="numeric"){
-          col <-   col %>% as.numeric()
-        }
-      }
-    }
-  }
-  if(!missing(label)){
-    attr(col, "label") <- label
-  }
-  if(!missing(units)){
-    attr(col, "units") <- units
-  }
-  col
 }
 #' @title add REDCap ID to any dataframe using a ref_id
 #' @description
@@ -533,41 +392,33 @@ grab_record_tables <- function(DB, records){
   }
   OUT
 }
-split_choices <- function(x){
-  oops <- x
-  x <- gsub("\n", " | ",x)  #added this to account for redcap metadata output if not a number
-  x <- x %>% strsplit(" [:|:] ") %>% unlist()
-  check_length <- length(x)
-  # code <- x %>% stringr::str_extract("^[^,]+(?=, )")
-  # name <- x %>% stringr::str_extract("(?<=, ).*$")
-  result <- x %>% stringr::str_match("([^,]+), (.*)")
-  # x <- data.frame(
-  #   code=x %>% strsplit(", ") %>% sapply(`[`, 1),
-  #   name=x %>% strsplit(", ")%>% sapply(`[`, -1) %>% sapply(function(y){paste0(y,collapse = ", ")})
-  # )
-  x <- data.frame(
-    code=result[,2],
-    name=result[,3]
-  )
-  rownames(x) <- NULL
-  if(nrow(x)!=check_length)stop("split choice error: ",oops)
-  x
-}
-metadata_to_codebook <- function(metadata){
-  rows_with_choices <- which(metadata$field_type%in%c("radio","dropdown","checkbox_choice","yesno"))
-  codebook <- NULL
-  if(length(choices)>0){
-    for(field_name in metadata$field_name[rows_with_choices]){
-      choices <- metadata$select_choices_or_calculations[which(metadata$field_name==field_name)] %>% split_choices()
-      codebook <- codebook %>% dplyr::bind_rows(
-        data.frame(
-          field_name = field_name,
-          code = choices$code,
-          name =choices$name
-        )
-      )
+
+#' @title Deidentify the REDCap DB according to REDCap or your choices
+#' @inheritParams save_DB
+#' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.
+#' @return DB object that has deidentified forms
+#' @export
+deidentify_DB <- function(DB,identifiers){
+  DB <- validate_DB(DB)
+  missing_identifiers <- missing(identifiers)
+  if(!missing_identifiers){
+    identifiers <- identifiers %>% unique()
+    bad_identifiers <- identifiers[which(!identifiers%in%DB$redcap$metadata$field_name)]
+    if(length(bad_identifiers)>0)stop("You have an identifier that is not included in the set of `DB$redcap$metadata$field_name` --> ",bad_identifiers %>% paste0(collapse = ", "))
+    if(DB$redcap$id_col%in%identifiers)stop("Your REDCap ID, ",DB$redcap$id_col,", should not be deidentified.") #If you want to pass a new set of random IDs to make this data use `scramble_ID_DB(DB)`.")
+  }
+  if(missing_identifiers){
+    identifiers <-  DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
+    if(length(identifiers)==0)warning("You have no identifiers marked in `DB$redcap$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
+  }
+  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data_extract), lapply(DB$data_extract, colnames))
+  drop_list <- drop_list[sapply(drop_list, length) > 0]
+  if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
+  for (FORM in names(drop_list)) {
+    for(DROP in drop_list[[FORM]]){
+      DB$data_extract[[FORM]][[DROP]] <- NULL
+      message("Dropped ",DROP," from ", FORM)
     }
   }
-  rownames(codebook) <- NULL
-  return(codebook)
+  DB
 }

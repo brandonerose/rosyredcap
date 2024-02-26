@@ -148,7 +148,7 @@ generate_custom_remap_from_dir <- function(DB){
 #' @inheritParams save_DB
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
 #' @export
-transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F){
+transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, terminal_transformation = F){
   DB  <- validate_DB(DB)
   will_update <- force
   if(is.null(DB$internals$last_data_transformation)) will_update <- T
@@ -162,9 +162,10 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F){
     }
     instrument_names <- DB$remap$instruments_new$instrument_name
     for (instrument_name in instrument_names) {# instrument_name <- instrument_names %>%  sample (1)
+      # add terminal_transformation
       if(instrument_name == DB$internals$merge_form_name){
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
-        DB$data_transform[[instrument_name]] <- merge_from_extact(DB, old_instruments)
+        DB$data_transform[[instrument_name]] <- merge_multiple(selected, old_instruments)
       }else{
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
         final_out <- NULL
@@ -199,124 +200,12 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F){
       }
     }
     DB$internals$last_data_transformation <- DB$internals$last_data_update
+    DB$internals$reference_state <- "data_transform"
+    DB$internals$reference_metadata <- "remap"
+    DB$internals$was_remapped <- T
     save_DB(DB)
   }
   return(DB)
-}
-summarize_DB <- function(DB){
-  #project --------
-  summary <- list()
-  was_remapped <-DB$remap %>% is_something()
-  pull_from <- "redcap"
-  df_names1 <- c("metadata","instruments","event_mapping","events")
-  if(was_remapped){
-    pull_from <- "remap"
-    df_names2 <- paste0(df_names1,"_new")
-  }
-  for(i in 1:length(df_names1)){
-    summary[[df_names1[[i]]]] <- DB[[pull_from]][[df_names2[[i]]]]
-  }
-  DB$redcap$project_info
-  metadata <- DB$redcap$metadata
-  instruments <- DB$redcap$instruments
-  arms <- DB$redcap$arms
-  users <- DB$redcap$instruments
-  events <- DB$redcap$events
-  event_mapping <- DB$redcap$event_mapping
-
-  if(was_remapped){
-  }
-  #records belong to arms 1 to 1 ----------
-  summary$records_n <- 0
-  if(!is.null(DB$summary$all_records)){
-    summary$records_n <- DB$summary$all_records %>% length()
-  }
-  #arms----------------
-  summary$arms_n <- 0
-  if(is.data.frame(DB$redcap$arms)){
-    summary$arms_n <- DB$redcap$arms %>% nrow()
-    id_pairs <- DB$redcap$instruments$instrument_name %>%  lapply(function(IN){DB$data_extract[[IN]][,c(DB$redcap$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
-    DB$redcap$arms$arm_records_n <- DB$redcap$arms$arm_num %>% sapply(function(arm){
-      which(id_pairs$arm_num==arm)%>% length()
-    })
-  }
-  #events belong to arms many to 1 ----------------
-  # summary$events_n <- DB$redcap$events %>% nrow()
-  summary$events_n <- 0
-  if(is.data.frame(DB$redcap$events)){
-    summary$events_n <- DB$redcap$events %>% nrow()
-    summary$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
-    # 1:nrow(DB$redcap$event_mapping) %>% lapply(function(i){
-    #   (DB$data_extract[[DB$redcap$event_mapping$form[i]]][['redcap_event_name']]==DB$redcap$event_mapping$unique_event_name[i]) %>% which() %>% length()
-    # })
-    # for(event in ){
-    #   summary[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
-    # }
-  }
-  #instruments/forms belong to events many to 1 (if no events/arms) ----------------
-  summary$instruments_n <- 0
-  if(is.data.frame(DB$redcap$instruments)){ # can add expected later
-    summary$instruments_n <- DB$redcap$instruments %>% nrow()
-    DB$redcap$instruments$incomplete <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
-    })
-    DB$redcap$instruments$unverified <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Unverified") %>% which() %>% length()
-    })
-    DB$redcap$instruments$complete <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Complete") %>% which() %>% length()
-    })
-  }
-  #fields belong to instruments/forms 1 to 1 ----------------
-  summary$metadata_n <- 0
-  summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
-  # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
-  #metadata/codebook =============
-
-  return(DB)
-}
-annotated_codebook <- function(metadata){
-  metadata <- DB$redcap$metadata
-  codebook <- DB$redcap$codebook
-  codebook <- unique(metadata$field_name) %>%
-    lapply(function(IN){
-      codebook[which(codebook$field_name==IN),]
-    }) %>% dplyr::bind_rows()
-  codebook <- codebook %>% merge(
-    metadata %>% dplyr::select(
-      "form_name","field_name","field_label","field_type","field_type_R","text_validation_type_or_show_slider_number"),by="field_name",sort=F)
-  codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
-    form_name <- codebook$form_name[i]
-    field_name <- codebook$field_name[i]
-    if(!form_name %in% names(DB$data_extract)){
-      if(DB$internals$merge_form_name %in% names(DB$data_extract)){
-        if(field_name%in%colnames(DB$data_extract$merged))return(DB$internals$merge_form_name)
-      }
-      for(other in names(DB$data_extract)[which(!names(DB$data_extract)%in%DB$redcap$instruments$instrument_name)]){
-        if(field_name%in%colnames(DB$data_extract[[other]]))return(other)
-      }
-    }
-    return(form_name)
-  }) %>% unlist()
-  codebook$field_name_raw <- codebook$field_name
-  codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name[which(codebook$field_type=="checkbox_choice")] %>%
-    strsplit("___") %>%
-    sapply(function(X){X[[1]]})
-  codebook$field_label_raw <- codebook$field_label
-  codebook$field_label_raw[which(codebook$field_type=="checkbox_choice")] <- codebook$field_name_raw[which(codebook$field_type=="checkbox_choice")] %>%
-    sapply(function(X){
-      metadata$field_label[which(metadata$field_name==X)] %>% unique()
-    })
-  codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
-  }) %>% unlist()
-  codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(!is.na(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
-  }) %>% unlist()
-  codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
-  codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
-  DB$redcap$codebook <- codebook
-  return(codebook)
 }
 
 find_in_DB <- function(DB,text, exact = F){

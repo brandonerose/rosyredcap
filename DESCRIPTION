@@ -22,6 +22,7 @@ Imports:
     REDCapR,
     rio,
     rmarkdown,
+    rosyutils,
     stringr,
     tools,
     utils

@@ -13,11 +13,17 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
       last_data_update=NULL,
       last_data_dir_save = NULL,
       last_data_transformation = NULL,
+      last_summary = NULL,
+      last_quality_check = NULL,
+      last_clean = NULL,
       last_directory_save=NULL,
       data_extract_labelled = NULL,
       data_extract_merged = NULL,
       merge_form_name = "merged",
-      data_extract_clean = NULL
+      reference_state = "data_extract",
+      reference_metadata = "redcap",
+      was_remapped = F,
+      terminal_transformation = NULL
     ),
     redcap = list(
       project_id=NULL,
@@ -45,7 +51,7 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
       has_repeating_instruments = NULL,
       has_repeating_events = NULL
     ),
-    auto_jobs = NULL,
+    quality_checks = NULL,
     remap = list(
       metadata_remap=NULL,
       metadata_new=NULL,
@@ -212,22 +218,15 @@ save_DB <- function(DB){
 #' @return DB tables
 #' @param transform show the data_transform section instead of data_extract
 #' @export
-show_DB <- function(DB,also_metadata=T,transform = T){
+show_DB <- function(DB,data_choice,also_metadata=T,only_dfs = T){
   DB <- validate_DB(DB)
   data_list <- list()
-  data_choice <- "data_extract"
-  if(transform)data_choice <- "data_transform"
-  for(NAME in names(DB[[data_choice]])){
-    L <- list(DB[[data_choice]][[NAME]])
-    names(L) <- NAME
-    data_list <- data_list %>% append(L)
+  if(missing(data_choice)){
+    data_choice<- DB$internals$reference_state
   }
+  DB[[data_choice]] %>% rosyutils::add_list_to_global(only_dfs = only_dfs)
   if(also_metadata){
-    for(NAME in c("metadata","instruments","arms","events","event_mapping","log","users","codebook","project_info")){#"unique_events"
-      L <- list(DB$redcap[[NAME]])
-      names(L) <- NAME
-      data_list <- data_list %>% append(L)
-    }
+    DB[["redcap"]] %>% rosyutils::add_list_to_global(only_dfs = only_dfs)
   }
   data_list %>% list2env(envir = .GlobalEnv)
 }
@@ -254,26 +253,4 @@ delete_DB <- function(DB,dir_path){
   }else{
     warning("The DB object you wanted to is not there. Did you delete already? ",delete_this)
   }
-}
-all_records <- function(DB){
-  records <- NULL
-  cols <- DB$redcap$id_col
-  if(is.data.frame(DB$redcap$arms)){
-    if(nrow(DB$redcap$arms)>1){
-      cols <- DB$redcap$id_col %>% append("arm_num")
-    }
-  }
-  if(length(cols)==1){
-    records <- data.frame(
-      records =  names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% unlist() %>% unique()
-    )
-    colnames(records) <- cols
-  }
-  if(length(cols) == 2){
-    records <- names(DB$data_extract) %>% lapply(function(IN){DB$data_extract[[IN]][,cols]}) %>% dplyr::bind_rows() %>% unique()
-    # records <- records[order(as.integer(records[[DB$redcap$id_col]])),]
-  }
-  rownames(records) <- NULL
-  if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
-  records
 }
