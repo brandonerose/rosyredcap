@@ -48,7 +48,7 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
     redcap_other_dir %>% dir.create(showWarnings = F)
     redcap_upload_dir %>% dir.create(showWarnings = F)
   }
-  DB_selected <-  DB %>% select_redcap_records(records)
+  DB_selected <-  DB %>% filter_DB(records)
   if(allow_mod){
     to_save <- names(DB$data_extract)
   }else{

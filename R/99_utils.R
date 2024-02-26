@@ -141,3 +141,13 @@ split_choices <- function(x){
   if(nrow(x)!=check_length)stop("split choice error: ",oops)
   x
 }
+# husk_of_instrument <- function (DB,FORM,field_names) {
+#   DF <- DB$data_extract[[FORM]]
+#   cols<- colnames(DF)[which(colnames(DF)%in%DB$redcap$raw_structure_cols)]
+#   DF2 <- NULL
+#   for(col in cols){
+#     DF2[[col]] <- DF[[col]]
+#   }
+#   DF2 <-as.data.frame(DF2)
+#   return(DF2)
+# }

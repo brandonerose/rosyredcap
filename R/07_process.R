@@ -56,7 +56,7 @@ raw_process_redcap <- function(raw,DB){
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-select_redcap_records <- function(DB, records=NULL,data_choice="data_extract"){#, ignore_incomplete=F, ignore_unverified = F
+filter_DB <- function(DB, records=NULL,data_choice="data_extract",field_names){#, ignore_incomplete=F, ignore_unverified = F
   selected <- DB[[data_choice]]
   if(!is.null(records)){
     if (length(records)==0)stop("Must supply records")
@@ -64,8 +64,15 @@ select_redcap_records <- function(DB, records=NULL,data_choice="data_extract"){#
     BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
     GOOD  <- records[which(records%in%DB$summary$all_records[[DB$redcap$id_col]])]
     if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
+    if(missing(field_names))field_names <- DB$redcap$metadata$field_name
     for(FORM in names(DB[[data_choice]])){
-      selected[[FORM]]  <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
+      OUT <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
+      cols <- colnames(OUT)[which(colnames(OUT)%in%field_names)]
+      if(length(cols)>0){
+        if(nrow(OUT)>0){
+          selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
+        }
+      }
     }
   }
   return(selected)
@@ -78,7 +85,6 @@ field_names_to_instruments <- function(DB,field_names){
     )
   ] %>% unique()
   return(instruments)
-
 }
 field_names_metadata <- function(DB,field_names){
   # if(!deparse(substitute(FORM))%in%DB$redcap$instruments$instrument_name)stop("To avoid potential issues the form name should match one of the instrument names" )
@@ -382,7 +388,7 @@ add_ID_to_DF <- function(DF,DB,ref_id){
 #' @title grab data table for an individual(s)
 #' @description
 #' grab data table for an individual(s)
-#' @inheritParams select_redcap_records
+#' @inheritParams filter_DB
 #' @return list of data tables
 #' @export
 grab_record_tables <- function(DB, records){
@@ -392,7 +398,27 @@ grab_record_tables <- function(DB, records){
   }
   OUT
 }
-
+#' @export
+filter_field_names_from_DB <- function(DB,field_names){
+  selected <- list()
+  form_names <- DB %>% field_names_to_instruments(field_names)
+  OUT<- DB$redcap$instruments$repeating[which(DB$redcap$instruments$instrument_name%in%form_names)]
+  if(!(all(OUT)|all(!OUT)))stop("cant have repating and not repeating")
+  non_reps <- all(!OUT)
+  if(!non_reps){
+    if(length(form_names)>1)stop("cant use this for mulitple repeating instruments")
+  }
+  merged <- NULL
+  for(form_name in form_names){
+    FORM <- DB$data_extract[[form_name]]
+    cols_vars <- colnames(FORM)[which(colnames(FORM)%in%field_names)]
+    if(length(cols_vars)>0){
+      selected[[form_name]] <- FORM[,colnames(FORM)[which(colnames(FORM)%in%c(DB$redcap$raw_structure_cols,cols_vars))]]
+    }
+  }
+  if(non_reps) selected <- selected %>% merge_multiple(form_names)
+  return(selected)
+}
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB
 #' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.

@@ -36,7 +36,7 @@ summarize_DB <- function(DB){
     x <- DB[[DB$internals$reference_metadata]][[df_names2[i]]]
     if(!is.null(x))summary[[df_names1[i]]] <- x
   }$
-  instruments <- DB$redcap$instruments
+    instruments <- DB$redcap$instruments
 
 
   if(was_remapped){
