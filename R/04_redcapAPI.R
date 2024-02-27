@@ -231,6 +231,9 @@ get_redcap_data <- function(DB,labelled=T,records=NULL){
   DB <- raw_process_redcap(raw = raw,DB = DB)
   if(is.null(records)){
     DB$summary$all_records <- all_records(DB)
+    DB$summary$all_records$last_data_update <- DB$internals$last_data_update
+  }else{
+    DB$summary$last_data_update[which(DB$summary$all_records[[DB$redcap$id_col]]%in%records)] <- DB$internals$last_data_update
   }
   DB$internals$data_extract_labelled <- F
   if(labelled){
@@ -249,9 +252,10 @@ get_redcap_users <- function(DB){
 #' @param last numeric paired with units. Default is 24.
 #' @param units character paired with last. Options are "mins","hours","days". Default is "hours".
 #' @param begin_time character of time where the log should start from. Example 2023-07-11 13:15:06.
+#' @param clean logical for cleaning of API data
 #' @return data.frame of log that has been cleaned and has extra summary columns
 #' @export
-check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
+check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T){
   if(units=="days"){
     x <- (Sys.time()-lubridate::days(last)) %>% as.character()
   }
@@ -264,7 +268,9 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time=""){
   if(begin_time!=""){
     x <- begin_time
   }
-  get_redcap_info(DB,"log",additional_args = list(beginTime=x)) %>% clean_redcap_log()
+  log <- get_redcap_info(DB,"log",additional_args = list(beginTime=x))
+  log <- log %>% clean_redcap_log(purge_api=clean)
+  log
 }
 #' @title Check the REDCap log
 #' @inheritParams save_DB

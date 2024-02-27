@@ -56,22 +56,23 @@ raw_process_redcap <- function(raw,DB){
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-filter_DB <- function(DB, records=NULL,data_choice="data_extract",field_names){#, ignore_incomplete=F, ignore_unverified = F
-  selected <- DB[[data_choice]]
-  if(!is.null(records)){
-    if (length(records)==0)stop("Must supply records")
-    selected <- list()
-    BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
-    GOOD  <- records[which(records%in%DB$summary$all_records[[DB$redcap$id_col]])]
-    if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
-    if(missing(field_names))field_names <- DB$redcap$metadata$field_name
-    for(FORM in names(DB[[data_choice]])){
-      OUT <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
-      cols <- colnames(OUT)[which(colnames(OUT)%in%field_names)]
-      if(length(cols)>0){
-        if(nrow(OUT)>0){
-          selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
-        }
+filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_name){#, ignore_incomplete=F, ignore_unverified = F
+  if(missing(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
+  if(is.null(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
+  if(missing(field_names))field_names <- DB$redcap$metadata$field_name
+  if(missing(form_name))form_name <- names(DB[[data_choice]])
+
+  if (length(records)==0)stop("Must supply records")
+  selected <- list()
+  BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+  GOOD  <- records[which(records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+  if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
+  for(FORM in form_name){
+    OUT <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
+    cols <- colnames(OUT)[which(colnames(OUT)%in%field_names)]
+    if(length(cols)>0){
+      if(nrow(OUT)>0){
+        selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
       }
     }
   }
@@ -225,13 +226,27 @@ raw_to_labelled_DB <- function(DB){
   DB$internals$data_extract_labelled <- T
   DB
 }
-clean_redcap_log <- function(log){
+clean_redcap_log <- function(log,purge_api=T){
   log$record_id <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),gsub("Update record|Delete record|Create record|[:(:]API[:):]|Auto|calculation| |[:):]|[:(:]","",A),NA)})
   log$action_type <- log$action %>% sapply(function(A){ifelse(grepl("Update record |Delete record |Create record ",A),(A %>% strsplit(" ") %>% unlist())[1],NA)})
   comments <- which(log$action=="Manage/Design"&grepl("Add field comment|Edit field comment|Delete field comment",log$details))
   if(length(comments)>0){
     log$record_id[comments] <- stringr::str_extract(log$details[comments], "(?<=Record: )[^,]+")
     log$action_type[comments] <- "Comment"
+  }
+  rows <- which(is.na(log$record)&!is.na(log$record_id))
+  log$record[rows] <- log$record_id[rows]
+  log$record_id <- NULL
+  # rows <- which(!is.na(log$record)&is.na(log$record_id))
+  # log$record_id[rows] <- log$record[rows]
+  if(purge_api){
+    log <- log[which(!log$details%in%c("Export Logging (API)","Export REDCap version (API)","export_format: CSV, rawOrLabel: raw", "Download data dictionary (API)")),]
+    log <- log[which(!startsWith(log$details,"Export ")),]
+    log <- log[which(!startsWith(log$details,"Delete file from ")),]
+    log <- log[which(!startsWith(log$details,"Upload file to ")),]
+    log <- log[which(!startsWith(log$details,"export_format")),]
+    log <- log[which(!startsWith(log$details,"Switch DAG ")),]
+    log <- log[which(!startsWith(log$details,"Reorder project fields")),]
   }
   log
 }
