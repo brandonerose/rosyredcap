@@ -67,19 +67,19 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
     if(include_metadata){
       DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
       for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
-        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(appended_name,x,".xlsx")))
+        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(x,".xlsx")))
       }
     }
     if(include_other){
       for (x in c("log","users")){ #,"log" #taking too long
-        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
+        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(x,".xlsx")))
       }
     }
   }
   if(due_for_save_data){
     DB$internals$last_data_dir_save <- DB$internals$last_data_update
     for(x in to_save){
-      DB_selected[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      DB_selected[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
     }
   }
   # if(annotate_codebook){
