@@ -93,6 +93,11 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T,units_df){
     }
   }
   for (data_choice in c("data_extract","data_transform")) {
+    if(data_choice=="data_extract"){
+      metadata <- DB$redcap$metadata %>% annotate_metadata()
+    }else{
+      metadata <- DB$remap$metadata_new %>% annotate_metadata()
+    }
     for(FORM in names(DB[[data_choice]])){
       for(COLUMN in colnames(DB[[data_choice]][[FORM]])){
         if(COLUMN %in% metadata$field_name){
