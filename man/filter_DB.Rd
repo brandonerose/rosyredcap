@@ -4,7 +4,7 @@
 \alias{filter_DB}
 \title{Select REDCap records from DB}
 \usage{
-filter_DB(DB, records = NULL, data_choice = "data_extract", field_names)
+filter_DB(DB, records, data_choice = "data_extract", field_names, form_name)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}

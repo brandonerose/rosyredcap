@@ -18,6 +18,16 @@ all_records <- function(DB){
   }
   rownames(records) <- NULL
   if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
+  # if(add_last_update){
+  #   rows <- which(!is.na(log$record))
+  #   records$last_update <- records$record_id %>% sapply(function(record_id){
+  #     for(i in rows){
+  #       if(log$record[i]==record_id) return(log$timestamp[i])
+  #     }
+  #     return(NA)
+  #   })
+  #   DB$redcap$log -> c
+  # }
   records
 }
 

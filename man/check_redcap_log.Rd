@@ -4,7 +4,7 @@
 \alias{check_redcap_log}
 \title{Check the REDCap log}
 \usage{
-check_redcap_log(DB, last = 24, units = "hours", begin_time = "")
+check_redcap_log(DB, last = 24, units = "hours", begin_time = "", clean = T)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
@@ -14,6 +14,8 @@ check_redcap_log(DB, last = 24, units = "hours", begin_time = "")
 \item{units}{character paired with last. Options are "mins","hours","days". Default is "hours".}
 
 \item{begin_time}{character of time where the log should start from. Example 2023-07-11 13:15:06.}
+
+\item{clean}{logical for cleaning of API data}
 }
 \value{
 data.frame of log that has been cleaned and has extra summary columns
