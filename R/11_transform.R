@@ -2,6 +2,10 @@ remap_process <- function(DB){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
     metadata_remap <-   DB$remap$metadata_remap
+    x<-which(!metadata_remap$field_name%in%DB$redcap$metadata$field_name)
+    if(length(x)>0)stop("remap missing variable: ",paste0(x, collapse = ", "))
+    x<- 1:nrow(metadata_remap) %>% sapply(function(i){DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==metadata_remap$field_name[i])]!=metadata_remap$select_choices_or_calculations[i]}) %>% which()
+    if(length(x)>0)stop("remap with differing choices: ",paste0(x, collapse = ", "))
     instruments_remap <- DB$redcap$instruments
     instruments_remap$instrument_name_remap <- instruments_remap$instrument_name %>% sapply(function(instrument_name){
       x<-metadata_remap$form_name_remap[which(metadata_remap$form_name==instrument_name)] %>% unique()
