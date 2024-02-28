@@ -14,7 +14,7 @@
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotate_codebook=T,forms){
+drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotate_codebook=T,forms){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
@@ -48,6 +48,7 @@ drop_redcap_dir <- function(DB,records=NULL,allow_mod=T,dir_other, smart=T,inclu
     redcap_other_dir %>% dir.create(showWarnings = F)
     redcap_upload_dir %>% dir.create(showWarnings = F)
   }
+  if(missing(records))records <-DB$summary$all_records[[DB$redcap$id_col]]
   DB_selected <-  DB %>% filter_DB(records)
   if(allow_mod){
     to_save <- names(DB$data_extract)
@@ -118,7 +119,7 @@ read_redcap_dir <- function(DB,allow_all=T,allow_nonredcap_vars=F){
   if(DB$data_upload %>% is_something())stop("Already files in DB$data_upload, clear that first")
   DB[["data_upload"]] <- list()
   for(y in x){#not done yet
-    the_file <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
+    the_file <- readxl::read_xlsx(file.path(path,y),col_types = "text") %>% all_character_cols()
     if(!allow_nonredcap_vars){
       x<-colnames(the_file)[which(!colnames(the_file)%in%c(DB$redcap$raw_structure_cols,DB$redcap$metadata$field_name))]
       if(length(x)>0)stop("forbidden col name: ",x %>% paste0(collapse = ", "))

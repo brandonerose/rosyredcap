@@ -57,7 +57,7 @@ update_DB <- function(
         DB,
         begin_time =  as.character(DB$internals$last_data_update - lubridate::minutes(1))
       )
-      ilog3 <- ilog[which(is.na(ilog$record_id)),]
+      ilog3 <- ilog[which(is.na(ilog$record)),]
       ilog3$timestamp <- NULL
       ilog3 <- ilog3 %>% unique()
       ilog3 <- ilog3[grep(ignore_redcap_log(),ilog3$details,ignore.case = T,invert = T) %>% unique(),]
@@ -65,13 +65,13 @@ update_DB <- function(
         force <- T
         message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
       }else{
-        ilog2 <- ilog[which(!is.na(ilog$record_id)),]
+        ilog2 <- ilog[which(!is.na(ilog$record)),]
         ilog2$timestamp <- NULL
         ilog2 <- ilog2 %>% unique()
         if(any(ilog2$action_type%in%c("Create","Delete"))){
           force <- T
         }else{
-          IDs <- ilog2$record_id %>% unique()
+          IDs <- ilog2$record %>% unique()
           if(length(IDs)==0){
             IDs <- NULL
             will_update <- F

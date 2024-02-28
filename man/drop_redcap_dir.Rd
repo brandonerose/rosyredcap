@@ -6,7 +6,7 @@
 \usage{
 drop_redcap_dir(
   DB,
-  records = NULL,
+  records,
   allow_mod = T,
   dir_other,
   smart = T,

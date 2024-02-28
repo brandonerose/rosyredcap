@@ -61,6 +61,8 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
         do_it  <- utils::menu(choices = c("Yes upload","No and go to next"),title = "Do you want to upload this?")
       }
       if(do_it==1){
+        to_be_uploaded_raw$arm_num <- NULL
+        to_be_uploaded_raw$event_name <- NULL
         upload_form_to_redcap(to_be_uploaded=to_be_uploaded_raw,DB=DB,batch_size=batch_size)
       }
     }
