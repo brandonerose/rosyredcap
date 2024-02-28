@@ -49,15 +49,9 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     redcap_upload_dir %>% dir.create(showWarnings = F)
   }
   if(missing(records))records <-DB$summary$all_records[[DB$redcap$id_col]]
-  DB_selected <-  DB %>% filter_DB(records)
-  if(allow_mod){
-    to_save <- names(DB$data_extract)
-  }else{
-    to_save <- DB$redcap$instruments$instrument_name
-  }
-  if(!missing(forms)){
-    to_save <- to_save[which(to_save %in% forms)]
-  }
+  DB[["data_extract"]] <-  DB %>% filter_DB(data_choice = "data_extract",records)
+  DB[["data_transform"]] <-  DB %>% filter_DB(data_choice = "data_transform",records)
+
   due_for_save_metadata <- T
   due_for_save_data <- T
   if(smart){
@@ -68,23 +62,27 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     if(include_metadata){
       DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
       for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
-        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(x,".xlsx")))
+        DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(x,".xlsx")))
       }
     }
     if(include_other){
       for (x in c("log","users")){ #,"log" #taking too long
-        DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(x,".xlsx")))
+        DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(x,".xlsx")))
       }
     }
   }
   if(due_for_save_data){
     DB$internals$last_data_dir_save <- DB$internals$last_data_update
+    to_save <- names(DB$data_extract)
+    if(!missing(forms)){
+      to_save <- to_save[which(to_save %in% forms)]
+    }
     for(x in to_save){
-      DB_selected[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      DB[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
     }
   }
   # if(annotate_codebook){
-  #   DB_selected$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
+  #   DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
   # }
   if(DB$data_transform %>% is_something()){
     save_it <- T
@@ -95,8 +93,12 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     }
     if(save_it){
       DB$internals$last_data_transformation <- DB$internals$last_data_update
-      for(x in names(DB$data_transform)){
-        DB_selected[["data_transform"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      to_save <- names(DB$data_transform)
+      if(!missing(forms)){
+        to_save <- to_save[which(to_save %in% forms)]
+      }
+      for(x in to_save){
+        DB[["data_transform"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
       }
     }
   }

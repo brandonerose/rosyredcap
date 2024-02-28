@@ -174,18 +174,21 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
         final_out <- NULL
         for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
+
           keep <- selected[[old_instrument]]
-          colnames(keep) <- colnames(keep) %>% sapply(function(col){
-            out <- col
-            x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
-            if(length(x)>0)out <- x
-            out
-          })
-          if("redcap_event_name"%in%colnames(keep)){
-            keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
-            # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+          if(!is.null(keep)){
+            colnames(keep) <- colnames(keep) %>% sapply(function(col){
+              out <- col
+              x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
+              if(length(x)>0)out <- x
+              out
+            })
+            if("redcap_event_name"%in%colnames(keep)){
+              keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+              # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
+            }
+            final_out <- final_out %>% dplyr::bind_rows(keep)
           }
-          final_out <- final_out %>% dplyr::bind_rows(keep)
         }
         DB$data_transform[[instrument_name]] <- final_out
       }
