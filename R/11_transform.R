@@ -98,6 +98,11 @@ remap_process <- function(DB){
   }
   return(DB)
 }
+#' @title Generate Default Re-Map
+#' @inheritParams save_DB
+#' @param save_file logical for whether or not to save sample default remap file to input folder of directory
+#' @param merge_non_repeating logical for whether or not to merge non-repeating instruments
+#' @export
 generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path),merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
