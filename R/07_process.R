@@ -61,7 +61,6 @@ filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_na
   if(is.null(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
   if(missing(field_names))field_names <- DB$redcap$metadata$field_name
   if(missing(form_name))form_name <- names(DB[[data_choice]])
-
   if (length(records)==0)stop("Must supply records")
   selected <- list()
   BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
