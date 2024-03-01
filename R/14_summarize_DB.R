@@ -30,7 +30,6 @@ all_records <- function(DB){
   # }
   records
 }
-
 summarize_DB <- function(DB){
   #project --------
   DB$summary$users <- DB$redcap$users
@@ -45,17 +44,14 @@ summarize_DB <- function(DB){
 
   for(i in 1:length(df_names1)){
     x <- DB[[DB$internals$reference_metadata]][[df_names2[i]]]
-    if(!is.null(x))DB$summary[[df_names1[i]]] <- x
+    if(!is.null(x)) DB$summary[[df_names1[i]]] <- x
   }
 
 
-
-  if(was_remapped){
-  }
   #records belong to arms 1 to 1 ----------
   DB$summary$records_n <- 0
   if(!is.null(DB$summary$all_records)){
-    DB$summary$records_n <- DB$summary$all_records %>% length()
+    DB$summary$records_n <- DB$summary$all_records %>% nrow()
   }
   #arms----------------
   DB$summary$arms_n <- 0
@@ -82,23 +78,18 @@ summarize_DB <- function(DB){
   #instruments/forms belong to events many to 1 (if no events/arms) ----------------
   DB$summary$instruments_n <- 0
   if(is.data.frame(DB$summary$instruments)){ # can add expected later
-    DB$summary$instruments_n <- DB$redcap$instruments %>% nrow()
-    DB$redcap$instruments$incomplete <- DB$summary$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB[[data_choice]][[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
-    })
-    DB$redcap$instruments$unverified <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Unverified") %>% which() %>% length()
-    })
-    DB$redcap$instruments$complete <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Complete") %>% which() %>% length()
-    })
+    DB$summary$instruments_n <- DB$summary$instruments %>% nrow()
+    DB$summary$instruments <- DB$summary$instruments %>% annotate_instruments()
+    if(is_something(DB$summary$instruments_remap)){
+      DB$summary$instruments_remap <- DB$summary$instruments_remap %>% annotate_instruments()
+    }
   }
   #fields belong to instruments/forms 1 to 1 ----------------
   DB$summary$metadata_n <- 0
   DB$summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
   # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
   #metadata/codebook =============
-
+DB$summary$metadata %>% metadata_to_codebook() %>% annotate_codebook(DB$summary$metadata)
   return(DB)
 }
 rmarkdown_DB <- function (DB,dir_other){

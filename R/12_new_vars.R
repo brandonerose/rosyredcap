@@ -6,7 +6,7 @@ add_new_varriable <- function(
     field_label = NA,
     select_choices_or_calculations = NA,
     field_note = NA,
-    identifier = "n",
+    identifier = "",
     units = NA,
     insert_after,
     DF = NA
@@ -20,10 +20,18 @@ add_new_varriable <- function(
     select_choices_or_calculations = select_choices_or_calculations,
     field_note = field_note,
     identifier = identifier,
-    units = units
+    units = units,
+    in_original_redcap = F,
+    field_label_short = field_label
   )
   # metadata <- DB$
-  # if()
+  DB$remap$metadata_new <-  DB$remap$metadata_new[which(DB$remap$metadata_new$field_name!=field_name),]
+
+  if(!missing(insert_after)){
+
+  }
+  DB$remap$metadata_new <-  DB$remap$metadata_new[which(DB$remap$metadata_new$field_name!=field_name),]
+
   metadata_new_var %>% metadata_to_codebook()
 }
 

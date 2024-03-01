@@ -34,9 +34,23 @@ metadata_to_codebook <- function(metadata){
   rownames(codebook) <- NULL
   return(codebook)
 }
+annotate_instruments <- function(instruments){
+  choice <- "instrument_name"
+  if("former_instrument_names" %in% colnames(instruments)){
+    choice <- "former_instrument_names"
+  }
+  for(status in c("Incomplete","Unverified","Complete")){
+    instruments[[tolower(status)]] <- instruments[[choice]] %>% sapply(function(former_instrument_names){
+      former_instrument_names %>% strsplit(" [:|:] ") %>% unlist() %>%  sapply(function(instrument_name){
+        (DB[["data_extract"]][[instrument_name]][[paste0(instrument_name,"_complete")]]==status) %>% which() %>% length()
+      }) %>% paste0(collapse = " | ")
+    })
+  }
+  return(instruments)
+}
 
-annotate_codebook <- function(metadata){
-  codebook <- DB$redcap$codebook
+annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
+
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
@@ -47,12 +61,12 @@ annotate_codebook <- function(metadata){
   codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
     form_name <- codebook$form_name[i]
     field_name <- codebook$field_name[i]
-    if(!form_name %in% names(DB$data_extract)){
-      if(DB$internals$merge_form_name %in% names(DB$data_extract)){
-        if(field_name%in%colnames(DB$data_extract$merged))return(DB$internals$merge_form_name)
+    if(!form_name %in% names(DB[[data_choice]])){
+      if(DB$internals$merge_form_name %in% names(DB[[data_choice]])){
+        if(field_name%in%colnames(DB[[data_choice]]$merged))return(DB$internals$merge_form_name)
       }
-      for(other in names(DB$data_extract)[which(!names(DB$data_extract)%in%DB$redcap$instruments$instrument_name)]){
-        if(field_name%in%colnames(DB$data_extract[[other]]))return(other)
+      for(other in names(DB[[data_choice]])[which(!names(DB[[data_choice]])%in%DB$redcap$instruments$instrument_name)]){
+        if(field_name%in%colnames(DB[[data_choice]][[other]]))return(other)
       }
     }
     return(form_name)
@@ -67,10 +81,10 @@ annotate_codebook <- function(metadata){
       metadata$field_label[which(metadata$field_name==X)] %>% unique()
     })
   codebook$n <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
+    sum(DB[[data_choice]][[codebook$form_name[i]]][,codebook$field_name[i]]==codebook$name[i],na.rm = T)
   }) %>% unlist()
   codebook$n_total <- 1:nrow(codebook) %>% lapply(function(i){
-    sum(!is.na(DB$data_extract[[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
+    sum(!is.na(DB[[data_choice]][[codebook$form_name[i]]][,codebook$field_name[i]]),na.rm = T)
   }) %>% unlist()
   codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
