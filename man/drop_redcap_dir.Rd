@@ -16,8 +16,8 @@ drop_redcap_dir(
   append_name,
   str_trunc_length = 32000,
   with_links = T,
-  annotate_codebook = T,
-  forms
+  forms,
+  merge_non_repeating = T
 )
 }
 \arguments{
@@ -42,8 +42,6 @@ drop_redcap_dir(
 \item{str_trunc_length}{optional integer for truncation}
 
 \item{with_links}{optional logical for including links in excel sheets}
-
-\item{annotate_codebook}{optional logical for adding annotations of n and percent to codebook file}
 
 \item{forms}{optional character vector for only selected forms}
 }

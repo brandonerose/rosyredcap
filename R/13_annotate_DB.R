@@ -1,4 +1,4 @@
-annotate_metadata <- function(metadata){
+annotate_metadata <- function(DB,metadata,data_choice="data_extract",skim= T){
   metadata$field_label[which(is.na(metadata$field_label))] <- metadata$field_name[which(is.na(metadata$field_label))]
   metadata  <- unique(metadata$form_name) %>%
     lapply(function(IN){
@@ -14,6 +14,17 @@ annotate_metadata <- function(metadata){
   if(!"units" %in% colnames(metadata))metadata$units <- NA
   if(!"field_label_short" %in% colnames(metadata)) metadata$field_label_short <- metadata$field_label
   # if(!"field_label_short" %in% colnames(metadata))metadata$ <- metadata$field_label
+  if(skim){
+    skimmed <- NULL
+    for (form in unique(metadata$form_name)){
+      COLS <- metadata$field_name[which(metadata$form_name==form)]
+      CHECK_THIS <- DB[[data_choice]][[form]]
+      COLS <- COLS[which(COLS %in% colnames(CHECK_THIS))]
+      skimmed <- skimmed %>% dplyr::bind_rows(CHECK_THIS[,COLS] %>% skimr::skim())
+    }
+    FOR_ORDERING <- metadata$field_name
+    metadata <- metadata %>% merge(skimmed,by.x = "field_name",by.y = "skim_variable",all = T)
+  }
   return(metadata)
 }
 metadata_to_codebook <- function(metadata){
@@ -34,7 +45,7 @@ metadata_to_codebook <- function(metadata){
   rownames(codebook) <- NULL
   return(codebook)
 }
-annotate_instruments <- function(instruments){
+annotate_instruments <- function(DB,instruments){
   choice <- "instrument_name"
   if("former_instrument_names" %in% colnames(instruments)){
     choice <- "former_instrument_names"
@@ -50,14 +61,13 @@ annotate_instruments <- function(instruments){
 }
 
 annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
-
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
     }) %>% dplyr::bind_rows()
   codebook <- codebook %>% merge(
     metadata %>% dplyr::select(
-      "form_name","field_name","field_label","field_type","field_type_R","text_validation_type_or_show_slider_number"),by="field_name",sort=F)
+      "form_name","field_name","field_label","field_type","field_type_R"),by="field_name",sort=F)
   codebook$form_name <- 1:nrow(codebook) %>% lapply(function(i){
     form_name <- codebook$form_name[i]
     field_name <- codebook$field_name[i]
@@ -88,7 +98,6 @@ annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
   }) %>% unlist()
   codebook$perc <-  (codebook$n/codebook$n_total) %>% round(4)
   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
-  DB$redcap$codebook <- codebook
   return(codebook)
 }
 #' @title clean DB columns for plotting using the metadata
@@ -103,9 +112,9 @@ annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T){
   for (data_choice in c("data_extract","data_transform")) {
     if(data_choice=="data_extract"){
-      metadata <- DB$redcap$metadata %>% annotate_metadata()
+      metadata <-  DB %>% annotate_metadata(metadata = DB$redcap$metadata, skim = F)
     }else{
-      metadata <- DB$remap$metadata_new %>% annotate_metadata()
+      metadata <-  DB %>% annotate_metadata(metadata = DB$remap$metadata_new, skim = F)
     }
     for(FORM in names(DB[[data_choice]])){
       DB[[data_choice]][[FORM]] <- DB[[data_choice]][[FORM]] %>% clean_DF(metadata=metadata,drop_blanks= drop_blanks,drop_unknowns=drop_unknowns)
@@ -139,13 +148,13 @@ clean_DF <- function(DF,metadata,drop_blanks= T,drop_unknowns=T){
         }
         DF
       }
+      DF[[COLUMN]] <- DF[[COLUMN]] %>% clean_column_for_table(
+        class = class,
+        label = label,
+        units = units,
+        levels = levels
+      )
     }
-    DF[[COLUMN]] <- DF[[COLUMN]] %>% clean_column_for_table(
-      class = class,
-      label = label,
-      units = units,
-      levels = levels
-    )
   }
   return(DF)
 }

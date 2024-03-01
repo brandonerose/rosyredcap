@@ -91,7 +91,7 @@ remap_process <- function(DB){
         metadata_remap[[col]][which(metadata_remap$field_name==field_name)[1]]
       })
     }
-    DB$remap$metadata_new <- metadata_new %>% annotate_metadata()
+    DB$remap$metadata_new <- DB %>% annotate_metadata(metadata = metadata_new,skim = F)
     DB$remap$instruments_new <- instruments_new
     DB$remap$instruments_remap <- instruments_remap
     # if(save_file) metadata_new %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_new_default.xlsx"))
@@ -129,7 +129,7 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path),merge_non_
       if(save_file) event_mapping_remap %>% rio::export(file = DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx"))
       DB$remap$event_mapping_remap <- event_mapping_remap
     }
-    metadata_remap <- metadata_remap %>% annotate_metadata()
+    metadata_remap <- DB %>% annotate_metadata(metadata = metadata_remap,skim = F)
     if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
     DB$remap$metadata_remap <- metadata_remap
   }

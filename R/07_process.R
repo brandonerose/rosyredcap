@@ -323,7 +323,7 @@ merge_non_repeating_DB <- function(DB){ # need to adjust for events, currently d
     keep_instruments <- all_instrument_names[which(!all_instrument_names%in% instrument_names)]
     data_choice <- "data_transform"
   }
-  DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_from_extact(DB$data_extract,instrument_names)
+  DB[[data_choice]][[DB$internals$merge_form_name]] <- merge_multiple(DB$data_extract,instrument_names)
   if(data_choice=="data_extract") {
     for(instrument_name in instrument_names){
       DB[["data_extract"]][[instrument_name]] <- NULL

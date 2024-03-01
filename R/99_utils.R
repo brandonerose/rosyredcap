@@ -17,7 +17,7 @@ write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add ins
   openxlsx::addWorksheet(wb, "sheet")
   COL <- which(colnames(DF)==DB$redcap$id_col)
   DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
-  if(nrow(DF)>0&&length(COL)>0&&with_links){
+  if(nrow(DF)>0&&length(COL)>0&&with_links&&nrow(DF)){
     DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF))]
     DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF)&DB$redcap$raw_structure_cols!=DB$redcap$id_col)]
     link_tail <- "&id=" %>% paste0(DF[[DB$redcap$id_col]])

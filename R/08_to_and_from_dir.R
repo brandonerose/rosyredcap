@@ -9,15 +9,14 @@
 #' @param include_other logical for whether to only include redcap and not metadata
 #' @param append_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
-#' @param annotate_codebook optional logical for adding annotations of n and percent to codebook file
 #' @param with_links optional logical for including links in excel sheets
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,annotate_codebook=T,forms){
+drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(deidentify){
-    DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers
+    DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers (drop text fields)
   }
   root_dir <- get_dir(DB)
   output_dir <- file.path(root_dir,"output")
@@ -73,6 +72,7 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
   }
   if(due_for_save_data){
     DB$internals$last_data_dir_save <- DB$internals$last_data_update
+    if(merge_non_repeating) DB <- merge_non_repeating_DB(DB)
     to_save <- names(DB$data_extract)
     if(!missing(forms)){
       to_save <- to_save[which(to_save %in% forms)]
@@ -80,6 +80,7 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     for(x in to_save){
       DB[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
     }
+    if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
   }
   # if(annotate_codebook){
   #   DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
@@ -99,6 +100,11 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
       }
       for(x in to_save){
         DB[["data_transform"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      }
+      if(DB$summary %>% is_something()){
+        for(x in names(DB$summary)[which(DB$summary %>% lapply(is.data.frame) %>% unlist())]){
+          DB[["summary"]][[x]] %>% write_xl(DB,path=file.path(output_dir,paste0(appended_name,"summary_",x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+        }
       }
     }
   }

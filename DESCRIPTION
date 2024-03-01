@@ -23,6 +23,7 @@ Imports:
     rio,
     rmarkdown,
     rosyutils,
+    skimr,
     stringr,
     tools,
     utils
