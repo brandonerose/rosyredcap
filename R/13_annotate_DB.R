@@ -24,6 +24,10 @@ annotate_metadata <- function(DB,metadata,data_choice="data_extract",skim= T){
     }
     FOR_ORDERING <- metadata$field_name
     metadata <- metadata %>% merge(skimmed,by.x = "field_name",by.y = "skim_variable",all = T)
+    metadata <- FOR_ORDERING %>%
+      lapply(function(IN){
+        metadata[which(metadata$field_name==IN),]
+      }) %>% dplyr::bind_rows()
   }
   return(metadata)
 }
