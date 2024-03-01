@@ -29,7 +29,7 @@ process_response <- function(response,error_action){
     }
     return(NA)
   }
-  return(all_character_cols(content))
+  return(rosyutils::all_character_cols(content))
 }
 test_redcap <- function(DB){
   ERROR  <- T
@@ -159,7 +159,7 @@ get_redcap_metadata <- function(DB){
           field_type="checkbox_choice",
           select_choices_or_calculations=c("0, Unchecked | 1, Checked")
         )
-      ) %>% all_character_cols()
+      ) %>% rosyutils::all_character_cols()
     }
   }
   if(any(DB$redcap$metadata$field_type=="yesno")){
@@ -280,6 +280,6 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T){
 #' @export
 get_raw_redcap <- function(DB,labelled=T,records=NULL){
   if(missing(records)) records <- NULL
-  raw <- REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% all_character_cols()
+  raw <- REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% rosyutils::all_character_cols()
   return(raw)
 }

@@ -129,6 +129,7 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path),merge_non_
       if(save_file) event_mapping_remap %>% rio::export(file = DB$dir_path %>% file.path("input","event_mapping_remap_default.xlsx"))
       DB$remap$event_mapping_remap <- event_mapping_remap
     }
+    metadata_remap <- metadata_remap %>% annotate_metadata()
     if(save_file) metadata_remap %>% rio::export(file = DB$dir_path %>% file.path("input","metadata_remap_default.xlsx"))
     DB$remap$metadata_remap <- metadata_remap
   }

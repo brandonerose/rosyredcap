@@ -121,12 +121,12 @@ read_redcap_dir <- function(DB,allow_all=T,allow_nonredcap_vars=F){
   if(DB$data_upload %>% is_something())stop("Already files in DB$data_upload, clear that first")
   DB[["data_upload"]] <- list()
   for(y in x){#not done yet
-    the_file <- readxl::read_xlsx(file.path(path,y),col_types = "text") %>% all_character_cols()
+    the_file <- readxl::read_xlsx(file.path(path,y),col_types = "text") %>% rosyutils::all_character_cols()
     if(!allow_nonredcap_vars){
       x<-colnames(the_file)[which(!colnames(the_file)%in%c(DB$redcap$raw_structure_cols,DB$redcap$metadata$field_name))]
       if(length(x)>0)stop("forbidden col name: ",x %>% paste0(collapse = ", "))
     }
-    DB[["data_upload"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% all_character_cols()
+    DB[["data_upload"]][[gsub("\\.xlsx","",y)]] <- readxl::read_xlsx(file.path(path,y)) %>% rosyutils::all_character_cols()
   }
   DB
 }

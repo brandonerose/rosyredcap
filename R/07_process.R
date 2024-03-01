@@ -8,7 +8,7 @@ raw_process_redcap <- function(raw,DB){
       was_merged <- T
       DB <- unmerge_non_repeating_DB(DB)
     }
-    raw  <- raw %>% all_character_cols()
+    raw  <- raw %>% rosyutils::all_character_cols()
     add_ons <- c(DB$redcap$id_col,"arm_num","event_name","redcap_event_name","redcap_repeat_instrument","redcap_repeat_instance")
     if(DB$redcap$is_longitudinal){
       raw$id_temp <- 1:nrow(raw)

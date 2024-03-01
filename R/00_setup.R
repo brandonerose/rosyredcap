@@ -77,7 +77,7 @@ add_project <- function(DB){
     last_data_update = DB$internals$last_data_update,
     redcap_home_link = DB$links$redcap_home,
     redcap_API_playground_link =  DB$links$redcap_API_playground
-  ) %>% all_character_cols()
+  ) %>% rosyutils::all_character_cols()
   colnames(OUT) <- blank_project_cols()
   rownames(OUT) <- NULL
   OUT

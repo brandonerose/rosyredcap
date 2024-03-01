@@ -75,9 +75,7 @@ validate_web_link <- function(link) {
 count_DB_upload_cells <- function(DB){
   DB$data_upload %>% lapply(function(x){nrow(x)*ncol(x)}) %>% unlist() %>% sum()
 }
-all_character_cols <- function(df){
-  as.data.frame(lapply(df,as.character))
-}
+
 addSlashIfNeeded <- function(input_string) {
   if (!endsWith(input_string, "/")) {
     output_string <- gsub("$", "/", input_string)

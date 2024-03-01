@@ -12,6 +12,8 @@ annotate_metadata <- function(metadata){
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "datetime_dmy")] <- "datetime"
   metadata$in_original_redcap <- metadata$field_name %in% DB$redcap$metadata$field_name
   if(!"units" %in% colnames(metadata))metadata$units <- NA
+  if(!"field_label_short" %in% colnames(metadata)) metadata$field_label_short <- metadata$field_label
+  # if(!"field_label_short" %in% colnames(metadata))metadata$ <- metadata$field_label
   return(metadata)
 }
 metadata_to_codebook <- function(metadata){

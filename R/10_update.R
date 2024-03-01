@@ -108,7 +108,7 @@ update_DB <- function(
       DB2$summary$all_records <-  all_records(DB2)
       DB2 <-DB2 %>% find_DB_diff(DB)
       DB$internals$last_data_update <- DB2$internals$last_data_update
-      DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% all_character_cols()
+      DB$redcap$log <- DB$redcap$log %>% dplyr::bind_rows(check_redcap_log(DB,begin_time = time)) %>% unique() %>% rosyutils::all_character_cols()
       forms <- names(DB2$data_extract)[
         which(
           names(DB2$data_extract) %>%

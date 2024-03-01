@@ -33,57 +33,58 @@ all_records <- function(DB){
 
 summarize_DB <- function(DB){
   #project --------
-  summary <- list()
-  summary$users <- DB$redcap$users
+  DB$summary$users <- DB$redcap$users
 
-  df_names1 <- df_names2 <- c("metadata","instruments","event_mapping","events","arms")
+  df_names0 <- df_names1 <- df_names2 <- c("metadata","instruments","event_mapping","events","arms")
+  data_choice <- "data_extract"
   if(DB$internals$was_remapped){
     df_names2 <- c(paste0(df_names1,"_new"),paste0(df_names1,"_remap"))
     df_names1 <- c(df_names1,paste0(df_names1,"_remap"))
+    data_choice <- "data_transform"
   }
 
   for(i in 1:length(df_names1)){
     x <- DB[[DB$internals$reference_metadata]][[df_names2[i]]]
-    if(!is.null(x))summary[[df_names1[i]]] <- x
-  }$
-    instruments <- DB$redcap$instruments
+    if(!is.null(x))DB$summary[[df_names1[i]]] <- x
+  }
+
 
 
   if(was_remapped){
   }
   #records belong to arms 1 to 1 ----------
-  summary$records_n <- 0
+  DB$summary$records_n <- 0
   if(!is.null(DB$summary$all_records)){
-    summary$records_n <- DB$summary$all_records %>% length()
+    DB$summary$records_n <- DB$summary$all_records %>% length()
   }
   #arms----------------
-  summary$arms_n <- 0
+  DB$summary$arms_n <- 0
   if(is.data.frame(DB$redcap$arms)){
-    summary$arms_n <- DB$redcap$arms %>% nrow()
+    DB$summary$arms_n <- DB$redcap$arms %>% nrow()
     id_pairs <- DB$redcap$instruments$instrument_name %>%  lapply(function(IN){DB$data_extract[[IN]][,c(DB$redcap$id_col,"arm_num")]}) %>% dplyr::bind_rows() %>% unique()
     DB$redcap$arms$arm_records_n <- DB$redcap$arms$arm_num %>% sapply(function(arm){
       which(id_pairs$arm_num==arm)%>% length()
     })
   }
   #events belong to arms many to 1 ----------------
-  # summary$events_n <- DB$redcap$events %>% nrow()
-  summary$events_n <- 0
+  # DB$summary$events_n <- DB$redcap$events %>% nrow()
+  DB$summary$events_n <- 0
   if(is.data.frame(DB$redcap$events)){
-    summary$events_n <- DB$redcap$events %>% nrow()
-    summary$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
+    DB$summary$events_n <- DB$redcap$events %>% nrow()
+    DB$summary$event_names_n <- DB$redcap$events$event_name %>% unique() %>% length()
     # 1:nrow(DB$redcap$event_mapping) %>% lapply(function(i){
     #   (DB$data_extract[[DB$redcap$event_mapping$form[i]]][['redcap_event_name']]==DB$redcap$event_mapping$unique_event_name[i]) %>% which() %>% length()
     # })
     # for(event in ){
-    #   summary[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
+    #   DB$summary[[paste0(event,"_records_n")]] <- DB$data_extract[[]][which(DB$redcap$arms$arm_num==arm)]
     # }
   }
   #instruments/forms belong to events many to 1 (if no events/arms) ----------------
-  summary$instruments_n <- 0
-  if(is.data.frame(DB$redcap$instruments)){ # can add expected later
-    summary$instruments_n <- DB$redcap$instruments %>% nrow()
-    DB$redcap$instruments$incomplete <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
-      (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
+  DB$summary$instruments_n <- 0
+  if(is.data.frame(DB$summary$instruments)){ # can add expected later
+    DB$summary$instruments_n <- DB$redcap$instruments %>% nrow()
+    DB$redcap$instruments$incomplete <- DB$summary$instruments$instrument_name %>% sapply(function(instrument_name){
+      (DB[[data_choice]][[instrument_name]][[paste0(instrument_name,"_complete")]]=="Incomplete") %>% which() %>% length()
     })
     DB$redcap$instruments$unverified <- DB$redcap$instruments$instrument_name %>% sapply(function(instrument_name){
       (DB$data_extract[[instrument_name]][[paste0(instrument_name,"_complete")]]=="Unverified") %>% which() %>% length()
@@ -93,8 +94,8 @@ summarize_DB <- function(DB){
     })
   }
   #fields belong to instruments/forms 1 to 1 ----------------
-  summary$metadata_n <- 0
-  summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
+  DB$summary$metadata_n <- 0
+  DB$summary$metadata_n <- DB$redcap$metadata[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive")),] %>% nrow()
   # DB$redcap$metadata$field_type[which(!DB$redcap$metadata$field_type%in%c("checkbox_choice","descriptive"))] %>% table()
   #metadata/codebook =============
 

@@ -11,7 +11,7 @@
 #' @export
 upload_form_to_redcap <- function(to_be_uploaded,DB,batch_size=500){
   REDCapR::redcap_write(
-    ds_to_write = to_be_uploaded %>% all_character_cols(),
+    ds_to_write = to_be_uploaded %>% rosyutils::all_character_cols(),
     batch_size=batch_size,
     interbatch_delay=0.2,
     continue_on_error=FALSE,
