@@ -18,6 +18,16 @@ filter_DB(
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{records}{character vector of the IDs you want to filter the DB by}
+
+\item{data_choice}{character vector of the IDs you want to filter the DB by}
+
+\item{field_names}{character vector of field_names to be included}
+
+\item{form_names}{character vector of form_names to be included}
+
+\item{add_filter_var}{character string of extra variable name to be filtered by if present in a data.frame}
+
+\item{add_filter_vals}{character vector of extra variable values to be filtered by if present in a data.frame}
 }
 \value{
 DB object that has been filtered to only include the specified records

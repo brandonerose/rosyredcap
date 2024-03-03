@@ -8,8 +8,6 @@ grab_record_tables(DB, records)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
-
-\item{records}{character vector of the IDs you want to filter the DB by}
 }
 \value{
 list of data tables

@@ -17,7 +17,11 @@ read_redcap_dir(
 
 \item{allow_all}{logical TF for allowing DB$data_extract names that are not also instrument names}
 
-\item{allow_nonredcap_vars}{logical TF for allowing non-redcap variable names}
+\item{drop_nonredcap_vars}{logical TF for dropping non-redcap variable names}
+
+\item{drop_non_instrument_vars}{logical TF for dropping non-instrument variable names}
+
+\item{stop_or_warn}{character string of whether to stop, warn, or do nothing when forbidden cols are present}
 }
 \value{
 messages for confirmation

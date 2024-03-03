@@ -10,10 +10,11 @@
 #' @param append_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
 #' @param with_links optional logical for including links in excel sheets
+#' @param merge_non_repeating optional logical for merging non-repeating instruments
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T,summarize = T){
+drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers (drop text fields)
@@ -45,9 +46,6 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
   if(missing(records))records <-DB$summary$all_records[[DB$redcap$id_col]]
   DB[["data_extract"]] <-  DB %>% filter_DB(data_choice = "data_extract",records)
   DB[["data_transform"]] <-  DB %>% filter_DB(data_choice = "data_transform",records)
-  if(summarize){
-    DB <- summarize_DB(DB,records = records)
-  }
 
   due_for_save_metadata <- T
   due_for_save_data <- T
@@ -114,7 +112,9 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
 #' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names
-#' @param allow_nonredcap_vars logical TF for allowing non-redcap variable names
+#' @param drop_nonredcap_vars logical TF for dropping non-redcap variable names
+#' @param drop_non_instrument_vars logical TF for dropping non-instrument variable names
+#' @param stop_or_warn character string of whether to stop, warn, or do nothing when forbidden cols are present
 #' @return messages for confirmation
 #' @export
 read_redcap_dir <- function(DB,allow_all=T,drop_nonredcap_vars=T,drop_non_instrument_vars=T,stop_or_warn="warn"){

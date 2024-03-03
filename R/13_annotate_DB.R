@@ -64,7 +64,7 @@ annotate_instruments <- function(DB,instruments){
   return(instruments)
 }
 
-annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
+annotate_codebook <- function(codebook,metadata,data_choice="data_extract",DB){
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
       codebook[which(codebook$field_name==IN),]
@@ -151,7 +151,6 @@ annotate_codebook <- function(codebook,metadata,data_choice="data_extract"){
 #' @inheritParams save_DB
 #' @param drop_blanks logical for dropping n=0 choices
 #' @param drop_unknowns logical for dropping missing codes
-#' @param units_df data.frame with two columns: `field_name` in the metadata and `units` to set units
 #' @return DB object cleaned for table or plots
 #' @export
 clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T){

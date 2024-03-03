@@ -23,6 +23,8 @@ setup_DB(
 \item{redcap_base_link}{character of the base REDCap link, ex. https://redcap.miami.edu}
 
 \item{force}{logical for force blank load vs last save}
+
+\item{merge_form_name}{name of merged non-repeating to be used in package}
 }
 \value{
 DB

@@ -9,16 +9,15 @@ show_DB(DB, data_choice, also_metadata = T, only_dfs = T)
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
+\item{data_choice}{whether to use 'data_extract' or 'data_transform'}
+
 \item{also_metadata}{logical for including metadata}
 
-\item{transform}{show the data_transform section instead of data_extract}
+\item{only_dfs}{logical for including data.frames}
 }
 \value{
 DB tables
 }
 \description{
-To add all of these to your global environment you could run the following code...
-`data_list <- show_DB(DB)`
-`for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
-This code is not allowed on CRAN to avoid name conflicts
+Shows DB in the env
 }

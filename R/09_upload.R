@@ -106,6 +106,7 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   }
   DB2
 }
+#' @export
 find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)
   DB <- validate_DB(DB)

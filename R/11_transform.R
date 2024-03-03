@@ -156,6 +156,10 @@ generate_custom_remap_from_dir <- function(DB){
 }
 #' @title Transform DB
 #' @inheritParams save_DB
+#' @param records character vector of records to be included in transform
+#' @param force logical for merging forcing transoformation even if up to date
+#' @param terminal_transformation logical for whether this transformation is terminal/destructive
+#' @param merge_non_rep_to_reps logical for merging non-repeating to every repeating instrument
 #' @return DB object that has DB$data_transform, can be based on a remap file from input folder or default
 #' @export
 transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, terminal_transformation = F){

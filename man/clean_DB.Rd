@@ -12,8 +12,6 @@ clean_DB(DB, drop_blanks = T, drop_unknowns = T)
 \item{drop_blanks}{logical for dropping n=0 choices}
 
 \item{drop_unknowns}{logical for dropping missing codes}
-
-\item{units_df}{data.frame with two columns: `field_name` in the metadata and `units` to set units}
 }
 \value{
 DB object cleaned for table or plots

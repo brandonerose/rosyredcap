@@ -127,6 +127,7 @@ validate_DB <- function(DB,silent = T){
 #' @param token_name character string of what the token is called when using Sys.setenv and Sys.getenv
 #' @param redcap_base_link character of the base REDCap link, ex. https://redcap.miami.edu
 #' @param force logical for force blank load vs last save
+#' @param merge_form_name name of merged non-repeating to be used in package
 #' @return DB
 #' @export
 setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,merge_form_name){
@@ -210,13 +211,9 @@ save_DB <- function(DB){
 #' @title Shows DB in the env
 #' @inheritParams save_DB
 #' @param also_metadata logical for including metadata
-#' @description
-#' To add all of these to your global environment you could run the following code...
-#' `data_list <- show_DB(DB)`
-#' `for(NAME in names(data_list)){assign(NAME,data_list[[NAME]],pos = 1)}`
-#' This code is not allowed on CRAN to avoid name conflicts
+#' @param data_choice whether to use 'data_extract' or 'data_transform'
+#' @param only_dfs logical for including data.frames
 #' @return DB tables
-#' @param transform show the data_transform section instead of data_extract
 #' @export
 show_DB <- function(DB,data_choice,also_metadata=T,only_dfs = T){
   DB <- validate_DB(DB)

@@ -14,6 +14,14 @@ transform_DB(
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
+
+\item{merge_non_rep_to_reps}{logical for merging non-repeating to every repeating instrument}
+
+\item{records}{character vector of records to be included in transform}
+
+\item{force}{logical for merging forcing transoformation even if up to date}
+
+\item{terminal_transformation}{logical for whether this transformation is terminal/destructive}
 }
 \value{
 DB object that has DB$data_transform, can be based on a remap file from input folder or default

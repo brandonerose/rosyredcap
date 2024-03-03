@@ -54,6 +54,11 @@ raw_process_redcap <- function(raw,DB){
 #' @title Select REDCap records from DB
 #' @inheritParams save_DB
 #' @param records character vector of the IDs you want to filter the DB by
+#' @param data_choice character vector of the IDs you want to filter the DB by
+#' @param field_names character vector of field_names to be included
+#' @param form_names character vector of form_names to be included
+#' @param add_filter_var character string of extra variable name to be filtered by if present in a data.frame
+#' @param add_filter_vals character vector of extra variable values to be filtered by if present in a data.frame
 #' @return DB object that has been filtered to only include the specified records
 #' @export
 filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_names,add_filter_var,add_filter_vals){#, ignore_incomplete=F, ignore_unverified = F
@@ -408,7 +413,7 @@ add_ID_to_DF <- function(DF,DB,ref_id){
 #' @title grab data table for an individual(s)
 #' @description
 #' grab data table for an individual(s)
-#' @inheritParams filter_DB
+#' @inheritParams save_DB
 #' @return list of data tables
 #' @export
 grab_record_tables <- function(DB, records){
@@ -417,25 +422,6 @@ grab_record_tables <- function(DB, records){
     OUT[[TABLE]] <-   DB$data_extract[[TABLE]][which(DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%records),]
   }
   OUT
-}
-#' @export
-filter_field_names_from_DB <- function(DB,field_names){
-  # selected <- list()
-  # form_names <- DB %>% field_names_to_instruments(field_names)
-  # form_names_rep <- form_names[which(OUT)]
-  # form_names_non_reps <-  form_names[which(!OUT)]
-  # if(length(form_names_rep)>1)stop("cant more than one repating for this function")
-  # if(length(form_names_non_reps)>1){
-  #   merged <- list()
-  #   for(form_name in form_names_non_reps){
-  #     FORM <- DB$data_extract[[form_name]]
-  #     cols_vars <- colnames(FORM)[which(colnames(FORM)%in%field_names)]
-  #     if(length(cols_vars)>0){
-  #       merged[[form_name]] <- FORM[,colnames(FORM)[which(colnames(FORM)%in%c(DB$redcap$raw_structure_cols,cols_vars))]]
-  #     }
-  #   }
-  #   merged <- merged %>% merge_multiple(form_names)
-  # }
 }
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB

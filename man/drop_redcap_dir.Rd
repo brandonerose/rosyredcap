@@ -17,8 +17,7 @@ drop_redcap_dir(
   str_trunc_length = 32000,
   with_links = T,
   forms,
-  merge_non_repeating = T,
-  summarize = T
+  merge_non_repeating = T
 )
 }
 \arguments{
@@ -45,6 +44,8 @@ drop_redcap_dir(
 \item{with_links}{optional logical for including links in excel sheets}
 
 \item{forms}{optional character vector for only selected forms}
+
+\item{merge_non_repeating}{optional logical for merging non-repeating instruments}
 }
 \value{
 messages for confirmation
