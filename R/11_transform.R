@@ -225,6 +225,61 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
   return(DB)
 }
 
+#' @title Horizontal Transform
+#' @inheritParams summarize_DB
+#' @export
+generate_horizontal_transform <- function(DB,records){
+  DB <- validate_DB(DB)
+  if(missing(records)) records <- DB$summary$all_records$record_id
+  data_extract <- filter_DB(DB,records = records)
+  FINAL_out <- NULL
+  forms <- names(data_extract)
+  col_names <- NULL
+  max_by_record <- NULL
+  ID_col <- DB$redcap$id_col
+  max_by_record <- data.frame(
+    record = records,
+    max = records %>% sapply(function(record){forms %>% sapply(function(form){length(which(data_extract[[form]][[ID_col]]==record))}) %>% max()})
+  )
+  for(form in forms){# form <- forms %>% sample(1)
+    col_names <- col_names %>% dplyr::bind_rows(
+      data.frame(
+        number = NA,
+        form_name = form,
+        field_name = names(data_extract[[form]])
+      )
+    )
+  }
+  col_names$number <-1:nrow(col_names)
+  form_list <- forms %>% sapply(function(IN){col_names$number[which(col_names$form_name==IN)]})
+
+  for(form in forms){# form <- forms %>% sample(1)
+    the_cols <- form_list[[form]]
+    out <- NULL
+   # out <- data.frame(matrix(nrow = 0,ncol = the_cols %>% length()))
+    # colnames(out) <- the_cols
+    for(record in records){ # record <- records %>% sample(1)
+      the_max <- max_by_record$max[which(max_by_record$record==record)]
+      df <- data_extract[[form]][which(data_extract[[form]][[ID_col]]==record),]
+      colnames(df) <- the_cols
+      n_blanks <- the_max-nrow(df)
+      if(n_blanks>0){
+        df_blanks <- data.frame(matrix(NA, ncol = ncol(df), nrow = n_blanks))
+        colnames(df_blanks) <- colnames(df)
+        df <- rbind(df,df_blanks)
+      }
+      out <- out %>% dplyr::bind_rows (df)
+    }
+    message("Done with ",form)
+    FINAL_out <- FINAL_out %>% dplyr::bind_cols (out)
+  }
+  col_names2 <- col_names
+  col_names2$number <- NULL
+  col_names2 <- col_names2 %>% t() %>% as.data.frame()
+  FINAL_out <-col_names2 %>%  dplyr::bind_rows(FINAL_out)
+  return(FINAL_out)
+}
+
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(
