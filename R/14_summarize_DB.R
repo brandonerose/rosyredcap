@@ -34,7 +34,7 @@ all_records <- function(DB){
 #' @export
 summarize_DB <- function(DB,records,drop_blanks = T){
   #project --------
-  DB$summary$users <- DB$redcap$users
+  # DB$summary$users <- DB$redcap$users
   df_names0 <- df_names1 <- df_names2 <- c("metadata","instruments","event_mapping","events","arms")
   data_choice <- "data_extract"
   if(!missing(records)) DB[[data_choice]] <- DB %>% filter_DB(records = records,data_choice = data_choice)
@@ -97,6 +97,8 @@ summarize_DB <- function(DB,records,drop_blanks = T){
   codebook <- metadata_to_codebook(DB$summary$metadata) %>% annotate_codebook(DB$summary$metadata,data_choice = "data_transform")
   if(drop_blanks) codebook <- codebook[which(codebook$n>0),]
   DB$summary$codebook <- codebook
+  #cross_codebook ------
+
   return(DB)
 }
 rmarkdown_DB <- function (DB,dir_other){

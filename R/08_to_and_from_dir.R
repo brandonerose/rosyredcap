@@ -13,7 +13,7 @@
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
+drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T,summarize = T){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers (drop text fields)
@@ -41,15 +41,13 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
   if(!missing(append_name)){
     appended_name <- paste0(append_name,"_")
   }
-  if(!trigger_other){
-    redcap_dir %>% dir.create(showWarnings = F)
-    redcap_metadata_dir %>% dir.create(showWarnings = F)
-    redcap_other_dir %>% dir.create(showWarnings = F)
-    redcap_upload_dir %>% dir.create(showWarnings = F)
-  }
+
   if(missing(records))records <-DB$summary$all_records[[DB$redcap$id_col]]
   DB[["data_extract"]] <-  DB %>% filter_DB(data_choice = "data_extract",records)
   DB[["data_transform"]] <-  DB %>% filter_DB(data_choice = "data_transform",records)
+  if(summarize){
+    DB <- summarize_DB(DB,records = records)
+  }
 
   due_for_save_metadata <- T
   due_for_save_data <- T
@@ -57,34 +55,38 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     if(!is.null(DB$internals$last_metadata_dir_save)) due_for_save_metadata <- DB$internals$last_metadata_update > DB$internals$last_metadata_dir_save
     if(!is.null(DB$internals$last_data_dir_save)) due_for_save_data <- DB$internals$last_data_update > DB$internals$last_data_dir_save
   }
-  if(due_for_save_metadata){
-    if(include_metadata){
-      DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
-      for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
-        DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(x,".xlsx")))
+  if(!trigger_other){
+    redcap_dir %>% dir.create(showWarnings = F)
+    redcap_metadata_dir %>% dir.create(showWarnings = F)
+    redcap_other_dir %>% dir.create(showWarnings = F)
+    redcap_upload_dir %>% dir.create(showWarnings = F)
+    if(due_for_save_metadata){
+      if(include_metadata){
+        DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
+        for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
+          DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_metadata_dir,paste0(x,".xlsx")))
+        }
+      }
+      if(include_other){
+        for (x in c("log","users")){ #,"log" #taking too long
+          DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(x,".xlsx")))
+        }
       }
     }
-    if(include_other){
-      for (x in c("log","users")){ #,"log" #taking too long
-        DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(x,".xlsx")))
+    if(due_for_save_data){
+      DB$internals$last_data_dir_save <- DB$internals$last_data_update
+      if(merge_non_repeating) DB <- merge_non_repeating_DB(DB)
+      to_save <- names(DB$data_extract)
+      if(!missing(forms)){
+        to_save <- to_save[which(to_save %in% forms)]
       }
+      for(x in to_save){
+        DB[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
+      }
+      if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
     }
   }
-  if(due_for_save_data){
-    DB$internals$last_data_dir_save <- DB$internals$last_data_update
-    if(merge_non_repeating) DB <- merge_non_repeating_DB(DB)
-    to_save <- names(DB$data_extract)
-    if(!missing(forms)){
-      to_save <- to_save[which(to_save %in% forms)]
-    }
-    for(x in to_save){
-      DB[["data_extract"]][[x]] %>% write_xl(DB,path=file.path(redcap_dir,paste0(x,".xlsx")),str_trunc_length = str_trunc_length, with_links=with_links)
-    }
-    if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
-  }
-  # if(annotate_codebook){
-  #   DB$redcap[[x]] %>% write_xl(DB,path=file.path(redcap_other_dir,paste0(appended_name,x,".xlsx")))
-  # }
+
   if(DB$data_transform %>% is_something()){
     save_it <- T
     if(!is.null(DB$internals$last_data_transformation)){
@@ -108,7 +110,6 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
       }
     }
   }
-  return(DB)
 }
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB

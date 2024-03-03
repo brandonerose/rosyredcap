@@ -56,20 +56,26 @@ raw_process_redcap <- function(raw,DB){
 #' @param records character vector of the IDs you want to filter the DB by
 #' @return DB object that has been filtered to only include the specified records
 #' @export
-filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_name){#, ignore_incomplete=F, ignore_unverified = F
+filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_names,add_filter_var,add_filter_vals){#, ignore_incomplete=F, ignore_unverified = F
   if(missing(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
   if(is.null(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
   if(missing(field_names))field_names <- DB$redcap$metadata$field_name
-  if(missing(form_name))form_name <- names(DB[[data_choice]])
+  if(missing(form_names))form_names <- names(DB[[data_choice]])
   if (length(records)==0)stop("Must supply records")
   selected <- list()
   BAD  <- records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
   GOOD  <- records[which(records%in%DB$summary$all_records[[DB$redcap$id_col]])]
   if(length(BAD)>0)stop("Following records are not found in DB: ", BAD %>% paste0(collapse = ", "))
-  for(FORM in form_name){
+  run_add_filter <- !missing(add_filter_var)&&!missing(add_filter_vals)
+  for(FORM in form_names){
     OUT <- DB[[data_choice]][[FORM]][which(DB[[data_choice]][[FORM]][[DB$redcap$id_col]]%in%GOOD),]
     cols <- colnames(OUT)[which(colnames(OUT)%in%field_names)]
     if(length(cols)>0){
+      if(run_add_filter){
+        if(add_filter_var %in% colnames(OUT)){
+          OUT <-  OUT[which(OUT[[add_filter_var]] %in% add_filter_vals),]
+        }
+      }
       if(nrow(OUT)>0){
         selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
       }
