@@ -276,6 +276,9 @@ generate_horizontal_transform <- function(DB,records){
   col_names2 <- col_names
   col_names2$number <- NULL
   col_names2 <- col_names2 %>% t() %>% as.data.frame()
+  colnames(col_names2)<-colnames(FINAL_out)
+  col_names2 <- rosyutils::all_character_cols(col_names2)
+  FINAL_out <- rosyutils::all_character_cols(FINAL_out)
   FINAL_out <-col_names2 %>%  dplyr::bind_rows(FINAL_out)
   return(FINAL_out)
 }
