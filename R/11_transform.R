@@ -256,7 +256,7 @@ generate_horizontal_transform <- function(DB,records){
   for(form in forms){# form <- forms %>% sample(1)
     the_cols <- form_list[[form]]
     out <- NULL
-   # out <- data.frame(matrix(nrow = 0,ncol = the_cols %>% length()))
+    # out <- data.frame(matrix(nrow = 0,ncol = the_cols %>% length()))
     # colnames(out) <- the_cols
     for(record in records){ # record <- records %>% sample(1)
       the_max <- max_by_record$max[which(max_by_record$record==record)]

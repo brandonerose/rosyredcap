@@ -138,28 +138,51 @@ get_redcap_metadata <- function(DB){
   DB$redcap$metadata$section_header <- DB$redcap$metadata$section_header %>% remove_html_tags()
   DB$redcap$metadata$field_label <- DB$redcap$metadata$field_label %>% remove_html_tags()
   DB$redcap$id_col <- DB$redcap$metadata[1,1] %>% as.character() #RISKY?
-  DB$redcap$metadata <- DB$redcap$metadata %>%
-    dplyr::bind_rows(
-      data.frame(
-        field_name = paste0(unique(DB$redcap$instruments$instrument_name),"_complete"),
-        form_name = unique(DB$redcap$instruments$instrument_name),
-        field_type = "radio",
-        select_choices_or_calculations = "0, Incomplete | 1, Unverified | 2, Complete"
+  for (instrument_name in unique(DB$redcap$instruments$instrument_name)){
+    row <- which(DB$redcap$metadata$form_name==instrument_name) %>% dplyr::last()
+    last_row <- nrow(DB$redcap$metadata)
+    new_row <- data.frame(
+      field_name = paste0(instrument_name,"_complete"),
+      form_name = instrument_name,
+      field_type = "radio",
+      select_choices_or_calculations = "0, Incomplete | 1, Unverified | 2, Complete"
+    )
+    top <- DB$redcap$metadata[1:row,]
+    bottom <- NULL
+    if(last_row>row){
+      bottom <- DB$redcap$metadata[(row+1):last_row,]
+    }
+    DB$redcap$metadata <- top %>%
+      dplyr::bind_rows(
+        new_row
+      ) %>%  dplyr::bind_rows(
+        bottom
       )
-    ) %>% unique()
+  }
   if(any(DB$redcap$metadata$field_type=="checkbox")){
     for(field_name in DB$redcap$metadata$field_name[which(DB$redcap$metadata$field_type=="checkbox")]){
       x <- DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==field_name)] %>% split_choices()
-      DB$redcap$metadata <- DB$redcap$metadata %>%dplyr::bind_rows(
-        data.frame(
-          field_name=paste0(field_name,"___",x$code),
-          form_name=DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==field_name)]  ,
-          field_label=x$name,
-          # field_label_full=paste0(DB$redcap$metadata$field_label[which(DB$redcap$metadata$field_name==field_name)]," - ",x$name),
-          field_type="checkbox_choice",
-          select_choices_or_calculations=c("0, Unchecked | 1, Checked")
+      new_rows <- data.frame(
+        field_name=paste0(field_name,"___",x$code),
+        form_name=DB$redcap$metadata$form_name[which(DB$redcap$metadata$field_name==field_name)]  ,
+        field_label=x$name,
+        # field_label_full=paste0(DB$redcap$metadata$field_label[which(DB$redcap$metadata$field_name==field_name)]," - ",x$name),
+        field_type="checkbox_choice",
+        select_choices_or_calculations=c("0, Unchecked | 1, Checked")
+      )
+      row <- which(DB$redcap$metadata$field_name==field_name)
+      last_row <- nrow(DB$redcap$metadata)
+      top <- DB$redcap$metadata[1:row,]
+      bottom <- NULL
+      if(last_row>row){
+        bottom <- DB$redcap$metadata[(row+1):last_row,]
+      }
+      DB$redcap$metadata <- top %>%
+        dplyr::bind_rows(
+          new_rows
+        ) %>%  dplyr::bind_rows(
+          bottom
         )
-      ) %>% rosyutils::all_character_cols()
     }
   }
   if(any(DB$redcap$metadata$field_type=="yesno")){
