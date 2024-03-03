@@ -136,6 +136,8 @@ update_DB <- function(
   if(!is.null(DB$dir_path))  save_DB(DB)
   DB
 }
+#' @title Run Quality Checks
+#' @inheritParams save_DB
 #' @export
 run_quality_checks <- function(DB){
   DB <- validate_DB(DB)

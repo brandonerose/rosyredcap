@@ -30,21 +30,22 @@ all_records <- function(DB){
   # }
   records
 }
-
+#' @title Summarize DB
+#' @inheritParams save_DB
+#' @param records character vector of records to be summarized
+#' @param drop_blanks optional logical for dropping blanks
 #' @export
 summarize_DB <- function(DB,records,drop_blanks = T){
   #project --------
   # DB$summary$users <- DB$redcap$users
   df_names0 <- df_names1 <- df_names2 <- c("metadata","instruments","event_mapping","events","arms")
   data_choice <- "data_extract"
-  if(!missing(records)) DB[[data_choice]] <- DB %>% filter_DB(records = records,data_choice = data_choice)
   if(DB$internals$was_remapped){
     df_names2 <- c(paste0(df_names1,"_new"),paste0(df_names1,"_remap"))
     df_names1 <- c(df_names1,paste0(df_names1,"_remap"))
     data_choice <- "data_transform"
-    if(!missing(records)) DB[[data_choice]] <- DB %>% filter_DB(records = records,data_choice = data_choice)
   }
-
+  if(!missing(records)) DB[[data_choice]] <- DB %>% filter_DB(records = records,data_choice = data_choice)
   for(i in 1:length(df_names1)){
     x <- DB[[DB$internals$reference_metadata]][[df_names2[i]]]
     if(!is.null(x)) DB$summary[[df_names1[i]]] <- x

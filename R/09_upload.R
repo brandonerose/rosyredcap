@@ -106,6 +106,11 @@ find_DB_diff <- function(DB2,DB,ignore_instruments){
   }
   DB2
 }
+#' @title Find the DB_import and DB differences
+#' @inheritParams save_DB
+#' @param compare what data_choice to be compare
+#' @param to what data_choice to be compared to
+#' @return upload_list
 #' @export
 find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
   warning("This function is not ready for primetime yet! Use at your own risk!",immediate. = T)

@@ -410,19 +410,7 @@ add_ID_to_DF <- function(DF,DB,ref_id){
   DF <- cbind(id_col,DF)
   DF
 }
-#' @title grab data table for an individual(s)
-#' @description
-#' grab data table for an individual(s)
-#' @inheritParams save_DB
-#' @return list of data tables
-#' @export
-grab_record_tables <- function(DB, records){
-  OUT  <- list()
-  for(TABLE in names(DB$data_extract)){
-    OUT[[TABLE]] <-   DB$data_extract[[TABLE]][which(DB$data_extract[[TABLE]][[DB$redcap$id_col]]%in%records),]
-  }
-  OUT
-}
+
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB
 #' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.
