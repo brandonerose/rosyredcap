@@ -81,9 +81,9 @@ filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_na
           OUT <-  OUT[which(OUT[[add_filter_var]] %in% add_filter_vals),]
         }
       }
-      if(nrow(OUT)>0){
-        selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
-      }
+      # if(nrow(OUT)>0){
+      selected[[FORM]] <- OUT[,colnames(OUT)[which(colnames(OUT)%in%c(DB$redcap$raw_structure_cols,field_names))]]
+      # }
     }
   }
   return(selected)
