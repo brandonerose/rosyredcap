@@ -128,4 +128,49 @@ find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
   }
   return(upload_list)
 }
+check_field <- function(DB,DF, field_name){
+  form <- rosyredcap:::field_names_to_instruments(DB,field_name)
+  cols <- c(DB$redcap$raw_structure_cols,field_name)
+  old <- DB$data_extract[[form]]
+  cols <- cols[which(cols %in% colnames(old))]
+  records <- DF$record_id
+  old <- old[which(old$record_id%in% records),cols]
+  cols <- c(DB$redcap$raw_structure_cols,field_name)
+  new <- DF
+  cols <- cols[which(cols %in% colnames(new))]
+  new <- new[,cols]
+  z<- new %>% find_df_diff(old,DB$redcap$id_col)
+  if(!is.null(z)){
+    new_old_col_name <- paste0(colnames(old)[which(colnames(old)!= DB$redcap$id_col)],"_old")
+    colnames(old)[which(colnames(old)!= DB$redcap$id_col)] <- new_old_col_name
+    z_old <- z %>% merge(old,by =DB$redcap$id_col)
+# add autoallow NA
+    if(nrow(z)>0){
+      # message("fix these in REDCap --> ",paste0(out,collapse = " | "))
+      choices <- c("upload new","keep old","manual entry","launch redcap link only")
+
+      for ( i in 1:nrow(z)){
+        OUT <- z[i,]
+        print.data.frame(z_old[i,])
+        choice <- utils::menu(choices,title=paste0("What would you like to do?"))
+        if(choice==1){
+          OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
+        }
+        if(choice==2){
+          message("Did not change anything")
+        }
+        if(choice==3){
+          DB %>% rosyredcap:::link_REDCap_record(OUT$record_id)
+          OUT[,2] <- readline("What would you like it to be? ")
+          print.data.frame(OUT)
+          OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
+        }
+        if(choice==4){
+          DB %>% rosyredcap:::link_REDCap_record(OUT$record_id)
+        }
+      }
+    }
+  }
+}
+
 
