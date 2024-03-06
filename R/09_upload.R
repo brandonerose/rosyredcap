@@ -128,8 +128,10 @@ find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
   }
   return(upload_list)
 }
+#' @export
 check_field <- function(DB,DF, field_name){
   form <- rosyredcap:::field_names_to_instruments(DB,field_name)
+  # is_repeating <- form%in% DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)]
   cols <- c(DB$redcap$raw_structure_cols,field_name)
   old <- DB$data_extract[[form]]
   cols <- cols[which(cols %in% colnames(old))]
