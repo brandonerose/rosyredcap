@@ -15,6 +15,19 @@ ignore_redcap_log <- function(collapse = T){
   if(collapse)return(paste0(ignores,collapse = "|"))
   return(ignores)
 }
+log_details_that_trigger_refresh <- function(){
+  c(
+    "Edit project field",
+    "Delete project field",
+    "Create project field",
+    "Make project customizations",
+    "Delete data collection instrument",
+    "Download instrument from Shared Library",
+    "Create data collection instrument",
+    "Tag new identifier fields"
+  )
+}
+
 #' @title Shows DB in the env
 #' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update
@@ -57,29 +70,25 @@ update_DB <- function(
         DB,
         begin_time =  as.character(DB$internals$last_data_update - lubridate::minutes(1))
       )
-      ilog3 <- ilog[which(is.na(ilog$record)),]
-      ilog3$timestamp <- NULL
-      ilog3 <- ilog3 %>% unique()
-      ilog3 <- ilog3[grep(ignore_redcap_log(),ilog3$details,ignore.case = T,invert = T) %>% unique(),]
-      if(nrow(ilog3)>0){
+      ilog$timestamp <- NULL
+      ilog <- ilog %>% unique()
+      ilog_metadata <- ilog[which(is.na(ilog$record)),]
+      ilog_metadata <- ilog_metadata[which(ilog_metadata$details%in%log_details_that_trigger_refresh()),] #inclusion
+      # ilog_metadata <- ilog_metadata[grep(ignore_redcap_log(),ilog_metadata$details,ignore.case = T,invert = T) %>% unique(),]
+      if(nrow(ilog_metadata)>0){
         force <- T
-        message(paste0("Update because: " ,ilog3$action, " - ", ilog3$details))
+        message(paste0("Update because: Metadata was changed! "))
       }else{
-        ilog2 <- ilog[which(!is.na(ilog$record)),]
-        ilog2$timestamp <- NULL
-        ilog2 <- ilog2 %>% unique()
-        if(any(ilog2$action_type%in%c("Create","Delete"))){
-          force <- T
-        }else{
-          IDs <- ilog2$record %>% unique()
-          if(length(IDs)==0){
-            IDs <- NULL
-            will_update <- F
-          }
+        ilog_data <- ilog[which(!is.na(ilog$record)),]
+        deleted_records<-which(ilog_data$action_type%in%c("Delete"))
+        if(length(deleted_records)>0){
+          warning("There were recent records deleted from redcap. As a default, rosyredcap will not delete redcap records from the R DB object. If it was correctly deleted consider running with 'force = T'. Records: ",deleted_records %>% paste0(collapse = ", "),immediate. = T)
         }
-        # if(Sys.time()>=(DB$internals$last_metadata_update+lubridate::days(2))){
-        #   force <- T
-        # }#not needed anymore because of log check?
+        IDs <- ilog_data$record %>% unique()
+        if(length(IDs)==0){
+          IDs <- NULL
+          will_update <- F
+        }
       }
     }
   }
