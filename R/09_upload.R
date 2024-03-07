@@ -129,50 +129,136 @@ find_upload_diff <- function(DB,compare = "data_upload", to = "data_transform"){
   return(upload_list)
 }
 #' @export
-check_field <- function(DB,DF, field_name){
+check_field <- function(DB,DF, field_name,autofill_new=T){
   form <- rosyredcap:::field_names_to_instruments(DB,field_name)
+  records <- DF[[DB$redcap$id_col]] %>% unique()
+  BAD<-records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+  if(length(BAD)>0)stop("Records not included in DB: ",records %>% paste0(collapse = ", "))
   # is_repeating <- form%in% DB$redcap$instruments$instrument_name[which(DB$redcap$instruments$repeating)]
-  cols <- c(DB$redcap$raw_structure_cols,field_name)
-  old <- DB$data_extract[[form]]
-  cols <- cols[which(cols %in% colnames(old))]
-  records <- DF$record_id
-  old <- old[which(old$record_id%in% records),cols]
-  cols <- c(DB$redcap$raw_structure_cols,field_name)
+  cols_mandatory_structure <- DB$redcap$raw_structure_cols
+  cols_mandatory <- c(cols_mandatory_structure,field_name)
+  old <- DB$data_extract[[form]][,cols_mandatory]
+  cols_mandatory_structure <- cols_mandatory_structure[which(cols_mandatory_structure %in% colnames(old))]
+  old <- old[which(old[[DB$redcap$id_col]]%in% records),]
   new <- DF
-  cols <- cols[which(cols %in% colnames(new))]
+  missing_structure_cols<-cols_mandatory_structure[which(!cols_mandatory_structure%in%colnames(new))]
+  cols <- cols_mandatory[which(cols_mandatory %in% colnames(new))]
   new <- new[,cols]
-  z<- new %>% find_df_diff(old,DB$redcap$id_col)
+  included_records <- records[which(records %in% old[[DB$redcap$id_col]])]
+  if(length(missing_structure_cols)>0){
+    included_records_many_rows <- included_records[which(included_records %>% sapply(function(ID){
+      length(which(old[[DB$redcap$id_col]]==ID))>1
+    }))]
+    if(length(included_records_many_rows)>0)stop("DF is missing structural columns (",missing_structure_cols %>% paste0(collapse = ", "),") and has ",form," rows with multiple entries... remove them or add the intended columns: ",included_records_many_rows %>% paste0(collapse = ", "))
+    if("redcap_repeat_instrument"%in%missing_structure_cols)new$redcap_repeat_instrument<- form
+    if("redcap_repeat_instance"%in%missing_structure_cols){
+      new$redcap_repeat_instance<- new[[DB$redcap$id_col]] %>% sapply(function(ID){
+        if(ID %in% included_records)return(old$redcap_repeat_instance[which(old[[DB$redcap$id_col]]==ID)])
+        return("1")
+      })
+    }
+    #add event?
+  }
+  z<- new %>% rosyutils::find_df_diff(old,ref_cols = cols_mandatory_structure)
   if(!is.null(z)){
-    new_old_col_name <- paste0(colnames(old)[which(colnames(old)!= DB$redcap$id_col)],"_old")
-    colnames(old)[which(colnames(old)!= DB$redcap$id_col)] <- new_old_col_name
-    z_old <- z %>% merge(old,by =DB$redcap$id_col)
+    i_of_old_name_change <- which(!colnames(old)%in% cols_mandatory_structure)
+    colnames(old)[i_of_old_name_change] <- paste0(colnames(old)[i_of_old_name_change],"_old")
+    z_old <- z %>% merge(old,by =cols_mandatory_structure)
     # add autoallow NA
     if(nrow(z)>0){
       # message("fix these in REDCap --> ",paste0(out,collapse = " | "))
       choices <- c("upload new","keep old","manual entry","launch redcap link only")
-
       for ( i in 1:nrow(z)){
         OUT <- z[i,]
-        print.data.frame(z_old[i,])
-        choice <- utils::menu(choices,title=paste0("What would you like to do?"))
+        IN<-z_old[i,]
+        new_answer <- IN[[field_name]]
+        old_answer <- IN[[paste0(field_name,"_old")]]
+        ask <- T
+        if(autofill_new){
+          if(is.na(old_answer)&&!is.na(new_answer)){
+            ask <- F
+          }
+        }
+        if(ask){
+          print.data.frame(z_old[i,])
+          choice <- utils::menu(choices,title=paste0("What would you like to do?"))
+        }else{
+          choice <- 1
+        }
         if(choice==1){
           OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
+          message("Uploaded: ",OUT %>% paste0(collapse = " | "))
         }
         if(choice==2){
           message("Did not change anything")
         }
         if(choice==3){
-          DB %>% rosyredcap:::link_REDCap_record(OUT$record_id)
-          OUT[,2] <- readline("What would you like it to be? ")
+          DB %>% rosyredcap:::link_REDCap_record(OUT[[DB$redcap$id_col]])
+          OUT[[field_name]] <- readline("What would you like it to be? ")
           print.data.frame(OUT)
           OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
         }
-        if(choice==4){
-          DB %>% rosyredcap:::link_REDCap_record(OUT$record_id)
+        if(choice==4){#account for repeat? instance
+          DB %>% rosyredcap:::link_REDCap_record(OUT[[DB$redcap$id_col]],form,instance = OUT[["redcap_repeat_instance"]])
         }
       }
     }
   }
 }
-
+#' @export
+edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_names_to_view){
+  form <- rosyredcap:::field_names_to_instruments(DB,field_name_to_change)
+  if(missing(records))records <- DB$summary$all_records[[DB$redcap$id_col]]
+  BAD<-records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+  if(length(BAD)>0)stop("Records not included in DB: ",records %>% paste0(collapse = ", "))
+  if(length(records)==0)return(message("records are length zero"))
+  records <- records %>% unique()
+  # form2 <- rosyredcap:::field_names_to_instruments(DB,field_names_to_view)
+  field_names_to_view <- c(field_name_to_change,field_names_to_view) %>% unique()
+  old_list <-filter_DB(DB,records = records, field_names = field_names_to_view)
+  old_ref <- old_list[[form]]
+  old_list[[form]] <- NULL
+  supplement <- NULL
+  if(length(old_list)>0){
+    supplement <- old_ref
+    for(i in 1:length(old_list)){
+      supplement <- supplement %>% merge( old_list[[i]],by =  DB$redcap$id_col)
+    }
+  }
+  if(nrow(old_ref)>0){
+    # message("fix these in REDCap --> ",paste0(out,collapse = " | "))
+    rows_of_choices <- which(DB$redcap$codebook$field_name==field_name_to_change)
+    has_choices <- length(rows_of_choices)>0
+    use_sup <- !is.null(supplement)
+    if(has_choices){
+      choices <- c(DB$redcap$codebook$name[rows_of_choices],"Do Nothing","Launch Redcap Link Only")
+    }else{
+      choices <- c("Manual Entry","Do Nothing","Launch Redcap Link Only")
+    }
+    for ( i in 1:nrow(old_ref)){
+      VIEW  <- OUT <- old_ref[i,]
+      if(use_sup)VIEW <-supplement[which(supplement[[DB$redcap$id_col]]==OUT[[DB$redcap$id_col]]),]
+      old_answer <- OUT[[field_name_to_change]] %>% as.character()
+      print.data.frame(VIEW)
+      choice <- utils::menu(choices,title=paste0("What would you like to do?"))
+      choice <- choices[choice]
+      if(choice %in% c("Manual Entry","Do Nothing","Launch Redcap Link Only")){
+        if(choice=="Manual Entry"){
+          OUT[[field_name_to_change]] <- readline("What would you like it to be? ")
+          OUT %>% upload_form_to_redcap(DB)
+        }
+        if(choice=="Do Nothing"){
+          message("Did not change anything")
+        }
+        if(choice=="Launch Redcap Link Only"){#account for repeat? instance
+          DB %>% rosyredcap:::link_REDCap_record(OUT[[DB$redcap$id_col]],form,instance = OUT[["redcap_repeat_instance"]])
+        }
+      }else{
+        OUT[[field_name_to_change]] <- choice
+        OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
+        message("Uploaded: ",OUT %>% paste0(collapse = " | "))
+      }
+    }
+  }
+}
 

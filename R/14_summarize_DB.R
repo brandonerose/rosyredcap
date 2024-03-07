@@ -20,7 +20,7 @@ all_records <- function(DB){
   if(records[[DB$redcap$id_col]]%>% duplicated() %>% any())stop("duplicate ",DB$redcap$id_col, " in all_records() function")
   # if(add_last_update){
   #   rows <- which(!is.na(log$record))
-  #   records$last_update <- records$record_id %>% sapply(function(record_id){
+  #   records$last_update <- records[[DB$redcap$id_col]] %>% sapply(function(record_id){
   #     for(i in rows){
   #       if(log$record[i]==record_id) return(log$timestamp[i])
   #     }
@@ -54,7 +54,7 @@ summarize_DB <- function(DB,records,drop_blanks = T){
   DB$summary$records_n <- 0
   if(!is.null(DB$summary$all_records)){
     if(!missing(records)) {
-      if(!is.null(records)) DB$summary$all_records <- DB$summary$all_records[which( DB$summary$all_records$record_id%in% records),]
+      if(!is.null(records)) DB$summary$all_records <- DB$summary$all_records[which( DB$summary$all_records[[DB$redcap$id_col]]%in% records),]
     }
     DB$summary$records_n <- DB$summary$all_records %>% nrow()
   }

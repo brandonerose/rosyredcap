@@ -230,7 +230,7 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
 #' @export
 generate_horizontal_transform <- function(DB,records){
   DB <- validate_DB(DB)
-  if(missing(records)) records <- DB$summary$all_records$record_id
+  if(missing(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
   data_extract <- filter_DB(DB,records = records)
   FINAL_out <- NULL
   forms <- names(data_extract)

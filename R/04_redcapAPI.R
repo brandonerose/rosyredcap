@@ -87,7 +87,7 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
             redcap_uri = DB$links$redcap_uri,
             token = validate_redcap_token(DB),
             field = field_name,
-            record = DB$data_extract$results$record_id[i],
+            record = DB$data_extract$results[[DB$redcap$id_col]][i],
             directory = out_dir_folder,
             file_name = file_name,
             repeat_instrument = repeat_instrument,
