@@ -146,7 +146,7 @@ check_field <- function(DB,DF, field_name){
     new_old_col_name <- paste0(colnames(old)[which(colnames(old)!= DB$redcap$id_col)],"_old")
     colnames(old)[which(colnames(old)!= DB$redcap$id_col)] <- new_old_col_name
     z_old <- z %>% merge(old,by =DB$redcap$id_col)
-# add autoallow NA
+    # add autoallow NA
     if(nrow(z)>0){
       # message("fix these in REDCap --> ",paste0(out,collapse = " | "))
       choices <- c("upload new","keep old","manual entry","launch redcap link only")

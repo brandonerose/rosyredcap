@@ -4,7 +4,14 @@
 \alias{check_redcap_log}
 \title{Check the REDCap log}
 \usage{
-check_redcap_log(DB, last = 24, units = "hours", begin_time = "", clean = T)
+check_redcap_log(
+  DB,
+  last = 24,
+  units = "hours",
+  begin_time = "",
+  clean = T,
+  record = ""
+)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}

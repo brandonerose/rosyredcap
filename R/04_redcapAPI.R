@@ -278,7 +278,7 @@ get_redcap_users <- function(DB){
 #' @param clean logical for cleaning of API data
 #' @return data.frame of log that has been cleaned and has extra summary columns
 #' @export
-check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T){
+check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T,record = ""){
   if(units=="days"){
     x <- (Sys.time()-lubridate::days(last)) %>% as.character()
   }
@@ -291,7 +291,7 @@ check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T){
   if(begin_time!=""){
     x <- begin_time
   }
-  log <- get_redcap_info(DB,"log",additional_args = list(beginTime=x))
+  log <- get_redcap_info(DB,"log",additional_args = list(beginTime=x,record=record))
   log <- log %>% clean_redcap_log(purge_api=clean)
   log
 }
@@ -305,4 +305,23 @@ get_raw_redcap <- function(DB,labelled=T,records=NULL){
   if(missing(records)) records <- NULL
   raw <- REDCapR::redcap_read(redcap_uri=DB$links$redcap_uri, token=validate_redcap_token(DB),batch_size = 2000, interbatch_delay = 0.1,records = records, raw_or_label = ifelse(labelled,"label","raw"))$data %>% rosyutils::all_character_cols()
   return(raw)
+}
+#' @export
+delete_redcap_records <- function(DB, records){
+  BAD<-records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
+  if(length(BAD)>0)stop("Records not included in DB: ",records %>% paste0(collapse = ", "))
+  for (record in records){
+    httr::POST(
+      url = DB$links$redcap_uri,
+      body = list(
+        "token"=validate_redcap_token(DB),
+        content='record',
+        action='delete',
+        `records[0]`=record,
+        returnFormat='json'
+      ),
+      encode = "form"
+    ) %>% process_response(error_action = "warn")
+  }
+  message("Records deleted!")
 }
