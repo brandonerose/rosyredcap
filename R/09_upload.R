@@ -206,7 +206,7 @@ check_field <- function(DB,DF, field_name,autofill_new=T){
   }
 }
 #' @export
-edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_names_to_view){
+edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_names_to_view,upload_individually = T){
   form <- rosyredcap:::field_names_to_instruments(DB,field_name_to_change)
   if(missing(records))records <- DB$summary$all_records[[DB$redcap$id_col]]
   BAD<-records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
@@ -242,10 +242,11 @@ edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_na
       print.data.frame(VIEW)
       choice <- utils::menu(choices,title=paste0("What would you like to do?"))
       choice <- choices[choice]
+      changed <- F
       if(choice %in% c("Manual Entry","Do Nothing","Launch Redcap Link Only")){
         if(choice=="Manual Entry"){
           OUT[[field_name_to_change]] <- readline("What would you like it to be? ")
-          OUT %>% upload_form_to_redcap(DB)
+          changed <- T
         }
         if(choice=="Do Nothing"){
           message("Did not change anything")
@@ -255,10 +256,15 @@ edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_na
         }
       }else{
         OUT[[field_name_to_change]] <- choice
-        OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
-        message("Uploaded: ",OUT %>% paste0(collapse = " | "))
+        if(upload_individually){
+          OUT %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
+          message("Uploaded: ",OUT %>% paste0(collapse = " | "))
+          changed <- T
+        }
       }
+      if(changed)old_ref[i,] <- OUT
     }
+    if(!upload_individually)old_ref %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
   }
 }
 
