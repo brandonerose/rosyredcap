@@ -206,7 +206,7 @@ check_field <- function(DB,DF, field_name,autofill_new=T){
   }
 }
 #' @export
-edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_names_to_view,upload_individually = T){
+edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_names_to_view=NULL,optional_DF,upload_individually = T){
   form <- rosyredcap:::field_names_to_instruments(DB,field_name_to_change)
   if(missing(records))records <- DB$summary$all_records[[DB$redcap$id_col]]
   BAD<-records[which(!records%in%DB$summary$all_records[[DB$redcap$id_col]])]
@@ -223,6 +223,10 @@ edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_na
     supplement <- old_ref
     for(i in 1:length(old_list)){
       supplement <- supplement %>% merge( old_list[[i]],by =  DB$redcap$id_col)
+    }
+    if(!missing(optional_DF)){
+      matching_optional_cols<-colnames(optional_DF)[which(colnames(optional_DF)%in%DB$redcap$raw_structure_cols)]
+      supplement <- supplement %>% merge( optional_DF,by =  matching_optional_cols)
     }
   }
   if(nrow(old_ref)>0){
