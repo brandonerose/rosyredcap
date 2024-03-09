@@ -17,7 +17,7 @@ drop_redcap_dir(
   str_trunc_length = 32000,
   with_links = T,
   forms,
-  merge_non_repeating = T
+  merge_non_repeating = F
 )
 }
 \arguments{
