@@ -103,6 +103,9 @@ update_DB <- function(
     }
   }
   if(force){
+    DB$data_extract <- list()
+    DB$data_transform <- list()
+    DB$data_upload <- list()
     DB <- DB %>% get_redcap_metadata()
     DB <- DB %>% get_redcap_data(labelled = labelled)
     forms <- DB$redcap$instruments$instrument_name
