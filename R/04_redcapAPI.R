@@ -280,13 +280,13 @@ get_redcap_users <- function(DB){
 #' @export
 check_redcap_log <- function(DB,last=24,units="hours",begin_time="",clean = T,record = ""){
   if(units=="days"){
-    x <- (Sys.time()-lubridate::days(last)) %>% as.character()
+    x <- (Sys.time()-lubridate::days(last)) %>% format( "%Y-%m-%d %H:%M") %>% as.character()
   }
   if(units=="hours"){
-    x <- (Sys.time()-lubridate::hours(last)) %>% as.character()
+    x <- (Sys.time()-lubridate::hours(last))%>% format( "%Y-%m-%d %H:%M") %>% as.character()
   }
   if(units=="mins"){
-    x <- (Sys.time()- lubridate::minutes(last)) %>% as.character()
+    x <- (Sys.time()- lubridate::minutes(last))%>% format( "%Y-%m-%d %H:%M") %>% as.character()
   }
   if(begin_time!=""){
     x <- begin_time
