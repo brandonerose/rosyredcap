@@ -27,7 +27,6 @@ log_details_that_trigger_refresh <- function(){
     "Tag new identifier fields"
   )
 }
-
 #' @title Shows DB in the env
 #' @param DB DB from load_DB or setup_DB
 #' @param force logical for force a fresh update

@@ -42,11 +42,9 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
   if(!missing(append_name)){
     appended_name <- paste0(append_name,"_")
   }
-
   if(missing(records))records <-DB$summary$all_records[[DB$redcap$id_col]]
   DB[["data_extract"]] <-  DB %>% filter_DB(data_choice = "data_extract",records)
   DB[["data_transform"]] <-  DB %>% filter_DB(data_choice = "data_transform",records)
-
   due_for_save_metadata <- T
   due_for_save_data <- T
   if(smart){
@@ -84,7 +82,6 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
       if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
     }
   }
-
   if(DB$data_transform %>% is_something()){
     save_it <- T
     if(!is.null(DB$internals$last_data_transformation)){
@@ -129,7 +126,6 @@ read_redcap_dir <- function(DB,allow_all=T,drop_nonredcap_vars=T,drop_non_instru
   )
   df$match <- strsplit(df$file_name_no_ext,"_") %>% sapply(function(IN){IN[length(IN)]})
   df$match[which(!df$match%in%c(DB$internals$merge_form_name,DB$redcap$instruments$instrument_name))] <- NA
-
   if(!allow_all){
     df <- df[which(!is.na(df$match)),]
   }

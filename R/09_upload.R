@@ -1,4 +1,3 @@
-
 #' @title Upload to REDCap
 #' @description
 #' This will only overwrite and new data. It will not directly delete and data.
@@ -271,4 +270,3 @@ edit_redcap_while_viewing <- function(DB,records, field_name_to_change, field_na
     if(!upload_individually)old_ref %>% rosyredcap::labelled_to_raw_form(DB) %>% upload_form_to_redcap(DB)
   }
 }
-

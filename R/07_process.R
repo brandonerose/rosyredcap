@@ -410,7 +410,6 @@ add_ID_to_DF <- function(DF,DB,ref_id){
   DF <- cbind(id_col,DF)
   DF
 }
-
 #' @title Deidentify the REDCap DB according to REDCap or your choices
 #' @inheritParams save_DB
 #' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.

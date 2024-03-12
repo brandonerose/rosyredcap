@@ -85,7 +85,6 @@ remap_process <- function(DB){
     drop_cols <- colnames(metadata_new)[which(!colnames(metadata_new)%in%keep_cols)]
     metadata_new <- metadata_new[,keep_cols] %>% unique()
     if(metadata_new$field_name %>% anyDuplicated() %>% magrittr::is_greater_than(0))stop("metadata_new has duplicate field names")
-
     for (col in drop_cols){
       metadata_new[[col]] <- metadata_new$field_name %>% sapply(function(field_name){
         metadata_remap[[col]][which(metadata_remap$field_name==field_name)[1]]
@@ -184,7 +183,6 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
         old_instruments <- DB$remap$instruments_remap$instrument_name[which(DB$remap$instruments_remap$instrument_name_remap == instrument_name)]
         final_out <- NULL
         for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
-
           keep <- selected[[old_instrument]]
           if(!is.null(keep)){
             colnames(keep) <- colnames(keep) %>% sapply(function(col){
@@ -224,7 +222,6 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
   }
   return(DB)
 }
-
 #' @title Horizontal Transform
 #' @inheritParams summarize_DB
 #' @export
@@ -252,7 +249,6 @@ generate_horizontal_transform <- function(DB,records){
   }
   col_names$number <-1:nrow(col_names)
   form_list <- forms %>% sapply(function(IN){col_names$number[which(col_names$form_name==IN)]})
-
   for(form in forms){# form <- forms %>% sample(1)
     the_cols <- form_list[[form]]
     out <- NULL
@@ -282,7 +278,6 @@ generate_horizontal_transform <- function(DB,records){
   FINAL_out <-col_names2 %>%  dplyr::bind_rows(FINAL_out)
   return(FINAL_out)
 }
-
 find_in_DB <- function(DB,text, exact = F){
   DB <- validate_DB(DB)
   out <- data.frame(

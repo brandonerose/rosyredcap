@@ -99,7 +99,6 @@ summarize_DB <- function(DB,records,drop_blanks = T){
   if(drop_blanks) codebook <- codebook[which(codebook$n>0),]
   DB$summary$codebook <- codebook
   #cross_codebook ------
-
   return(DB)
 }
 rmarkdown_DB <- function (DB,dir_other){
@@ -117,4 +116,3 @@ rmarkdown_DB <- function (DB,dir_other){
     quiet = F
   )
 }
-

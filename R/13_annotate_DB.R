@@ -63,7 +63,6 @@ annotate_instruments <- function(DB,instruments){
   }
   return(instruments)
 }
-
 annotate_codebook <- function(codebook,metadata,data_choice="data_extract",DB){
   codebook <- unique(metadata$field_name) %>%
     lapply(function(IN){
@@ -144,7 +143,6 @@ annotate_codebook <- function(codebook,metadata,data_choice="data_extract",DB){
 #   codebook$perc_text <- codebook$perc %>% magrittr::multiply_by(100) %>% round(1) %>% paste0("%")
 #   return(codebook)
 # }
-
 #' @title clean DB columns for plotting using the metadata
 #' @description
 #'  Turns choices into factors and integers to integer for table processing such as with table1 and plots

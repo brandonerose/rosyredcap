@@ -26,13 +26,8 @@ add_new_varriable <- function(
   )
   # metadata <- DB$
   DB$remap$metadata_new <-  DB$remap$metadata_new[which(DB$remap$metadata_new$field_name!=field_name),]
-
   if(!missing(insert_after)){
-
   }
   DB$remap$metadata_new <-  DB$remap$metadata_new[which(DB$remap$metadata_new$field_name!=field_name),]
-
   metadata_new_var %>% metadata_to_codebook()
 }
-
-
