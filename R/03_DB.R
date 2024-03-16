@@ -80,43 +80,62 @@ blank_DB <-  function(){ # can sort this better in version 3.0.0
     )
   )
 }
-validate_DB <- function(DB,silent = T){
+validate_DB <- function(DB,silent = T,warn_only = F){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
+  outcome_valid <- T
+  messages <- NULL
   if( ! all(names(blank_DB())%in%names(DB))){
-    stop("`DB` does not have the appropriate names. Did you use `load_DB()` or `setup_DB()` to generate it?")
+    outcome_valid <- F
+    messages <- messages %>% append("`DB` does not have the appropriate names. Did you use `load_DB()` or `setup_DB()` to generate it?")
   }
   if(is.null(DB$dir_path)){
-    stop("`DB$dir_path` is NULL!, Did you use `setup_DB()`?")
+    outcome_valid <- F
+    messages <- messages %>% append("`DB$dir_path` is NULL!, Did you use `setup_DB()`?")
   }else{
     if( ! DB$dir_path %>% file.exists()) warning("`DB$dir_path`, '",DB$dir_path,"', does not exist!, Did you use `setup_DB()`?\nThis can also happen with shared directories.",immediate. = T)
   }
   if(is.null(DB$short_name)){
-    stop("`DB$short_name` is NULL!, Did you use `setup_DB()`?")
+    outcome_valid <- F
+    messages <- messages %>% append("`DB$short_name` is NULL!, Did you use `setup_DB()`?")
   }else{
     DB$short_name %>% validate_env_name()
   }
   if(is.null(DB$token_name)){
-    stop("`DB$token_name` is NULL!, Did you use `setup_DB()`?")
+    outcome_valid <- F
+    messages <- messages %>% append("`DB$token_name` is NULL!, Did you use `setup_DB()`?")
   }else{
     DB$token_name %>% validate_env_name()
   }
-  if(is.null(DB$links$redcap_base_link)){
-    stop("`DB$links$redcap_base_link` is NULL!, Did you use `setup_DB()`?")
+  if(is.null(DB$links$redcap_base)){
+    outcome_valid <- F
+    messages <- messages %>% append("`DB$redcap_base` is NULL!, Did you use `setup_DB()`?")
   }else{
-    DB$links$redcap_base_link %>% validate_web_link()
+    DB$links$redcap_base %>% validate_web_link()
   }
   # for (CHECK in c("title","PID","version","last_metadata_update","last_data_update","home_link","API_playground_link")){
   #   if(is.null(DB[[CHECK]])){
   #     stop("`DB$",CHECK,"` is NULL!, Did you use `setup_DB()`?")
   #   }
   # }
+  if(!outcome_valid){
+    for(m in messages){
+      if(warn_only){
+        warning(m,immediate. = T)
+      }else{
+        stop(m)
+      }
+    }
+  }
   if(!silent){
     if((length(DB$data_extract)==0)>0||is.null(DB$redcap$project_info)){
       warning("Valid list but no data yet!",immediate. = T)
     }
-    message("`DB` validated!")
+    if(outcome_valid){
+      message("`DB` validated!")
+    }
+    message("DB Loaded!")
   }
   DB
 }
@@ -127,10 +146,11 @@ validate_DB <- function(DB,silent = T){
 #' @param token_name character string of what the token is called when using Sys.setenv and Sys.getenv
 #' @param redcap_base_link character of the base REDCap link, ex. https://redcap.miami.edu
 #' @param force logical for force blank load vs last save
+#' @param validate logical for validation
 #' @param merge_form_name name of merged non-repeating to be used in package
 #' @return DB
 #' @export
-setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,merge_form_name){
+setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,merge_form_name,validate = T){
   #param check
   missing_dir_path <- missing(dir_path)
   if(missing_dir_path){
@@ -139,7 +159,7 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,m
   }
   if(!missing_dir_path){
     dir_path <- set_dir(dir_path)
-    DB <- load_DB(dir_path,blank = force)
+    DB <- load_DB(dir_path,blank = force,validate = validate)
     DB$dir_path <- dir_path
   }
   if(
@@ -157,18 +177,20 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,m
     if(missing(redcap_base_link))stop("`redcap_base_link` is required for DBs that haven't been validated")
     DB$short_name <- short_name %>% validate_env_name()
     DB$token_name <- token_name %>% validate_env_name()
-    DB$links$redcap_base_link <- redcap_base_link %>% validate_web_link()
-    DB$links$redcap_uri <- DB$links$redcap_base_link  %>% paste0("api/")
-    DB <- validate_DB(DB)
+    DB$links$redcap_base <-  validate_web_link(redcap_base_link)
+    DB$links$redcap_uri <- DB$links$redcap_base  %>% paste0("api/")
+    if(validate)DB <- validate_DB(DB)
   }else{
-    if(! missing(short_name)){
-      if(DB$short_name != short_name)stop("The `short_name`, ",short_name,", you provided does not match the one the was loaded ",DB$short_name)
-    }
-    if(! missing(token_name)){
-      if(DB$token_name != token_name)stop("The `token_name`, ",token_name,", you provided does not match the one the was loaded ",DB$token_name)
-    }
-    if(! missing(redcap_base_link)){
-      if(DB$links$redcap_base_link != redcap_base_link)stop("The `redcap_base_link`, ",redcap_base_link,", you provided does not match the one the was loaded ",DB$links$redcap_base_link)
+    if(validate){
+      if(! missing(short_name)){
+        if(DB$short_name != short_name)stop("The `short_name`, ",short_name,", you provided does not match the one the was loaded ",DB$short_name)
+      }
+      if(! missing(token_name)){
+        if(DB$token_name != token_name)stop("The `token_name`, ",token_name,", you provided does not match the one the was loaded ",DB$token_name)
+      }
+      if(! missing(redcap_base_link)){
+        if(DB$links$redcap_base != redcap_base_link)stop("The `redcap_base`, ",redcap_base_link,", you provided does not match the one the was loaded ",DB$links$redcap_base)
+      }
     }
   }
   if(! missing(merge_form_name)){
@@ -181,14 +203,14 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,m
 #' @param blank logical for blank load or last save
 #' @return DB
 #' @export
-load_DB <- function(dir_path,blank=F){
+load_DB <- function(dir_path,blank=F,validate = T){
   if(blank){
     DB <- blank_DB()
   }else{
     DB_path <- file.path(dir_path,"R_objects","DB.rdata")
     if(file.exists(DB_path)){
       DB  <- readRDS(file=DB_path)
-      validate_DB(DB)
+      DB <- validate_DB(DB,silent = F,warn_only = !validate)
     }else{
       DB <- blank_DB()
     }

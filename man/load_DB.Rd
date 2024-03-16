@@ -4,12 +4,14 @@
 \alias{load_DB}
 \title{Reads DB from the directory}
 \usage{
-load_DB(dir_path, blank = F)
+load_DB(dir_path, blank = F, validate = T)
 }
 \arguments{
 \item{dir_path}{character file path of the directory}
 
 \item{blank}{logical for blank load or last save}
+
+\item{validate}{logical for validation}
 }
 \value{
 DB

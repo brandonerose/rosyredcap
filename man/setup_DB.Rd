@@ -10,7 +10,8 @@ setup_DB(
   token_name,
   redcap_base_link,
   force = F,
-  merge_form_name
+  merge_form_name,
+  validate = T
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ setup_DB(
 \item{force}{logical for force blank load vs last save}
 
 \item{merge_form_name}{name of merged non-repeating to be used in package}
+
+\item{validate}{logical for validation}
 }
 \value{
 DB

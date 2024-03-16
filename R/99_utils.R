@@ -12,31 +12,51 @@
 #' @param rhs A function call using the magrittr semantics.
 #' @return The result of calling `rhs(lhs)`.
 NULL
-write_xl <- function(DF,DB,path,str_trunc_length=32000,with_links = T){# add instance links
-  wb <- openxlsx::createWorkbook()
-  openxlsx::addWorksheet(wb, "sheet")
-  COL <- which(colnames(DF)==DB$redcap$id_col)
-  DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
-  if(nrow(DF)>0&&length(COL)>0&&with_links&&nrow(DF)){
-    DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF))]
-    DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF)&DB$redcap$raw_structure_cols!=DB$redcap$id_col)]
-    link_tail <- "&id=" %>% paste0(DF[[DB$redcap$id_col]])
-    if("redcap_repeat_instrument"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&page=",DF[["redcap_repeat_instrument"]])
-    if("redcap_repeat_instance"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&instance=",DF[["redcap_repeat_instance"]])
-    DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id,link_tail)
-    if("arm_num"%in%colnames(DF)){
-      DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
-    }
-    class(DF$redcap_link) <- "hyperlink"
-    openxlsx::writeData(wb, sheet = 1, x = DF$redcap_link,startRow = 2,startCol = COL)
-    DF$redcap_link <- NULL
+add_redcap_links_to_DF <- function(DF,DB){# add instance links
+  DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF))]
+  DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF)&DB$redcap$raw_structure_cols!=DB$redcap$id_col)]
+  link_tail <- "&id=" %>% paste0(DF[[DB$redcap$id_col]])
+  if("redcap_repeat_instrument"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&page=",DF[["redcap_repeat_instrument"]])
+  if("redcap_repeat_instance"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&instance=",DF[["redcap_repeat_instance"]])
+  DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id,link_tail)
+  if("arm_num"%in%colnames(DF)){
+    DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
   }
-  openxlsx::writeData(wb, sheet = 1, x = DF)
-  openxlsx::saveWorkbook(
-    wb = wb,
-    file = path, overwrite = TRUE)
-  message("Saved at -> ","'",path,"'")
+  return(DF)
 }
+
+write_xl <- function(DB,path,str_trunc_length=32000,with_links = T,combine = T,data_choice="data_transform"){# add instance links
+  wb <- openxlsx::createWorkbook()
+  for(DF_name in names(DB[[data_choice]])){
+    DF <- DB[[data_choice]][[DF_name]]
+    if(is.data.frame(DF)){
+      openxlsx::addWorksheet(wb, DF_name)
+      COL <- which(colnames(DF)==DB$redcap$id_col)
+      DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
+      if(nrow(DF)>0&&length(COL)>0&&with_links&&nrow(DF)){
+        DF <- DF %>% add_redcap_links_to_DF(DB)
+        class(DF$redcap_link) <- "hyperlink"
+        openxlsx::writeData(wb, sheet = DF_name, x = DF$redcap_link,startRow = 2,startCol = COL)
+        DF$redcap_link <- NULL
+      }
+      openxlsx::writeData(wb, sheet = DF_name, x = DF)
+    }
+    if(!combine){
+      openxlsx::saveWorkbook(
+        wb = wb,
+        file = path, overwrite = TRUE)
+      wb <- openxlsx::createWorkbook()
+      message("Saved at -> ","'",path,"'")
+    }
+  }
+  if(combine){
+    openxlsx::saveWorkbook(
+      wb = wb,
+      file = path, overwrite = TRUE)
+    message("Saved at -> ","'",path,"'")
+  }
+}
+
 list.files.real <- function(path){
   grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
 }
