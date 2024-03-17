@@ -3,6 +3,8 @@ remap_process <- function(DB){
   DB <- validate_DB(DB)
   if(is.data.frame(DB$redcap$metadata)){
     metadata_remap <-   DB$remap$metadata_remap
+    BAD <- DB$redcap$metadata$field_name[which(!DB$redcap$metadata$field_name%in%metadata_remap$field_name)]
+    if(length(BAD)>0)stop("Missing mappings: ",BAD %>% paste0(collapse = ", "))
     x<-which(!metadata_remap$field_name%in%DB$redcap$metadata$field_name)
     if(length(x)>0)stop("remap missing variable: ",paste0(x, collapse = ", "))
     x<- 1:nrow(metadata_remap) %>% sapply(function(i){DB$redcap$metadata$select_choices_or_calculations[which(DB$redcap$metadata$field_name==metadata_remap$field_name[i])]!=metadata_remap$select_choices_or_calculations[i]}) %>% which()
@@ -51,6 +53,13 @@ remap_process <- function(DB){
               }else{
                 anyDuplicated(event_mapping_new$form[which(event_mapping_new$form==instrument_name_remap)])>0
               }
+            })
+          )
+        ] <- T
+        instruments_remap$repeating_via_events[
+          which(
+            instruments_remap$instrument_name_remap %>% sapply(function(instrument_name_remap){
+              anyDuplicated(metadata_remap$field_name_remap[which(metadata_remap$form_name_remap==instrument_name_remap)])>0
             })
           )
         ] <- T
@@ -186,12 +195,35 @@ transform_DB <- function(DB, merge_non_rep_to_reps = F, records=NULL,force = F, 
         for(old_instrument in old_instruments){# old_instrument <- old_instruments %>%  sample (1)
           keep <- selected[[old_instrument]]
           if(!is.null(keep)){
-            colnames(keep) <- colnames(keep) %>% sapply(function(col){
-              out <- col
-              x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
-              if(length(x)>0)out <- x
-              out
-            })
+            # cols <- colnames(keep) %>% sapply(function(col){
+            #   out <- col
+            #   x<-DB$remap$metadata_remap$field_name_remap[which(DB$remap$metadata_remap$field_name == col)]
+            #   if(length(x)>0)out <- x
+            #   out
+            # })
+            #
+            # cols <- data.frame(
+            #   name = names(cols),
+            #   cols = cols
+            # )
+            # non_col_reps <- cols$cols %>% unique()
+            # all_cols <- cols$cols %>% unique()
+            # cols_reps <- cols$cols[which(duplicated(cols$cols))] %>% unique()
+            # non_col_reps <- non_col_reps[which(!non_col_reps%in%cols_reps)] %>% unique()
+            # keep2 <- NULL
+            # if(length(cols_reps)>0){
+            #   for(i in 1:nrow(keep)){
+            #     x <- keep[i,non_col_reps]
+            #
+            #     y <- keep[i,cols$name[which(cols$cols%in%cols_reps)]]
+            #     sets <- colnames(y)
+            #     for()
+            #     colnames(y)<- cols$cols[which(cols$cols%in%cols_reps)]
+            #     x <- x[,]
+            #     keep2 <-
+            #   }
+            # }
+            # colnames(keep) <-
             if("redcap_event_name"%in%colnames(keep)){
               keep$redcap_event_name <- keep$redcap_event_name %>% sapply(function(unique_event_name){DB$remap$event_mapping_remap$unique_event_name_remap[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})
               # keep$event_name <- keep$event_name %>% sapply(function(event_name){DB$remap$event_mapping_remap$[which(DB$remap$event_mapping_remap$unique_event_name==unique_event_name)] %>% unique()})

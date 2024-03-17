@@ -23,7 +23,6 @@ drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_
   redcap_metadata_dir <- file.path(redcap_dir,"metadata")
   redcap_other_dir <- file.path(redcap_dir,"other")
   redcap_upload_dir <- file.path(redcap_dir,"upload")
-  appended_name <- paste0(DB$short_name,"_",append_name,"_")
   due_for_save_metadata <- T
   due_for_save_data <- T
   if(smart){
@@ -63,14 +62,18 @@ drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_
     if(with_links){
       to_save_list <-to_save_list %>% lapply(function(DF){add_redcap_links_to_DF(DF,DB)})
       link_col_list <- list(
-        record_id = "redcap_link"
+        "redcap_link"
       )
+      names(link_col_list) <- DB$redcap$id_col
     }
+    names(to_save_list)
+    file_name <- NULL
+    if(!separate)file_name <- DB$short_name
     to_save_list %>% list_to_excel(
       dir = redcap_dir,
-      file_name = DB$short_name,
       separate = separate,
       link_col_list = link_col_list,
+      file_name = file_name,
       str_trunc_length = str_trunc_length,
       overwrite = TRUE
     )
@@ -80,9 +83,8 @@ drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_
     # )
     if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
   }
+  return(DB)
 }
-
-
 
 drop_redcap_dir_old <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
   DB <- validate_DB(DB)
