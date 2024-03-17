@@ -15,7 +15,7 @@
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F){
+drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F,str_trunc_length=32000){
   DB <- validate_DB(DB)
   root_dir <- get_dir(DB)
   output_dir <- file.path(root_dir,"output")
