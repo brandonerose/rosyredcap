@@ -1,5 +1,4 @@
 #' @import rosyutils
-
 raw_process_redcap <- function(raw,DB){
   if(nrow(raw)>0){
     if(is.null(DB$internals$data_extract_merged)){

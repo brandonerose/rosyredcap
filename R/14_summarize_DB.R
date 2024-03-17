@@ -1,5 +1,4 @@
 #' @import rosyutils
-
 all_records <- function(DB){
   records <- NULL
   cols <- DB$redcap$id_col
