@@ -182,22 +182,33 @@ setup_DB <- function(short_name,dir_path,token_name,redcap_base_link,force = F,m
     DB$links$redcap_uri <- DB$links$redcap_base  %>% paste0("api/")
     if(validate)DB <- validate_DB(DB)
   }else{
-    if(validate){
-      if(! missing(short_name)){
+    if(! missing(short_name)){
+      if(validate){
         if(DB$short_name != short_name)stop("The `short_name`, ",short_name,", you provided does not match the one the was loaded ",DB$short_name)
+      }else{
+        DB$short_name <- short_name %>% validate_env_name()
       }
-      if(! missing(token_name)){
+    }
+    if(! missing(token_name)){
+      if(validate){
         if(DB$token_name != token_name)stop("The `token_name`, ",token_name,", you provided does not match the one the was loaded ",DB$token_name)
+      }else{
+        DB$token_name <- token_name %>% validate_env_name()
       }
-      if(! missing(redcap_base_link)){
+    }
+    if(! missing(redcap_base_link)){
+      if(validate){
         if(DB$links$redcap_base != redcap_base_link)stop("The `redcap_base`, ",redcap_base_link,", you provided does not match the one the was loaded ",DB$links$redcap_base)
+      }else{
+        DB$links$redcap_base <-  validate_web_link(redcap_base_link)
+        DB$links$redcap_uri <- DB$links$redcap_base  %>% paste0("api/")
       }
     }
   }
   if(! missing(merge_form_name)){
     DB$internals$merge_form_name<- merge_form_name
   }
-  DB
+  return(DB)
 }
 #' @title Reads DB from the directory
 #' @inheritParams setup_DB

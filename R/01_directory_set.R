@@ -16,7 +16,8 @@ validate_dir <- function(dir_path,silent=T){
 }
 clean_dir_path <- function(dir_path){
   if ( ! is.character(dir_path)) stop("dir must be a character string")
-  dir_path %>% trimws(whitespace = "[\\h\\v]") %>% normalizePath( winslash = "/",mustWork = F)
+  dir_path <- dir_path %>% trimws(whitespace = "[\\h\\v]") %>% normalizePath( winslash = "/",mustWork = F)
+  return(dir_path)
 }
 set_dir <- function(dir_path){
   dir_path <- clean_dir_path(dir_path)
