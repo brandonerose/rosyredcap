@@ -68,7 +68,7 @@ update_DB <- function(
     }else{
       ilog <- check_redcap_log(
         DB,
-        begin_time =  (DB$internals$last_data_update - lubridate::minutes(60)) %>% format( "%Y-%m-%d %H:%M") %>% as.character()
+        begin_time =  (DB$internals$last_data_update - lubridate::minutes(1)) %>% format( "%Y-%m-%d %H:%M") %>% as.character()
       ) %>% clean_redcap_log()
       ilog$timestamp <- NULL
       ilog <- ilog %>% unique()
