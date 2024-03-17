@@ -1,3 +1,4 @@
+#' @import rosyutils
 add_new_varriable <- function(
     DB,
     field_name,
