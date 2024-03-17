@@ -12,7 +12,8 @@ drop_redcap_dir(
   with_links = F,
   forms,
   merge_non_repeating = T,
-  separate = F
+  separate = F,
+  str_trunc_length = 32000
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ drop_redcap_dir(
 
 \item{merge_non_repeating}{optional logical for merging non-repeating instruments}
 
+\item{str_trunc_length}{optional integer for truncation}
+
 \item{records}{character vector of records you want dropped to your directory}
 
 \item{allow_mod}{logical for whether non-instrument names are allowed}
@@ -39,8 +42,6 @@ drop_redcap_dir(
 \item{dir_other}{optional character string of another file path where the files should be saved}
 
 \item{append_name}{optional character string for adding to the front of file names}
-
-\item{str_trunc_length}{optional integer for truncation}
 }
 \value{
 messages for confirmation
