@@ -24,42 +24,6 @@ add_redcap_links_to_DF <- function(DF,DB){# add instance links
   }
   return(DF)
 }
-
-write_xl <- function(DB,path,str_trunc_length=32000,with_links = T,combine = T,data_choice="data_transform"){# add instance links
-  wb <- openxlsx::createWorkbook()
-  for(DF_name in names(DB[[data_choice]])){
-    DF <- DB[[data_choice]][[DF_name]]
-    if(is.data.frame(DF)){
-      openxlsx::addWorksheet(wb, DF_name)
-      COL <- which(colnames(DF)==DB$redcap$id_col)
-      DF <-  DF %>% lapply(stringr::str_trunc, str_trunc_length, ellipsis = "") %>% as.data.frame()
-      if(nrow(DF)>0&&length(COL)>0&&with_links&&nrow(DF)){
-        DF <- DF %>% add_redcap_links_to_DF(DB)
-        class(DF$redcap_link) <- "hyperlink"
-        openxlsx::writeData(wb, sheet = DF_name, x = DF$redcap_link,startRow = 2,startCol = COL)
-        DF$redcap_link <- NULL
-      }
-      openxlsx::writeData(wb, sheet = DF_name, x = DF)
-    }
-    if(!combine){
-      openxlsx::saveWorkbook(
-        wb = wb,
-        file = path, overwrite = TRUE)
-      wb <- openxlsx::createWorkbook()
-      message("Saved at -> ","'",path,"'")
-    }
-  }
-  if(combine){
-    openxlsx::saveWorkbook(
-      wb = wb,
-      file = path, overwrite = TRUE)
-    message("Saved at -> ","'",path,"'")
-  }
-}
-
-list.files.real <- function(path){
-  grep('~$', list.files(path), fixed = TRUE, value = TRUE, invert = TRUE)
-}
 validate_env_name <- function(env_name) {
   # Check if the name is empty
   if(is.null(env_name)) stop("env_name is NULL")
@@ -109,34 +73,6 @@ remove_html_tags <- function(text_vector) {
   # Use gsub to remove the HTML tags from each element in the vector
   cleaned_vector <- gsub(html_pattern, "", text_vector)
   return(cleaned_vector)
-}
-drop_nas <- function(x) {
-  x[!sapply(x, is.na)]
-}
-is_something <- function(thing,row=0){
-  out <- F
-  if(!is.null(thing)){
-    if(is.data.frame(thing)){
-      if(nrow(thing)>row){
-        out <- T
-      }
-    }else{
-      if(length(thing)>0){
-        if(is.list(thing)){
-          out <- T
-        }else{
-          if(!is.na(thing)){
-            out <- T
-          }
-        }
-      }
-    }
-  }
-  return(out)
-}
-check_match <- function(vec_list) {
-  sorted_vecs <- lapply(vec_list, sort)
-  all(sapply(sorted_vecs[-1], function(x) identical(sorted_vecs[[1]], x)))
 }
 split_choices <- function(x){
   oops <- x

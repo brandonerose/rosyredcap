@@ -17,7 +17,6 @@ Imports:
     httr,
     lubridate,
     magrittr,
-    openxlsx,
     readxl,
     REDCapR,
     rio,
