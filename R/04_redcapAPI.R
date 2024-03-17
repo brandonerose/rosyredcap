@@ -76,6 +76,8 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
         record_id <- form[[DB$redcap$id_col]][i]
         repeat_instrument = form[["redcap_repeat_instrument"]][i]
         repeat_instance = form[["redcap_repeat_instance"]][i]
+          redcap_event_name = form[["redcap_event_name"]][i]
+
         if(!original_file_names){
           if(anyDuplicated(file_name)>0){
             warning(paste0("You have duplicate file names in ",form_name,", ",field_name,". Therefore will use system generated names"),immediate. = T)
@@ -88,9 +90,10 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
             redcap_uri = DB$links$redcap_uri,
             token = validate_redcap_token(DB),
             field = field_name,
-            record = DB$data_extract$results[[DB$redcap$id_col]][i],
+            record = form[[DB$redcap$id_col]][i],
             directory = out_dir_folder,
             file_name = file_name,
+            event = redcap_event_name,
             repeat_instrument = repeat_instrument,
             repeat_instance = repeat_instance,
             verbose = F
