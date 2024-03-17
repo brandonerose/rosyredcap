@@ -1,4 +1,5 @@
 #' @import rosyutils
+
 validate_dir <- function(dir_path,silent=T){
   #param check
   dir_path <- clean_dir_path(dir_path)
