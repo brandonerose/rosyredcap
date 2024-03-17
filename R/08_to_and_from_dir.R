@@ -15,7 +15,76 @@
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
+drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F){
+  DB <- validate_DB(DB)
+  root_dir <- get_dir(DB)
+  output_dir <- file.path(root_dir,"output")
+  redcap_dir <- file.path(root_dir,"REDCap")
+  redcap_metadata_dir <- file.path(redcap_dir,"metadata")
+  redcap_other_dir <- file.path(redcap_dir,"other")
+  redcap_upload_dir <- file.path(redcap_dir,"upload")
+  appended_name <- paste0(DB$short_name,"_",append_name,"_")
+  due_for_save_metadata <- T
+  due_for_save_data <- T
+  if(smart){
+    if(!is.null(DB$internals$last_metadata_dir_save)) due_for_save_metadata <- DB$internals$last_metadata_update > DB$internals$last_metadata_dir_save
+    if(!is.null(DB$internals$last_data_dir_save)) due_for_save_data <- DB$internals$last_data_update > DB$internals$last_data_dir_save
+  }
+  redcap_dir %>% dir.create(showWarnings = F)
+  redcap_metadata_dir %>% dir.create(showWarnings = F)
+  redcap_other_dir %>% dir.create(showWarnings = F)
+  redcap_upload_dir %>% dir.create(showWarnings = F)
+  if(due_for_save_metadata){
+    if(include_metadata){
+      DB$internals$last_metadata_dir_save <- DB$internals$last_metadata_update
+      for (x in c("project_info","metadata","instruments","codebook")){ #,"log" #taking too long
+        DB$redcap[x] %>%list_to_excel(redcap_metadata_dir,file_name = x,str_trunc_length = str_trunc_length,overwrite = TRUE)
+      }
+    }
+    if(include_other){
+      for (x in c("log","users")){ #,"log" #taking too long
+        DB$redcap[x] %>% list_to_excel(redcap_other_dir,file_name = x,str_trunc_length = str_trunc_length,overwrite = TRUE)
+      }
+    }
+  }
+  if(due_for_save_data){
+    DB$internals$last_data_dir_save <- DB$internals$last_data_update
+    if(merge_non_repeating) DB <- merge_non_repeating_DB(DB)
+    # to_save <- names(DB$data_extract)
+    # if(!missing(forms)){
+    #   to_save <- to_save[which(to_save %in% forms)]
+    # }
+    # to_save_list<-DB[["data_extract"]]
+    # to_save_list < to_save_list[[to_save]]
+    # for(x in to_save){
+    #   [x] %>%
+    to_save_list <- DB[["data_extract"]]
+    link_col_list <- list()
+    if(with_links){
+      to_save_list <-to_save_list %>% lapply(function(DF){add_redcap_links_to_DF(DF,DB)})
+      link_col_list <- list(
+        record_id = "redcap_link"
+      )
+    }
+    to_save_list %>% list_to_excel(
+      dir = redcap_dir,
+      file_name = DB$short_name,
+      separate = separate,
+      link_col_list = link_col_list,
+      str_trunc_length = str_trunc_length,
+      overwrite = TRUE
+    )
+    # wb <- to_save_list %>% list_to_wb(
+    #   link_col_list = link_col_list,
+    #   str_trunc_length = str_trunc_length
+    # )
+    if(merge_non_repeating) DB <- unmerge_non_repeating_DB(DB)
+  }
+}
+
+
+
+drop_redcap_dir_old <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(deidentify){
     DB <- deidentify_DB(DB) #right now not passing up option for additional non redcap marked identifiers (drop text fields)
@@ -107,6 +176,9 @@ drop_redcap_dir <- function(DB,records,allow_mod=T,dir_other, smart=T,include_me
     }
   }
 }
+
+
+
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
 #' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names

@@ -6,28 +6,17 @@
 \usage{
 drop_redcap_dir(
   DB,
-  records,
-  allow_mod = T,
-  dir_other,
   smart = T,
   include_metadata = T,
-  include_other = F,
-  deidentify = F,
-  append_name,
-  str_trunc_length = 32000,
-  with_links = T,
+  include_other = T,
+  with_links = F,
   forms,
-  merge_non_repeating = T
+  merge_non_repeating = T,
+  separate = F
 )
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
-
-\item{records}{character vector of records you want dropped to your directory}
-
-\item{allow_mod}{logical for whether non-instrument names are allowed}
-
-\item{dir_other}{optional character string of another file path where the files should be saved}
 
 \item{smart}{logical for whether to only save when data is new}
 
@@ -35,17 +24,23 @@ drop_redcap_dir(
 
 \item{include_other}{logical for whether to only include redcap and not metadata}
 
-\item{deidentify}{logical for deidentification}
-
-\item{append_name}{optional character string for adding to the front of file names}
-
-\item{str_trunc_length}{optional integer for truncation}
-
 \item{with_links}{optional logical for including links in excel sheets}
 
 \item{forms}{optional character vector for only selected forms}
 
 \item{merge_non_repeating}{optional logical for merging non-repeating instruments}
+
+\item{records}{character vector of records you want dropped to your directory}
+
+\item{allow_mod}{logical for whether non-instrument names are allowed}
+
+\item{deidentify}{logical for deidentification}
+
+\item{dir_other}{optional character string of another file path where the files should be saved}
+
+\item{append_name}{optional character string for adding to the front of file names}
+
+\item{str_trunc_length}{optional integer for truncation}
 }
 \value{
 messages for confirmation
