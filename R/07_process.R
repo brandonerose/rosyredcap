@@ -247,6 +247,8 @@ clean_redcap_log <- function(log,purge_api=T){
   }
   rows <- which(is.na(log$record)&!is.na(log$record_id))
   log$record[rows] <- log$record_id[rows]
+  rows <- which(!is.na(log$record)&is.na(log$record_id))
+  log$action_type[rows] <- "Users"
   log$record_id <- NULL
   # rows <- which(!is.na(log$record)&is.na(log$record_id))
   # log$record_id[rows] <- log$record[rows]
@@ -259,7 +261,7 @@ clean_redcap_log <- function(log,purge_api=T){
     log <- log[which(!startsWith(log$details,"Switch DAG ")),]
     log <- log[which(!startsWith(log$details,"Reorder project fields")),]
   }
-  log
+  return(log)
 }
 all_missing_codes <- function(){
   data.frame(

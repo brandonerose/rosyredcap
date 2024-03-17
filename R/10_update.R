@@ -68,8 +68,8 @@ update_DB <- function(
     }else{
       ilog <- check_redcap_log(
         DB,
-        begin_time =  (DB$internals$last_data_update - lubridate::minutes(1)) %>% format( "%Y-%m-%d %H:%M") %>% as.character()
-      )
+        begin_time =  (DB$internals$last_data_update - lubridate::minutes(60)) %>% format( "%Y-%m-%d %H:%M") %>% as.character()
+      ) %>% clean_redcap_log()
       ilog$timestamp <- NULL
       ilog <- ilog %>% unique()
       ilog_metadata <- ilog[which(is.na(ilog$record)),]
@@ -80,6 +80,7 @@ update_DB <- function(
         message(paste0("Update because: Metadata was changed! "))
       }else{
         ilog_data <- ilog[which(!is.na(ilog$record)),]
+        ilog_data <- ilog_data[which(ilog_data$action_type!="Users"),]
         deleted_records<-which(ilog_data$action_type%in%c("Delete"))
         if(length(deleted_records)>0){
           warning("There were recent records deleted from redcap. As a default, rosyredcap will not delete redcap records from the R DB object. If it was correctly deleted consider running with 'force = T'. Records: ",deleted_records %>% paste0(collapse = ", "),immediate. = T)
