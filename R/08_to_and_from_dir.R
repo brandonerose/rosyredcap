@@ -85,7 +85,6 @@ drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_
   }
   return(DB)
 }
-
 drop_redcap_dir_old <- function(DB,records,allow_mod=T,dir_other, smart=T,include_metadata=T,include_other=F,deidentify=F,append_name,str_trunc_length=32000,with_links = T,forms,merge_non_repeating = T){
   DB <- validate_DB(DB)
   if(deidentify){
@@ -178,9 +177,6 @@ drop_redcap_dir_old <- function(DB,records,allow_mod=T,dir_other, smart=T,includ
     }
   }
 }
-
-
-
 #' @title Reads DB from the dropped REDCap files in dir/REDCap/upload
 #' @inheritParams save_DB
 #' @param allow_all logical TF for allowing DB$data_extract names that are not also instrument names

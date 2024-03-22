@@ -77,7 +77,6 @@ get_redcap_files <- function(DB,original_file_names = F,overwrite = F){
         repeat_instrument = form[["redcap_repeat_instrument"]][i]
         repeat_instance = form[["redcap_repeat_instance"]][i]
           redcap_event_name = form[["redcap_event_name"]][i]
-
         if(!original_file_names){
           if(anyDuplicated(file_name)>0){
             warning(paste0("You have duplicate file names in ",form_name,", ",field_name,". Therefore will use system generated names"),immediate. = T)
