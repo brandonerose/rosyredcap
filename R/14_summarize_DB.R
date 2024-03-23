@@ -118,7 +118,7 @@ rmarkdown_DB <- function (DB,dir_other){
   )
 }
 
-save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"output"),file_name = paste0(DB$short_name,"_rosyredcap.xlsx")){
+save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"output"),file_name = paste0(DB$short_name,"_rosyredcap")){
   DB <- DB %>% validate_DB()
   to_save_list <- append(DB[["data_transform"]],DB[["summary"]])
   to_save_list <- to_save_list[which(to_save_list %>% sapply(is.data.frame))]
@@ -139,4 +139,23 @@ save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"outp
     # str_trunc_length = str_trunc_length,
     overwrite = TRUE
   )
+}
+
+stack_vars <- function(DB,vars,new_name,drop_na=T){
+  DB <- validate_DB(DB)
+  metadata <- DB$redcap$metadata
+  if(DB$internals$was_remapped){
+    metadata <- DB$remap$metadata_remap
+  }
+  if(!all(vars%in%metadata$field_name))stop("all vars must be in metadata.")
+  the_stack <- NULL
+  for(var in vars){# var <- vars %>% sample1()
+    DF <- filter_DB(DB,field_names = var)[[1]]
+    colnames(DF)[which(colnames(DF)==var)] <- new_name
+    the_stack <-the_stack %>% dplyr::bind_rows(DF)
+  }
+  if(drop_na){
+    the_stack <- the_stack[which(!is.na(the_stack[[new_name]])),]
+  }
+  return(the_stack)
 }
