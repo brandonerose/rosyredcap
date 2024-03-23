@@ -1,13 +1,15 @@
 #' @import rosyutils
 add_redcap_links_to_DF <- function(DF,DB){# add instance links
-  DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF))]
-  DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF)&DB$redcap$raw_structure_cols!=DB$redcap$id_col)]
-  link_tail <- "&id=" %>% paste0(DF[[DB$redcap$id_col]])
-  if("redcap_repeat_instrument"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&page=",DF[["redcap_repeat_instrument"]])
-  if("redcap_repeat_instance"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&instance=",DF[["redcap_repeat_instance"]])
-  DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id,link_tail)
-  if("arm_num"%in%colnames(DF)){
-    DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
+  if(DB$redcap$id_col%in%colnames(DF)){
+    DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF))]
+    DF_structure_cols <- DB$redcap$raw_structure_cols[which(DB$redcap$raw_structure_cols%in%colnames(DF)&DB$redcap$raw_structure_cols!=DB$redcap$id_col)]
+    link_tail <- "&id=" %>% paste0(DF[[DB$redcap$id_col]])
+    if("redcap_repeat_instrument"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&page=",DF[["redcap_repeat_instrument"]])
+    if("redcap_repeat_instance"%in%DF_structure_cols) link_tail <- link_tail %>% paste0("&instance=",DF[["redcap_repeat_instance"]])
+    DF$redcap_link <- paste0("https://redcap.miami.edu/redcap_v",DB$redcap$version,"/DataEntry/record_home.php?pid=",DB$redcap$project_id,link_tail)
+    if("arm_num"%in%colnames(DF)){
+      DF$redcap_link <- DF$redcap_link %>% paste0("&arm=", DF[["arm_num"]])
+    }
   }
   return(DF)
 }

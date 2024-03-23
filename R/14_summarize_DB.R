@@ -117,3 +117,26 @@ rmarkdown_DB <- function (DB,dir_other){
     quiet = F
   )
 }
+
+save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"output"),file_name = paste0(DB$short_name,"_rosyredcap.xlsx")){
+  DB <- DB %>% validate_DB()
+  to_save_list <- append(DB[["data_transform"]],DB[["summary"]])
+  to_save_list <- to_save_list[which(to_save_list %>% sapply(is.data.frame))]
+  link_col_list <- list()
+  if(with_links){
+    to_save_list <-to_save_list %>% lapply(function(DF){add_redcap_links_to_DF(DF,DB)})
+    link_col_list <- list(
+      "redcap_link"
+    )
+    names(link_col_list) <- DB$redcap$id_col
+  }
+  names(to_save_list)
+  to_save_list %>% list_to_excel(
+    dir = dir_other,
+    # separate = separate,
+    link_col_list = link_col_list,
+    file_name = file_name,
+    # str_trunc_length = str_trunc_length,
+    overwrite = TRUE
+  )
+}
