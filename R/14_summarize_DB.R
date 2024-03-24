@@ -102,6 +102,7 @@ summarize_DB <- function(DB,records,drop_blanks = T){
   #cross_codebook ------
   return(DB)
 }
+#' @export
 rmarkdown_DB <- function (DB,dir_other){
   if(missing(dir_other)){
     dir <- get_dir(DB) %>% file.path("output")
@@ -117,6 +118,7 @@ rmarkdown_DB <- function (DB,dir_other){
     quiet = F
   )
 }
+#' @export
 save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"output"),file_name = paste0(DB$short_name,"_rosyredcap")){
   DB <- DB %>% validate_DB()
   to_save_list <- append(DB[["data_transform"]],DB[["summary"]])
