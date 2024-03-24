@@ -2,6 +2,7 @@
 
 export("%>%")
 export(add_ID_to_DF)
+export(add_new_varriable)
 export(add_redcap_folder)
 export(cache_clear)
 export(check_field)

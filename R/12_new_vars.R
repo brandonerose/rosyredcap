@@ -1,4 +1,7 @@
 #' @import rosyutils
+
+#' @title add_new_varriable
+#' @export
 add_new_varriable <- function(
     DB,
     field_name,
