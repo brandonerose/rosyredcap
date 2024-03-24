@@ -168,13 +168,14 @@ clean_DB <- function(DB,drop_blanks=T,drop_unknowns=T){
 clean_DF <- function(DF,metadata,drop_blanks= T,drop_unknowns=T){
   for(COLUMN in colnames(DF)){
     if(COLUMN %in% metadata$field_name){
-      units <- NULL
-      class <- metadata$field_type_R[which(metadata$field_name==COLUMN)][[1]]
-      label <- ifelse(is.na(metadata$field_label[which(metadata$field_name==COLUMN)]),COLUMN,metadata$field_label[which(metadata$field_name==COLUMN)])[[1]]
+      ROW <- which(metadata$field_name==COLUMN)
+      units <- ifelse(!is.na(metadata$units[ROW]),metadata$units[ROW],NULL)
+      class <- metadata$field_type_R[ROW][[1]]
+      label <- ifelse(is.na(metadata$field_label[ROW]),COLUMN,metadata$field_label[ROW])[[1]]
       levels <- NULL
       if(!is.na(class)){
         if(class == "factor"){
-          levels <- (metadata$select_choices_or_calculations[which(metadata$field_name==COLUMN)] %>% split_choices())[[2]]
+          levels <- (metadata$select_choices_or_calculations[ROW] %>% split_choices())[[2]]
           if(any(duplicated(levels))){
             DUPS <- levels %>% duplicated() %>% which()
             warning("You have a variable (",COLUMN,") with dupplicate names (",levels[DUPS] %>% paste0(collapse = ", "),"). This is not great but for this proccess they will be merged and treated as identical responses.")
@@ -188,6 +189,10 @@ clean_DF <- function(DF,metadata,drop_blanks= T,drop_unknowns=T){
           }
         }
         if(class == "integer"){
+          DF[[COLUMN]] <- as.integer(DF[[COLUMN]])
+        }
+        if(class == "numeric"){
+          DF[[COLUMN]] <- as.numeric(DF[[COLUMN]])
         }
         DF
       }
