@@ -5,7 +5,7 @@ annotate_metadata <- function(DB,metadata,data_choice="data_extract",skim= T){
     lapply(function(IN){
       metadata[which(metadata$form_name==IN),]
     }) %>% dplyr::bind_rows()
-  metadata$field_type_R <- NA
+  if(!"field_type_R"%in%colnames(metadata))metadata$field_type_R <- NA
   metadata$field_type_R[which(metadata$field_type %in% c("radio","yesno","dropdown"))] <- "factor"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "integer")] <- "integer"
   metadata$field_type_R[which(metadata$text_validation_type_or_show_slider_number == "date_mdy")] <- "date"

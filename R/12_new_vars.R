@@ -4,7 +4,7 @@ add_new_varriable <- function(
     field_name,
     form_name,
     field_type,
-    field_type_R,
+    field_type_R = NA,
     field_label = NA,
     select_choices_or_calculations = NA,
     field_note = NA,
