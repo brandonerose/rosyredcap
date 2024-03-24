@@ -141,6 +141,7 @@ save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"outp
     overwrite = TRUE
   )
 }
+#' @export
 stack_vars <- function(DB,vars,new_name,drop_na=T){
   DB <- validate_DB(DB)
   metadata <- DB$redcap$metadata
