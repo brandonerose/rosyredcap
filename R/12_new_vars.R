@@ -41,10 +41,11 @@ add_new_varriable <- function(
   }else{
     DB$remap$metadata_new <-  DB$remap$metadata_new %>% dplyr::bind_rows(metadata_new_var)
   }
-  original <- DB$data_transform[[form_name]]
-  original_struc <- colnames(original)[which(colnames(original)%in%DB$redcap$raw_structure_cols)]
-  if(any(!original_struc%in% colnames(DF)))stop("all of structural columns for the ",form_name," form must be in DF")
-  original <- merge(original,DF,by = original_struc,all.x = T)
-  final_cols <-c(original_struc,DB$remap$metadata_new$field_name[which(DB$remap$metadata_new$form_name==form_name)]) %>% unique()
-  final_cols[which(!final_cols%in%colnames(original))]
+  # original <- DB$data_transform[[form_name]]
+  # original_struc <- colnames(original)[which(colnames(original)%in%DB$redcap$raw_structure_cols)]
+  # if(any(!original_struc%in% colnames(DF)))stop("all of structural columns for the ",form_name," form must be in DF")
+  # original <- merge(original,DF,by = original_struc,all.x = T)
+  # final_cols <-c(original_struc,DB$remap$metadata_new$field_name[which(DB$remap$metadata_new$form_name==form_name)]) %>% unique()
+  # final_cols[which(!final_cols%in%colnames(original))]
+  return(DB)
 }

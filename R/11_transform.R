@@ -119,7 +119,11 @@ generate_default_remap <- function(DB,save_file=!is.null(DB$dir_path),merge_non_
     metadata_remap$field_name_remap <- metadata_remap$field_name
     metadata_remap$form_name_remap <- metadata_remap$form_name
     if(merge_non_repeating){
-      metadata_remap$form_name_remap[which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!(DB$redcap$instruments$repeating|DB$redcap$instruments$repeating_via_events))])] <- DB$internals$merge_form_name
+      rows <- which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!(DB$redcap$instruments$repeating))])
+      if(DB$redcap$is_longitudinal){
+        rows <- which(metadata_remap$form_name%in%DB$redcap$instruments$instrument_name[which(!(DB$redcap$instruments$repeating|DB$redcap$instruments$repeating_via_events))])
+      }
+      metadata_remap$form_name_remap[rows] <- DB$internals$merge_form_name
     }
     if(DB$redcap$is_longitudinal){
       if(DB$redcap$has_arms_that_matter){
