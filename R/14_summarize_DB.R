@@ -117,7 +117,6 @@ rmarkdown_DB <- function (DB,dir_other){
     quiet = F
   )
 }
-
 save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"output"),file_name = paste0(DB$short_name,"_rosyredcap")){
   DB <- DB %>% validate_DB()
   to_save_list <- append(DB[["data_transform"]],DB[["summary"]])
@@ -140,7 +139,6 @@ save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"outp
     overwrite = TRUE
   )
 }
-
 stack_vars <- function(DB,vars,new_name,drop_na=T){
   DB <- validate_DB(DB)
   metadata <- DB$redcap$metadata

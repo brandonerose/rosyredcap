@@ -47,4 +47,4 @@ add_new_varriable <- function(
   original <- merge(original,DF,by = original_struc,all.x = T)
   final_cols <-c(original_struc,DB$remap$metadata_new$field_name[which(DB$remap$metadata_new$form_name==form_name)]) %>% unique()
   final_cols[which(!final_cols%in%colnames(original))]
-  }
+}
