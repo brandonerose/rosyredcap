@@ -65,7 +65,9 @@ raw_process_redcap <- function(raw,DB){
 filter_DB <- function(DB, records,data_choice="data_extract",field_names,form_names,add_filter_var,add_filter_vals){#, ignore_incomplete=F, ignore_unverified = F
   if(missing(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
   if(is.null(records)) records <- DB$summary$all_records[[DB$redcap$id_col]]
-  if(missing(field_names))field_names <- DB$redcap$metadata$field_name
+  if(missing(field_names)){
+    field_names <- DB %>% get_all_field_names(data_choice = data_choice)
+  }
   if(missing(form_names))form_names <- names(DB[[data_choice]])
   if (length(records)==0)stop("Must supply records")
   selected <- list()

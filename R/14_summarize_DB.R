@@ -160,3 +160,17 @@ stack_vars <- function(DB,vars,new_name,drop_na=T){
   }
   return(the_stack)
 }
+get_default_data_choice <- function(DB){ifelse(!DB$internals$was_remapped,"data_extract","data_transform")}
+get_default_metadata <- function(DB){
+  if(DB$internals$was_remapped){
+    return(DB$remap$metadata_new)
+  }else{
+    return(DB$redcap$metadata)
+  }
+}
+
+#' @export
+get_all_field_names <- function(DB,data_choice){
+  if(missing(data_choice))data_choice <- get_default_data_choice(DB)
+  return(DB[[data_choice]] %>% sapply(colnames) %>% unlist() %>% unique())
+}

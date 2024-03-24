@@ -14,9 +14,10 @@ add_new_varriable <- function(
     identifier = "",
     units = NA,
     insert_after,
-    DF = NA
+    data_col
 ) {
   DB <-validate_DB(DB)
+  if(!DB$data_transform %>% is_something())stop("Must have transformed data to add new vars.")
   metadata_new_var <- data.frame(
     field_name = field_name,
     form_name = form_name,
@@ -44,11 +45,9 @@ add_new_varriable <- function(
   }else{
     DB$remap$metadata_new <-  DB$remap$metadata_new %>% dplyr::bind_rows(metadata_new_var)
   }
-  # original <- DB$data_transform[[form_name]]
-  # original_struc <- colnames(original)[which(colnames(original)%in%DB$redcap$raw_structure_cols)]
-  # if(any(!original_struc%in% colnames(DF)))stop("all of structural columns for the ",form_name," form must be in DF")
-  # original <- merge(original,DF,by = original_struc,all.x = T)
-  # final_cols <-c(original_struc,DB$remap$metadata_new$field_name[which(DB$remap$metadata_new$form_name==form_name)]) %>% unique()
-  # final_cols[which(!final_cols%in%colnames(original))]
+  message("added '",field_name,"' column")
+  is_missing_data_col <- missing(data_col)
+  if(is_missing_data_col)warning("if no `data_col` is provided, the column is only added to the metadata",immediate. = T)
+  if(!is_missing_data_col)DB$data_transform[[form_name]][[field_name]] <- data_col
   return(DB)
 }
