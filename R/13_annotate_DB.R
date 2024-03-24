@@ -169,7 +169,10 @@ clean_DF <- function(DF,metadata,drop_blanks= T,drop_unknowns=T){
   for(COLUMN in colnames(DF)){
     if(COLUMN %in% metadata$field_name){
       ROW <- which(metadata$field_name==COLUMN)
-      units <- ifelse(!is.na(metadata$units[ROW]),metadata$units[ROW],NULL)
+      units <- NULL
+      if(!is.na(metadata$units[ROW])){
+        units <- metadata$units[ROW]
+      }
       class <- metadata$field_type_R[ROW][[1]]
       label <- ifelse(is.na(metadata$field_label[ROW]),COLUMN,metadata$field_label[ROW])[[1]]
       levels <- NULL
