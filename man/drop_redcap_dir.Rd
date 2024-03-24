@@ -6,6 +6,7 @@
 \usage{
 drop_redcap_dir(
   DB,
+  records,
   smart = T,
   include_metadata = T,
   include_other = T,
@@ -18,6 +19,8 @@ drop_redcap_dir(
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
+
+\item{records}{character vector of records you want dropped to your directory}
 
 \item{smart}{logical for whether to only save when data is new}
 
@@ -32,8 +35,6 @@ drop_redcap_dir(
 \item{merge_non_repeating}{optional logical for merging non-repeating instruments}
 
 \item{str_trunc_length}{optional integer for truncation}
-
-\item{records}{character vector of records you want dropped to your directory}
 
 \item{allow_mod}{logical for whether non-instrument names are allowed}
 

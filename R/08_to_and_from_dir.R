@@ -15,7 +15,7 @@
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F,str_trunc_length=32000){
+drop_redcap_dir <- function(DB,records, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F,str_trunc_length=32000){
   DB <- validate_DB(DB)
   root_dir <- get_dir(DB)
   output_dir <- file.path(root_dir,"output")
@@ -58,6 +58,7 @@ drop_redcap_dir <- function(DB, smart=T,include_metadata=T,include_other=T,with_
     # for(x in to_save){
     #   [x] %>%
     to_save_list <- DB[["data_extract"]]
+    if(!missing(records)) to_save_list<- filter_DB(DB,records = records)
     link_col_list <- list()
     if(with_links){
       to_save_list <-to_save_list %>% lapply(function(DF){add_redcap_links_to_DF(DF,DB)})
