@@ -420,7 +420,7 @@ add_ID_to_DF <- function(DF,DB,ref_id){
 #' @param identifiers optional character vector of column names that should be excluded from DB. Otherwise `DB$redcap$metadata$identifier =="y` will be used.
 #' @return DB object that has deidentified forms
 #' @export
-deidentify_DB <- function(DB,identifiers){
+deidentify_DB <- function(DB,identifiers,drop_free_text = F){
   DB <- validate_DB(DB)
   missing_identifiers <- missing(identifiers)
   if(!missing_identifiers){
@@ -433,14 +433,24 @@ deidentify_DB <- function(DB,identifiers){
     identifiers <-  DB$redcap$metadata$field_name[which(DB$redcap$metadata$identifier=="y")]
     if(length(identifiers)==0)warning("You have no identifiers marked in `DB$redcap$metadata$identifier`. You can set it in REDCap Project Setup and update DB OR define your idenitifiers in this functions `identifiers` argument." ,immediate. = T)
   }
-  drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB$data_extract), lapply(DB$data_extract, colnames))
-  drop_list <- drop_list[sapply(drop_list, length) > 0]
-  if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
-  for (FORM in names(drop_list)) {
-    for(DROP in drop_list[[FORM]]){
-      DB$data_extract[[FORM]][[DROP]] <- NULL
-      message("Dropped ",DROP," from ", FORM)
+  if(drop_free_text){ # placeholder
+    # unvalidated_free_text <- DB$redcap$metadata$field_name[which(DB$redcap$metadata$field_type=="text"&is.na(DB$redcap$metadata$text_validation_type_or_show_slider_number))]
+    # identifiers <- identifiers %>% append(
+    #   DB$redcap$metadata$field_name[which(DB$redcap$metadata$field_type=="y")]
+    # ) %>% unique()
+  }
+  for (data_choice in c("data_extract","data_transform")){
+    if(is_something(DB[[data_choice]])){
+      drop_list <- Map(function(NAME, COLS) {identifiers[which(identifiers %in% COLS)]},names(DB[[data_choice]]), lapply(DB[[data_choice]], colnames))
+      drop_list <- drop_list[sapply(drop_list, length) > 0]
+      if(length(drop_list)==0)message("Nothing to deidentify from --> ",identifiers %>% paste0(collapse = ", "))
+      for (FORM in names(drop_list)) {
+        for(DROP in drop_list[[FORM]]){
+          DB[[data_choice]][[FORM]][[DROP]] <- NULL
+          message("Dropped '",DROP,"' from '",data_choice,"' --> '", FORM,"'")
+        }
+      }
     }
   }
-  DB
+  return(DB)
 }

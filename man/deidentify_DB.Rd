@@ -4,7 +4,7 @@
 \alias{deidentify_DB}
 \title{Deidentify the REDCap DB according to REDCap or your choices}
 \usage{
-deidentify_DB(DB, identifiers)
+deidentify_DB(DB, identifiers, drop_free_text = F)
 }
 \arguments{
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
