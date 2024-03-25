@@ -14,7 +14,8 @@ drop_redcap_dir(
   forms,
   merge_non_repeating = T,
   separate = F,
-  str_trunc_length = 32000
+  str_trunc_length = 32000,
+  file_name
 )
 }
 \arguments{
@@ -36,13 +37,13 @@ drop_redcap_dir(
 
 \item{str_trunc_length}{optional integer for truncation}
 
+\item{file_name}{optional character string for adding to the front of file names}
+
 \item{allow_mod}{logical for whether non-instrument names are allowed}
 
 \item{deidentify}{logical for deidentification}
 
 \item{dir_other}{optional character string of another file path where the files should be saved}
-
-\item{append_name}{optional character string for adding to the front of file names}
 }
 \value{
 messages for confirmation

@@ -8,14 +8,14 @@
 #' @param smart logical for whether to only save when data is new
 #' @param include_metadata logical for whether to only include redcap and not metadata
 #' @param include_other logical for whether to only include redcap and not metadata
-#' @param append_name optional character string for adding to the front of file names
+#' @param file_name optional character string for adding to the front of file names
 #' @param str_trunc_length optional integer for truncation
 #' @param with_links optional logical for including links in excel sheets
 #' @param merge_non_repeating optional logical for merging non-repeating instruments
 #' @param forms optional character vector for only selected forms
 #' @return messages for confirmation
 #' @export
-drop_redcap_dir <- function(DB,records, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F,str_trunc_length=32000){
+drop_redcap_dir <- function(DB,records, smart=T,include_metadata=T,include_other=T,with_links = F,forms,merge_non_repeating = T,separate = F,str_trunc_length=32000,file_name){
   DB <- validate_DB(DB)
   root_dir <- get_dir(DB)
   output_dir <- file.path(root_dir,"output")
@@ -68,8 +68,7 @@ drop_redcap_dir <- function(DB,records, smart=T,include_metadata=T,include_other
       names(link_col_list) <- DB$redcap$id_col
     }
     names(to_save_list)
-    file_name <- NULL
-    if(!separate)file_name <- DB$short_name
+    if(missing(file_name))file_name <- DB$short_name
     to_save_list %>% list_to_excel(
       dir = redcap_dir,
       separate = separate,
