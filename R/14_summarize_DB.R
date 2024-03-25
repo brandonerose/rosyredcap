@@ -123,6 +123,7 @@ save_summary <- function(DB,with_links=T,dir_other = file.path(DB$dir_path,"outp
   DB <- DB %>% validate_DB()
   to_save_list <- append(DB[["data_transform"]],DB[["summary"]])
   to_save_list <- to_save_list[which(to_save_list %>% sapply(is.data.frame))]
+  to_save_list <- to_save_list[which((to_save_list %>% sapply(nrow) %>% unlist())>0)]
   link_col_list <- list()
   if(with_links){
     to_save_list <-to_save_list %>% lapply(function(DF){add_redcap_links_to_DF(DF,DB)})
