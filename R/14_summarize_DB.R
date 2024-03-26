@@ -169,7 +169,6 @@ get_default_metadata <- function(DB){
     return(DB$redcap$metadata)
   }
 }
-
 #' @export
 get_all_field_names <- function(DB,data_choice){
   if(missing(data_choice))data_choice <- get_default_data_choice(DB)
