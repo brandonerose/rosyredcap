@@ -237,9 +237,10 @@ save_DB <- function(DB){
   #param check
   if( ! is.list(DB)) stop("DB must be a list")
   #function
-  DB %>% validate_DB() %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
+  DB <- DB %>% validate_DB()
+  DB$data_extract <- DB$data_extract %>% all_character_cols_list()
+  DB %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
   add_project(DB)
-  DB$data_extract <- all_character_cols_list(DB$data_extract)
   # save_xls_wrapper(DB)
   message("Saved!")
 }
