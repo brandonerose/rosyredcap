@@ -7,6 +7,7 @@
 check_redcap_log(
   DB,
   last = 24,
+  user = "",
   units = "hours",
   begin_time = "",
   clean = T,
@@ -17,6 +18,8 @@ check_redcap_log(
 \item{DB}{object generated using `load_DB()` or `setup_DB()`}
 
 \item{last}{numeric paired with units. Default is 24.}
+
+\item{user}{optional user filter.}
 
 \item{units}{character paired with last. Options are "mins","hours","days". Default is "hours".}
 
