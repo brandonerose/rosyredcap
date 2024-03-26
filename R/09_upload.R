@@ -43,6 +43,7 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
   }
   warning("Right now this function only updates repeating instruments. It WILL NOT clear repeating instrument instances past number 1. SO, you will have to delete manually on REDCap.",immediate. = T)
   if(!is_something(DB$data_upload))stop("`DB$data_extract` is empty")
+  any_updates <- F
   for(TABLE in names(DB$data_upload)){
     to_be_uploaded_raw <- DB$data_upload[[TABLE]]
     if(nrow(to_be_uploaded_raw)>0){
@@ -64,9 +65,14 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
         to_be_uploaded_raw$arm_num <- NULL
         to_be_uploaded_raw$event_name <- NULL
         upload_form_to_redcap(to_be_uploaded=to_be_uploaded_raw,DB=DB,batch_size=batch_size)
+        DB$data_upload[[TABLE]] <- NULL
       }
     }
   }
+  if(any_updates){
+    DB <- update_DB(DB)
+  }
+  return(DB)
 }
 #' @title Find the DB_import and DB differences
 #' @description
