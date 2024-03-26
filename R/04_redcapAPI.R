@@ -292,6 +292,9 @@ check_redcap_log <- function(DB,last=24,user = "",units="hours",begin_time="",cl
   if(units=="mins"){
     x <- (Sys.time()- lubridate::minutes(last))%>% format( "%Y-%m-%d %H:%M") %>% as.character()
   }
+  if(units=="years"){
+    x <- (Sys.time()- lubridate::years(last))%>% format( "%Y-%m-%d %H:%M") %>% as.character()
+  }
   if(begin_time!=""){
     x <- begin_time
   }
