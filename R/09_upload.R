@@ -66,6 +66,8 @@ upload_DB_to_redcap <- function(DB,batch_size=500,ask=T){
         to_be_uploaded_raw$event_name <- NULL
         upload_form_to_redcap(to_be_uploaded=to_be_uploaded_raw,DB=DB,batch_size=batch_size)
         DB$data_upload[[TABLE]] <- NULL
+        any_updates <- T
+        DB$internals$last_data_upload <- Sys.time()
       }
     }
   }
