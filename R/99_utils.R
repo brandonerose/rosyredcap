@@ -93,3 +93,9 @@ husk_of_instrument <- function (DB,data_choice="data_extract",FORM,field_names) 
   DF2 <-as.data.frame(DF2)
   return(DF2)
 }
+all_DB_to_char_cols <- function(DB){
+  DB$data_extract <-DB$data_extract %>% all_character_cols_list()
+  DB$data_transform <-DB$data_transform %>% all_character_cols_list()
+  DB$data_upload <-DB$data_upload %>% all_character_cols_list()
+  return(DB)
+}

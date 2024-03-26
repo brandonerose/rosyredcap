@@ -239,6 +239,7 @@ save_DB <- function(DB){
   #function
   DB %>% validate_DB() %>% saveRDS(file=file.path(DB$dir_path,"R_objects","DB.rdata"))
   add_project(DB)
+  DB$data_extract <- all_character_cols_list(DB$data_extract)
   # save_xls_wrapper(DB)
   message("Saved!")
 }

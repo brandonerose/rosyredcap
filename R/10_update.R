@@ -146,7 +146,7 @@ update_DB <- function(
       DB <- merge_non_repeating_DB(DB)
     }
   }
-  if(!is.null(DB$dir_path))  save_DB(DB)
+  if(!is.null(DB$dir_path)) save_DB(DB)
   DB
 }
 #' @title Run Quality Checks
